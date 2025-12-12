@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -76,10 +75,4 @@ func TestPush(t *testing.T) {
 			t.Errorf("Messages() mismatch (-want +got):\n%v", diff)
 		}
 	})
-
-	fmt.Println(M{
-		S: SeverityDebug,
-		M: "HI MINKE",
-		T: time.Now(),
-	}.String())
 }

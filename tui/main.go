@@ -17,14 +17,16 @@ import (
 	"github.com/minkezhang/truffle-api/db/atom"
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
 	"github.com/minkezhang/truffle/tui/component/util/debug"
+	"github.com/minkezhang/truffle/tui/util/logger"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	tuibook "github.com/minkezhang/truffle/tui/component/metadata/book"
 )
 
 type M struct {
-	atom  *atom.A
-	debug tea.Model
+	atom    *atom.A
+	debug   tea.Model
+	overlay bool
 }
 
 func New() *M {
@@ -61,6 +63,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tea.KeyCtrlZ:
 			return m, tea.Suspend
+		case tea.KeyTab:
+			m.overlay = !m.overlay
+			return m, nil
 		}
 	}
 	return m, nil
@@ -69,7 +74,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *M) View() string {
 	var s strings.Builder
 
-	s.WriteString(m.debug.View())
+	if m.overlay {
+		s.WriteString(m.debug.View())
+	}
 	s.WriteString(
 		tuibook.Init(tuibook.O{
 			Book: m.atom.Metadata().(*book.M),
@@ -79,6 +86,8 @@ func (m *M) View() string {
 }
 
 func main() {
+	logger.SetSize(5)
+
 	// See https://github.com/lrstanley/bubblezone for more information.
 	zone.NewGlobal()
 

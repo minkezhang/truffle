@@ -64,21 +64,22 @@ func (m M) String() string {
 
 func New(o O) *L {
 	l := &L{
-		lines: make([]M, o.Size),
-		size:  o.Size,
-		tail:  0,
-		count: 0,
-		now:   time.Now,
+		now: time.Now,
 	}
 	if o.now != nil {
 		l.now = o.now
 	}
+	l.SetSize(o.Size)
 	return l
 }
 
 func (l *L) push(s Severity, m string) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
+
+	if l.size <= 0 {
+		return
+	}
 
 	ms := strings.Split(strings.ReplaceAll(m, "\r\n", "\n"), "\n")
 	t := l.now()
@@ -120,7 +121,22 @@ func (l *L) Messages() []M {
 	return res
 }
 
-func (l *L) Size() int { return l.size }
+func (l *L) Size() int {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	return l.size
+}
+
+func (l *L) SetSize(v int) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	l.lines = make([]M, v)
+	l.size = v
+	l.tail = 0
+	l.count = 0
+}
 
 func (l *L) Len() int {
 	l.mux.Lock()
@@ -141,3 +157,4 @@ func Errorf(f string, args ...any)   { buf.push(SeverityError, fmt.Sprintf(f, ar
 
 func Messages() []M { return buf.Messages() }
 func Size() int     { return buf.size }
+func SetSize(v int) { buf.SetSize(v) }
