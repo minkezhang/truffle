@@ -10,21 +10,21 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbletea"
+	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/client/mal"
 	"github.com/minkezhang/truffle-api/client/query"
 	"github.com/minkezhang/truffle-api/db/atom"
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
-	"github.com/minkezhang/truffle/tui/component/util/logger"
+	"github.com/minkezhang/truffle/tui/component/util/debug"
 
-	tea "github.com/charmbracelet/bubbletea"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	tuibook "github.com/minkezhang/truffle/tui/component/metadata/book"
-	l "github.com/minkezhang/truffle/tui/util/logger"
 )
 
 type M struct {
-	atom   *atom.A
-	logger tea.Model
+	atom  *atom.A
+	debug tea.Model
 }
 
 func New() *M {
@@ -40,14 +40,16 @@ func New() *M {
 	})
 
 	return &M{
-		atom:   a,
-		logger: logger.Init(),
+		atom:  a,
+		debug: debug.Init(),
 	}
 }
 
 func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.debug.Update(msg)
+
 	switch msg := msg.(type) {
 
 	// Is it a key press?
@@ -59,11 +61,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tea.KeyCtrlZ:
 			return m, tea.Suspend
-		// DEBUG command
-		case tea.KeyCtrlL:
-			return m, tea.ClearScreen
-		default:
-			l.Debugf("%v %v %v %v", msg.Type, msg.Runes, msg.Alt, msg.Paste)
 		}
 	}
 	return m, nil
@@ -72,17 +69,24 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *M) View() string {
 	var s strings.Builder
 
-	s.WriteString(m.logger.View())
+	s.WriteString(m.debug.View())
 	s.WriteString(
 		tuibook.Init(tuibook.O{
 			Book: m.atom.Metadata().(*book.M),
 		}).View(),
 	)
-	return s.String()
+	return zone.Scan(s.String())
 }
 
 func main() {
-	p := tea.NewProgram(New())
+	// See https://github.com/lrstanley/bubblezone for more information.
+	zone.NewGlobal()
+
+	p := tea.NewProgram(
+		New(),
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Run() returned unexpected error: %v", err)
 		os.Exit(1)
