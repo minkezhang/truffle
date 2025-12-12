@@ -1,9 +1,6 @@
 # truffle
 Project to track queue of media that needs to be consumed.
 
-## Developer Notes
-Remember to regenerate GraphQL code upon schema changes.
+## Bubbletea
 
-```bash
-go run github.com/99designs/gqlgen generate
-```
+https://leg100.github.io/en/posts/building-bubbletea-programs/
