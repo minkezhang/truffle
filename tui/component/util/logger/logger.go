@@ -1,14 +1,16 @@
 package logger
 
 import (
-	"strings"
-
+	"github.com/76creates/stickers/flexbox"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	l "github.com/minkezhang/truffle/tui/util/logger"
 )
 
+const (
+	w = 100
+)
 var (
 	colors = map[l.Severity]lipgloss.TerminalColor{
 		l.SeverityDebug:   lipgloss.Color("#AAAAAA"),
@@ -18,26 +20,45 @@ var (
 	}
 )
 
-type M struct{}
+type M struct {
+	flex *flexbox.FlexBox
+	width int
+}
 
-func Init() M { return M{} }
+func Init() M {
+	return M{
+		flex: flexbox.New(0, 0).SetWidth(w),
+		width: w,
+	}
+}
 
-func (m M) Init() tea.Cmd                           { return nil }
-func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
+func (m M) Init() tea.Cmd { return nil }
+
+func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	l.Debugf("%v", msg)
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		if msg.Width >= w {
+			m.flex.SetWidth(msg.Width)
+		}
+	}
+	return m, nil
+}
 
 func (m M) View() string {
-	style := lipgloss.NewStyle().Background(lipgloss.Color("5"))
-	var s strings.Builder
+	style := lipgloss.NewStyle()
 
-	messages := []string{}
-	for _, m := range l.Messages() {
-		messages = append(messages, style.Foreground(colors[m.S]).Render(m.String()))
+	rows := []*flexbox.Row{}
+	for _, msg := range l.Messages() {
+		r := m.flex.NewRow().AddCells(
+			flexbox.NewCell(0, 0).SetContent(
+				style.Foreground(colors[msg.S]).Background(lipgloss.Color("7")).Render(msg.String()),
+			),
+		)
+		r.SetStyle(style.Background(lipgloss.Color("7")))
+		rows = append(rows, r)
 	}
 
-	for i := len(messages); i < l.Size(); i++ {
-		messages = append([]string{""}, messages...)
-	}
-	s.WriteString(strings.Join(messages, "\n"))
-
-	return s.String()
+	m.flex.SetRows(rows)
+	return m.flex.Render()
 }

@@ -3,6 +3,7 @@ module github.com/minkezhang/truffle
 go 1.25.4
 
 require (
+	github.com/76creates/stickers v1.5.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/google/go-cmp v0.7.0

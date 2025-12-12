@@ -10,8 +10,10 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/component/root"
+	// "github.com/minkezhang/truffle/tui/component/root"
 	"github.com/minkezhang/truffle/tui/util/logger"
+
+	tuilogger "github.com/minkezhang/truffle/tui/component/util/logger"
 )
 
 func main() {
@@ -21,7 +23,8 @@ func main() {
 	zone.NewGlobal()
 
 	p := tea.NewProgram(
-		root.New(),
+		tuilogger.Init(),
+		// root.New(),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
