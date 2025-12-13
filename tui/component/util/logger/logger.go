@@ -11,6 +11,7 @@ import (
 const (
 	w = 80
 )
+
 var (
 	background = map[logging.Severity]lipgloss.TerminalColor{
 		logging.SeverityDebug:   lipgloss.Color("#000FFF"),
@@ -27,12 +28,12 @@ var (
 )
 
 type M struct {
-	flex *flexbox.FlexBox
-	width int  // min-width
+	flex  *flexbox.FlexBox
+	width int // min-width
 }
 
 type O struct {
-	Width int
+	Width int // min-width
 }
 
 func Init(o O) M {
@@ -47,7 +48,7 @@ func Init(o O) M {
 	}
 	flex.SetRows(rows)
 	return M{
-		flex: flex,
+		flex:  flex,
 		width: o.Width,
 	}
 }

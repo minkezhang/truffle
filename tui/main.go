@@ -13,8 +13,7 @@ import (
 	// "github.com/minkezhang/truffle/tui/component/root"
 	"github.com/minkezhang/truffle/tui/util/logging"
 
-	"github.com/minkezhang/truffle/tui/component/util/logger"
-	// "github.com/minkezhang/truffle/tui/component/util/debug"
+	"github.com/minkezhang/truffle/tui/component/util/debug"
 )
 
 func main() {
@@ -24,8 +23,9 @@ func main() {
 	zone.NewGlobal()
 
 	p := tea.NewProgram(
-		logger.Init(logger.O{Width: 80}),
-		// debug.Init(),
+		debug.Init(debug.O{
+			Width: 80,
+		}),
 		// root.New(),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),

@@ -17,16 +17,20 @@ type M struct {
 	flex *flexbox.FlexBox
 	c    *flexbox.Cell
 
-	width int
+	width int // min-width
 
 	logger tea.Model
 	key    tea.Model
 }
 
-func Init() M {
-	c := flexbox.NewCell(1, 1).SetStyle(
+type O struct {
+	Width int // min-width
+}
+
+func Init(o O) M {
+	c := flexbox.NewCell(0, 0).SetStyle(
 		lipgloss.NewStyle().Background(lipgloss.Color("6")),
-	).SetMinHeight(logging.Size()).SetMinWidth(w)
+	).SetMinHeight(logging.Size()).SetMinWidth(o.Width)
 	f := flexbox.New(0, 0)
 	f.AddRows(
 		[]*flexbox.Row{
@@ -35,12 +39,12 @@ func Init() M {
 	)
 	return M{
 		logger: logger.Init(logger.O{
-			Width: w,
+			Width: o.Width,
 		}),
-		key:    KeyLogger{},
-		flex:   f,
-		c:      c,
-		width: w,
+		key:   KeyLogger{},
+		flex:  f,
+		c:     c,
+		width: o.Width,
 	}
 }
 
