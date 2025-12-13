@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/util/logger"
 
-	l "github.com/minkezhang/truffle/tui/util/logger"
+	"github.com/minkezhang/truffle/tui/util/logging"
 )
 
 const (
@@ -26,7 +26,7 @@ type M struct {
 func Init() M {
 	c := flexbox.NewCell(1, 1).SetStyle(
 		lipgloss.NewStyle().Background(lipgloss.Color("6")),
-	).SetMinHeight(l.Size()).SetMinWidth(w)
+	).SetMinHeight(logging.Size()).SetMinWidth(w)
 	f := flexbox.New(0, 0)
 	f.AddRows(
 		[]*flexbox.Row{
@@ -34,10 +34,13 @@ func Init() M {
 		},
 	)
 	return M{
-		logger: logger.Init(),
+		logger: logger.Init(logger.O{
+			Width: w,
+		}),
 		key:    KeyLogger{},
 		flex:   f,
 		c:      c,
+		width: w,
 	}
 }
 
@@ -52,10 +55,9 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if msg.Width >= w {
+		if msg.Width >= m.width {
 			m.flex.SetWidth(msg.Width)
 		}
-		m.flex.SetHeight(msg.Height)
 	}
 
 	return m, nil
@@ -69,14 +71,14 @@ func (m KeyLogger) View() string  { return "" }
 func (m KeyLogger) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		l.Debugf(
+		logging.Debugf(
 			"KeyInput { Type:%v, Runes:'%s' }",
 			msg.Type,
 			string(msg.Runes),
 		)
 	case tea.MouseMsg:
 		if msg.Action != tea.MouseActionMotion { // Reduce some spam
-			l.Debugf(
+			logging.Debugf(
 				"MouseInput { X:%d, Y:%d, Action:%v, Button:%v }",
 				msg.X,
 				msg.Y,
@@ -85,7 +87,7 @@ func (m KeyLogger) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 	case tea.WindowSizeMsg:
-		l.Debugf(
+		logging.Debugf(
 			"ResizeInput { W:%d, H:%d }",
 			msg.Width,
 			msg.Height,

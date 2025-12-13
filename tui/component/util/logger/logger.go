@@ -5,40 +5,59 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	l "github.com/minkezhang/truffle/tui/util/logger"
+	"github.com/minkezhang/truffle/tui/util/logging"
 )
 
 const (
-	w = 100
+	w = 80
 )
 var (
-	colors = map[l.Severity]lipgloss.TerminalColor{
-		l.SeverityDebug:   lipgloss.Color("#AAAAAA"),
-		l.SeverityInfo:    lipgloss.Color("#FFFFFF"),
-		l.SeverityWarning: lipgloss.Color("#FFFF00"),
-		l.SeverityError:   lipgloss.Color("#FF0000"),
+	background = map[logging.Severity]lipgloss.TerminalColor{
+		logging.SeverityDebug:   lipgloss.Color("#000FFF"),
+		logging.SeverityInfo:    lipgloss.Color("#0000FF"),
+		logging.SeverityWarning: lipgloss.Color("#FFA500"),
+		logging.SeverityError:   lipgloss.Color("#FF0000"),
+	}
+	foreground = map[logging.Severity]lipgloss.TerminalColor{
+		logging.SeverityDebug:   lipgloss.Color("#FFFFFF"),
+		logging.SeverityInfo:    lipgloss.Color("#FFFFFF"),
+		logging.SeverityWarning: lipgloss.Color("#FFFF00"),
+		logging.SeverityError:   lipgloss.Color("#FFFFFF"),
 	}
 )
 
 type M struct {
 	flex *flexbox.FlexBox
-	width int
+	width int  // min-width
 }
 
-func Init() M {
+type O struct {
+	Width int
+}
+
+func Init(o O) M {
+	flex := flexbox.New(0, 0)
+	rows := []*flexbox.Row{}
+	for _ = range logging.Size() {
+		r := flex.NewRow()
+		c := flexbox.NewCell(0, 0)
+		c.SetContent("")
+		r.AddCells(c)
+		rows = append(rows, r)
+	}
+	flex.SetRows(rows)
 	return M{
-		flex: flexbox.New(0, 0).SetWidth(w),
-		width: w,
+		flex: flex,
+		width: o.Width,
 	}
 }
 
 func (m M) Init() tea.Cmd { return nil }
 
 func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	l.Debugf("%v", msg)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if msg.Width >= w {
+		if msg.Width >= m.width {
 			m.flex.SetWidth(msg.Width)
 		}
 	}
@@ -48,17 +67,12 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m M) View() string {
 	style := lipgloss.NewStyle()
 
-	rows := []*flexbox.Row{}
-	for _, msg := range l.Messages() {
-		r := m.flex.NewRow().AddCells(
-			flexbox.NewCell(0, 0).SetContent(
-				style.Foreground(colors[msg.S]).Background(lipgloss.Color("7")).Render(msg.String()),
-			),
+	for i, msg := range logging.Messages() {
+		r := m.flex.GetRow(logging.Size() - i - 1)
+		r.SetStyle(style.Background(background[msg.S]))
+		r.GetCell(0).SetContent(
+			style.Foreground(foreground[msg.S]).Render(msg.String()),
 		)
-		r.SetStyle(style.Background(lipgloss.Color("7")))
-		rows = append(rows, r)
 	}
-
-	m.flex.SetRows(rows)
 	return m.flex.Render()
 }

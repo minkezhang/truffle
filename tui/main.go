@@ -11,19 +11,21 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
 	// "github.com/minkezhang/truffle/tui/component/root"
-	"github.com/minkezhang/truffle/tui/util/logger"
+	"github.com/minkezhang/truffle/tui/util/logging"
 
-	tuilogger "github.com/minkezhang/truffle/tui/component/util/logger"
+	"github.com/minkezhang/truffle/tui/component/util/logger"
+	// "github.com/minkezhang/truffle/tui/component/util/debug"
 )
 
 func main() {
-	logger.SetSize(5)
+	logging.SetSize(10)
 
 	// See https://github.com/lrstanley/bubblezone for more information.
 	zone.NewGlobal()
 
 	p := tea.NewProgram(
-		tuilogger.Init(),
+		logger.Init(logger.O{Width: 80}),
+		// debug.Init(),
 		// root.New(),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
