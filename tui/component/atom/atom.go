@@ -43,6 +43,8 @@ func data(url string) []byte {
 }
 
 // format converts an image to a string representation of an image.
+// From https://github.com/knipferrc/fm.
+// TODO(minkezhang): Rewrite.
 func format(width int, img image.Image) string {
 	img = imaging.Resize(img, width, 0, imaging.Lanczos)
 	b := img.Bounds()
