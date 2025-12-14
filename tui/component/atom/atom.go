@@ -11,7 +11,8 @@ import (
 )
 
 type O struct {
-	Atom *atom.A
+	Atom           *atom.A
+	CacheDirectory string
 }
 
 type M struct {
@@ -27,8 +28,10 @@ func New(o O) *M {
 			Book: o.Atom.Metadata().(*book.M),
 		}),
 		image: image_ui.New(image_ui.O{
-			Width: 30,
-			URL:   o.Atom.PreviewURL(),
+			CacheDirectory: o.CacheDirectory,
+			Width:          50,
+			Height:         100,
+			URL:            o.Atom.PreviewURL(),
 		}),
 	}
 }

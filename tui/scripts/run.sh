@@ -2,5 +2,5 @@
 
 # in foreground, continously run app
 while true; do
-    _build/tui
+    .build/tui
 done

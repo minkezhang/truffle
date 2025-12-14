@@ -27,10 +27,10 @@ import (
 )
 
 type O struct {
-	URL       string
-	Width     int
-	Height    int
-	Directory string
+	URL            string
+	Width          int
+	Height         int
+	CacheDirectory string
 }
 
 type M struct {
@@ -48,7 +48,7 @@ func New(o O) *M {
 		url:       o.URL,
 		width:     o.Width,
 		height:    o.Height,
-		directory: o.Directory,
+		directory: o.CacheDirectory,
 	}
 }
 
@@ -71,6 +71,7 @@ func (m *M) data() (string, error) {
 
 	// Save data locally if not exists
 	if _, err := os.Stat(fn); errors.Is(err, os.ErrNotExist) {
+		slog.Debug(fmt.Sprintf("downloading remote asset: %s", m.url))
 		res, err := http.Get(m.url)
 		if err != nil || res.StatusCode != 200 {
 			return "", fmt.Errorf("cannot download image: %v", err)
@@ -112,39 +113,44 @@ func (m *M) data() (string, error) {
 			return "", fmt.Errorf("cannot decode %s image: %v", t, err)
 		}
 	}
-	return resize(m.width, img), nil
+	return m.render(img), nil
 }
 
 // resize converts an image to a string representation of an image.
 //
-// From https://github.com/knipferrc/fm.
+// This relies on the fact that each character in the terminal has a 2 x 1
+// aspect ratio. The top half of the character can represent a pixel at some y
+// coordinate using a tinted ▀ character, and the y + 1 pixel can be represented
+// by the character background color (using lipgloss styles).
 //
-// TODO(minkezhang): Rewrite.
-func resize(width int, img image.Image) string {
-	img = imaging.Resize(img, width, 0, imaging.Lanczos)
-	b := img.Bounds()
-	imageWidth := b.Max.X
-	h := b.Max.Y
-	str := strings.Builder{}
+// From https://github.com/knipferrc/fm.
+func (m *M) render(img image.Image) string {
+	img = imaging.Fit(img, m.width, m.height, imaging.Lanczos)
+	w := img.Bounds().Max.X
+	h := img.Bounds().Max.Y
 
-	for heightCounter := 0; heightCounter < h; heightCounter += 2 {
-		for x := imageWidth; x < width; x += 2 {
-			str.WriteString(" ")
+	buf := strings.Builder{}
+
+	for y := 0; y < h; y += 2 {
+		for x := w; x < w; x += 2 {
+			buf.WriteString(" ")
 		}
 
-		for x := 0; x < imageWidth; x++ {
-			c1, _ := colorful.MakeColor(img.At(x, heightCounter))
-			color1 := lipgloss.Color(c1.Hex())
-			c2, _ := colorful.MakeColor(img.At(x, heightCounter+1))
-			color2 := lipgloss.Color(c2.Hex())
-			str.WriteString(lipgloss.NewStyle().Foreground(color1).
-				Background(color2).Render("▀"))
+		for x := 0; x < w; x++ {
+			c1, _ := colorful.MakeColor(img.At(x, y))
+			c2, _ := colorful.MakeColor(img.At(x, y+1))
+
+			ct := lipgloss.Color(c1.Hex()) // Top pixel
+			cb := lipgloss.Color(c2.Hex())
+
+			style := lipgloss.NewStyle().Foreground(ct).Background(cb)
+			buf.WriteString(style.Render("▀"))
 		}
 
-		str.WriteString("\n")
+		buf.WriteString("\n")
 	}
 
-	return str.String()
+	return buf.String()
 }
 
 func (m *M) Init() tea.Cmd {

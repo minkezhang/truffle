@@ -9,17 +9,22 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/root"
 )
 
+const (
+	cache = "./.build/"
+)
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	if _, err := tea.LogToFile("debug.log", ""); err != nil {
+	if _, err := tea.LogToFile(filepath.Join(cache, "debug.log"), ""); err != nil {
 		fmt.Printf("cannot open error log")
 		os.Exit(1)
 	}
@@ -28,7 +33,9 @@ func main() {
 	zone.NewGlobal()
 
 	p := tea.NewProgram(
-		root.New(),
+		root.New(root.O{
+			CacheDirectory: cache,
+		}),
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),
 	)

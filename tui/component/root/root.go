@@ -12,11 +12,16 @@ import (
 	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
 )
 
-type M struct {
-	atom *atom_ui.M
+type O struct {
+	CacheDirectory string
 }
 
-func New() *M {
+type M struct {
+	directory string
+	atom      *atom_ui.M
+}
+
+func New(o O) *M {
 	c := mal.New(mal.O{
 		ClientID:         "6114d00ca681b7701d1e15fe11a4987e",
 		PopularityCutoff: 10000,
@@ -29,8 +34,10 @@ func New() *M {
 	})
 
 	return &M{
+		directory: o.CacheDirectory,
 		atom: atom_ui.New(atom_ui.O{
-			Atom: a,
+			CacheDirectory: o.CacheDirectory,
+			Atom:           a,
 		}),
 	}
 }
@@ -38,7 +45,7 @@ func New() *M {
 func (m *M) Init() tea.Cmd { return m.atom.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.atom.Update(msg)
+	_, c := m.atom.Update(msg)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -50,7 +57,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Suspend
 		}
 	}
-	return m, nil
+	return m, c
 }
 
 func (m *M) View() string {
