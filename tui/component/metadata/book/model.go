@@ -6,15 +6,16 @@ import (
 )
 
 var (
-	_ tea.Model = M{}
+	_ tea.Model = &M{}
 )
 
 type O struct {
 	Book *book.M
 }
 
-func Init(o O) M { return M{book: o.Book} }
+func New(o O) *M { return &M{book: o.Book} }
 
 type M struct {
 	book *book.M
+	hover bool
 }

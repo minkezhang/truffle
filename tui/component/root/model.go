@@ -3,19 +3,16 @@ package root
 import (
 	"context"
 
-	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/client/mal"
 	"github.com/minkezhang/truffle-api/client/query"
-	"github.com/minkezhang/truffle-api/db/atom"
-	"github.com/minkezhang/truffle/tui/component/util/debug"
+	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
 
+	tuibook "github.com/minkezhang/truffle/tui/component/metadata/book"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 type M struct {
-	atom    *atom.A
-	debug   tea.Model
-	overlay bool
+	metadata *tuibook.M
 }
 
 func New() *M {
@@ -31,7 +28,8 @@ func New() *M {
 	})
 
 	return &M{
-		atom:  a,
-		debug: debug.Init(),
+		metadata: tuibook.New(tuibook.O{
+			Book: a.Metadata().(*book.M),
+		}),
 	}
 }

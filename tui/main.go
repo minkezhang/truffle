@@ -10,25 +10,17 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	// "github.com/minkezhang/truffle/tui/component/root"
-	"github.com/minkezhang/truffle/tui/util/logging"
-
-	"github.com/minkezhang/truffle/tui/component/util/debug"
+	"github.com/minkezhang/truffle/tui/component/root"
 )
 
 func main() {
-	logging.SetSize(10)
-
 	// See https://github.com/lrstanley/bubblezone for more information.
 	zone.NewGlobal()
 
 	p := tea.NewProgram(
-		debug.Init(debug.O{
-			Width: 80,
-		}),
-		// root.New(),
+		root.New(),
 		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
+		tea.WithMouseAllMotion(),
 	)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Run() returned unexpected error: %v", err)

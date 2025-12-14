@@ -3,16 +3,21 @@ package book
 import (
 	"strings"
 
+	"github.com/lrstanley/bubblezone"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 )
 
-func (m M) View() string {
+func (m *M) View() string {
 	var b strings.Builder
 
 	bold := lipgloss.NewStyle().Bold(true)
 
-	tab := table.New().Border(lipgloss.HiddenBorder()).Rows(
+	tab := table.New().Border(lipgloss.HiddenBorder())
+	if m.hover {
+		tab = tab.Border(lipgloss.NormalBorder())
+	}
+	tab = tab.Rows(
 		[]string{bold.Render("Type"), R{}.BookType(m.book)},
 		[]string{"", strings.Join(R{}.Genres(m.book), ", ")},
 		[]string{bold.Render("Authors"), strings.Join(R{}.Authors(m.book), ", ")},
@@ -21,5 +26,5 @@ func (m M) View() string {
 	)
 
 	b.WriteString(tab.String())
-	return b.String()
+	return zone.Mark("TEST", b.String())
 }
