@@ -6,6 +6,8 @@ package main
 // dependencies.
 import (
 	"fmt"
+	"log"
+	"log/slog"
 	"os"
 
 	"github.com/charmbracelet/bubbletea"
@@ -14,6 +16,9 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Llongfile)
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	if _, err := tea.LogToFile("debug.log", ""); err != nil {
 		fmt.Printf("cannot open error log")
 		os.Exit(1)
