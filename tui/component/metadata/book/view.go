@@ -3,9 +3,9 @@ package book
 import (
 	"strings"
 
-	"github.com/lrstanley/bubblezone"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/lrstanley/bubblezone"
 )
 
 func (m *M) View() string {

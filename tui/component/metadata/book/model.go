@@ -16,6 +16,6 @@ type O struct {
 func New(o O) *M { return &M{book: o.Book} }
 
 type M struct {
-	book *book.M
+	book  *book.M
 	hover bool
 }

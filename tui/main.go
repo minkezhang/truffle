@@ -14,6 +14,11 @@ import (
 )
 
 func main() {
+	if _, err := tea.LogToFile("debug.log", ""); err != nil {
+		fmt.Printf("cannot open error log")
+		os.Exit(1)
+	}
+
 	// See https://github.com/lrstanley/bubblezone for more information.
 	zone.NewGlobal()
 
