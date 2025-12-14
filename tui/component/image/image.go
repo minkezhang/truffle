@@ -126,17 +126,11 @@ func (m *M) data() (string, error) {
 // From https://github.com/knipferrc/fm.
 func (m *M) render(img image.Image) string {
 	img = imaging.Fit(img, m.width, m.height, imaging.Lanczos)
-	w := img.Bounds().Max.X
-	h := img.Bounds().Max.Y
 
 	buf := strings.Builder{}
 
-	for y := 0; y < h; y += 2 {
-		for x := w; x < w; x += 2 {
-			buf.WriteString(" ")
-		}
-
-		for x := 0; x < w; x++ {
+	for y := 0; y < img.Bounds().Max.Y; y += 2 {
+		for x := 0; x < img.Bounds().Max.X; x++ {
 			c1, _ := colorful.MakeColor(img.At(x, y))
 			c2, _ := colorful.MakeColor(img.At(x, y+1))
 
