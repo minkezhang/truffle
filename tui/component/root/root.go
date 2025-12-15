@@ -18,7 +18,7 @@ type O struct {
 
 type M struct {
 	directory string
-	atom      *atom_ui.M
+	atom      tea.Model
 }
 
 func New(o O) *M {
@@ -30,12 +30,13 @@ func New(o O) *M {
 	})
 	a, _ := c.Get(context.Background(), query.G{
 		AtomType: epb.Type_TYPE_BOOK,
-		ID:       "146793", // "107562",
+		ID:       "107562",
 	})
 
 	return &M{
 		directory: o.CacheDirectory,
 		atom: atom_ui.New(atom_ui.O{
+			Width:          90,
 			CacheDirectory: o.CacheDirectory,
 			Atom:           a,
 		}),
@@ -45,7 +46,6 @@ func New(o O) *M {
 func (m *M) Init() tea.Cmd { return m.atom.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	_, c := m.atom.Update(msg)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -56,7 +56,10 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlZ:
 			return m, tea.Suspend
 		}
+	case tea.WindowSizeMsg: // Clear buffer
+		return m, tea.ClearScreen
 	}
+	_, c := m.atom.Update(msg)
 	return m, c
 }
 

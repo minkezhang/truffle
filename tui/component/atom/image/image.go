@@ -171,4 +171,14 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return nil, nil
 }
 
-func (m *M) View() string { return m.cache }
+func (m *M) View() string {
+	return lipgloss.Place(
+		m.width,
+		// Two vertical pixels per character may leave a pixel
+		// unaccounted for.
+		m.height/2+1,
+		lipgloss.Top,
+		lipgloss.Center,
+		m.cache,
+	)
+}

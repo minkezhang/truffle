@@ -23,6 +23,5 @@ func New(o O) *M {
 
 type M struct {
 	book  *book.M
-	hover bool
 	width int
 }

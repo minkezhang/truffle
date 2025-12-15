@@ -16,35 +16,33 @@ import (
 	titles_ui "github.com/minkezhang/truffle/tui/component/atom/titles"
 )
 
-var (
-	width  int = 30                                      // In pixels
-	height int = int(math.Trunc(float64(width) * 1.414)) // A4 ratio; in pixels
-)
-
 type O struct {
+	Width          int // Total width of the element
 	Atom           *atom.A
 	CacheDirectory string
 }
 
 type M struct {
+	width    int
 	atom     *atom.A
-	metadata *book_ui.M
-	image    *image_ui.M
-	score    *score_ui.M
-	titles   *titles_ui.M
+	metadata tea.Model
+	image    tea.Model
+	score    tea.Model
+	titles   tea.Model
 }
 
 func New(o O) *M {
 	return &M{
-		atom: o.Atom,
+		width: o.Width,
+		atom:  o.Atom,
 		metadata: book_ui.New(book_ui.O{
 			Book:  o.Atom.Metadata().(*book.M),
-			Width: width * 2,
+			Width: column(o.Width) * 2,
 		}),
 		image: image_ui.New(image_ui.O{
 			CacheDirectory: o.CacheDirectory,
-			Width:          width,
-			Height:         height,
+			Width:          column(o.Width),
+			Height:         height(column(o.Width)),
 			URL:            o.Atom.PreviewURL(),
 		}),
 		score: score_ui.New(score_ui.O{
@@ -78,35 +76,34 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func column(width int) int { return width / 3 }
+
+func height(width int) int {
+	return int( // A4 ratio; in pixels
+		math.Trunc(float64(width) * 1.414),
+	)
+}
+
 func (m *M) View() string {
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
+			m.image.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				lipgloss.Place(
-					width,
-					// Two vertical pixels per character may leave
-					// a pixel unaccounted for.
-					height/2+1,
-					lipgloss.Top,
-					lipgloss.Center,
-					m.image.View(),
+				lipgloss.NewStyle().Width(m.width).Bold(true).Foreground(lipgloss.Color("5")).Render(
+					fmt.Sprintf(
+						"%s/%s",
+						strings.ToLower(strings.ReplaceAll(m.atom.APIType().String(), "API_", "")),
+						m.atom.APIID(),
+					),
 				),
-			),
-			lipgloss.JoinVertical(
-				lipgloss.Left,
 				m.metadata.View(),
-				fmt.Sprintf(
-					"%s:%s",
-					strings.ReplaceAll(m.atom.APIType().String(), "API_", ""),
-					m.atom.APIID(),
-				),
-				m.score.View(),
 			),
 		),
-		lipgloss.NewStyle().Width(width*3).Render(m.titles.View()),
-		lipgloss.NewStyle().Width(width*3).Render(m.atom.Synopsis()),
+		lipgloss.NewStyle().Width(m.width).Render(m.titles.View()),
+		lipgloss.NewStyle().Width(m.width).Margin(1, 0, 1, 0).Render(m.score.View()),
+		lipgloss.NewStyle().Width(m.width).Render(m.atom.Synopsis()),
 	)
 }

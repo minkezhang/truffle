@@ -53,7 +53,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return nil, nil }
 
 func (m *M) View() string {
 	var parts []string
-	for i, t := range m.titles {
+	for i, t := range m.titles[:2] {
 		styleTitle := lipgloss.NewStyle()
 		if i == 0 {
 			styleTitle = styleTitle.Bold(true)
