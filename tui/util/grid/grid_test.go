@@ -22,7 +22,7 @@ func TestColumn(t *testing.T) {
 			n: 1,
 			m: 0,
 			p: 0,
-			want: C{
+			want: L{
 				Width:   50,
 				Content: 50,
 				Margin:  0,
@@ -38,7 +38,7 @@ func TestColumn(t *testing.T) {
 			n: 2,
 			m: 0,
 			p: 0,
-			want: C{
+			want: L{
 				Width:   200,
 				Content: 200,
 				Margin:  0,
@@ -54,7 +54,7 @@ func TestColumn(t *testing.T) {
 			n: 3,
 			m: 0,
 			p: 0,
-			want: C{
+			want: L{
 				Width:   300,
 				Content: 300,
 				Margin:  0,
@@ -70,7 +70,7 @@ func TestColumn(t *testing.T) {
 			n: 2,
 			m: 1,
 			p: 1,
-			want: C{
+			want: L{
 				Width:   200,
 				Content: 196,
 				Margin:  1,

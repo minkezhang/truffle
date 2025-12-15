@@ -7,6 +7,7 @@ import (
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/client/mal"
 	"github.com/minkezhang/truffle-api/client/query"
+	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
@@ -30,13 +31,13 @@ func New(o O) *M {
 	})
 	a, _ := c.Get(context.Background(), query.G{
 		AtomType: epb.Type_TYPE_BOOK,
-		ID:       "107562",
+		ID:       "148467",
 	})
 
 	return &M{
 		directory: o.CacheDirectory,
 		atom: atom_ui.New(atom_ui.O{
-			Width:          90,
+			Layout:         grid.L{Width: 90, Content: 90},
 			CacheDirectory: o.CacheDirectory,
 			Atom:           a,
 		}),

@@ -60,10 +60,7 @@ func (m *M) View() string {
 		} else {
 			styleTitle = styleTitle.Foreground(lipgloss.Color("8"))
 		}
-		parts = append(parts, strings.Join([]string{
-			styleTitle.Render(t.Title),
-			lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(t.Localization),
-		}, " "))
+		parts = append(parts, styleTitle.Render(t.Title))
 	}
 	return strings.Join(parts, "\n")
 }

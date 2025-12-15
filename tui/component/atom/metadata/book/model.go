@@ -3,6 +3,7 @@ package book
 import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
+	"github.com/minkezhang/truffle/tui/util/grid"
 )
 
 var (
@@ -10,18 +11,19 @@ var (
 )
 
 type O struct {
-	Book  *book.M
-	Width int
+	Book   *book.M
+	Layout grid.L
 }
 
 func New(o O) *M {
 	return &M{
-		book:  o.Book,
-		width: o.Width,
+		book:   o.Book,
+		layout: o.Layout,
 	}
 }
 
 type M struct {
-	book  *book.M
-	width int
+	layout grid.L
+
+	book *book.M
 }

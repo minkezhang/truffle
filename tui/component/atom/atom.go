@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
+	"github.com/minkezhang/truffle/tui/util/grid"
 
 	image_ui "github.com/minkezhang/truffle/tui/component/atom/image"
 	book_ui "github.com/minkezhang/truffle/tui/component/atom/metadata/book"
@@ -17,13 +18,15 @@ import (
 )
 
 type O struct {
-	Width          int // Total width of the element
+	Layout         grid.L // Total width of the element
 	Atom           *atom.A
 	CacheDirectory string
 }
 
 type M struct {
-	width    int
+	layout grid.L
+	grid   grid.G
+
 	atom     *atom.A
 	metadata tea.Model
 	image    tea.Model
@@ -32,17 +35,21 @@ type M struct {
 }
 
 func New(o O) *M {
+	l := o.Layout
+	g := l.Grid(3)
+
 	return &M{
-		width: o.Width,
-		atom:  o.Atom,
+		layout: l,
+		grid:   g,
+		atom:   o.Atom,
 		metadata: book_ui.New(book_ui.O{
-			Book:  o.Atom.Metadata().(*book.M),
-			Width: column(o.Width) * 2,
+			Book:   o.Atom.Metadata().(*book.M),
+			Layout: g.Column(2, 1, 0),
 		}),
 		image: image_ui.New(image_ui.O{
 			CacheDirectory: o.CacheDirectory,
-			Width:          column(o.Width),
-			Height:         height(column(o.Width)),
+			Layout:         g.Column(1, 0, 0),
+			Height:         height(g.Column(1, 0, 0).Content),
 			URL:            o.Atom.PreviewURL(),
 		}),
 		score: score_ui.New(score_ui.O{
@@ -76,8 +83,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func column(width int) int { return width / 3 }
-
 func height(width int) int {
 	return int( // A4 ratio; in pixels
 		math.Trunc(float64(width) * 1.414),
@@ -87,12 +92,13 @@ func height(width int) int {
 func (m *M) View() string {
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
+		m.grid.Column(3, 0, 0).Style().MarginBottom(1).Render(m.titles.View()),
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			m.image.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				lipgloss.NewStyle().Width(m.width).Bold(true).Foreground(lipgloss.Color("5")).Render(
+				m.grid.Column(2, 1, 0).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(
 					fmt.Sprintf(
 						"%s/%s",
 						strings.ToLower(strings.ReplaceAll(m.atom.APIType().String(), "API_", "")),
@@ -100,10 +106,9 @@ func (m *M) View() string {
 					),
 				),
 				m.metadata.View(),
+				m.grid.Column(2, 1, 0).Style().MarginTop(1).Render(m.score.View()),
 			),
 		),
-		lipgloss.NewStyle().Width(m.width).Render(m.titles.View()),
-		lipgloss.NewStyle().Width(m.width).Margin(1, 0, 1, 0).Render(m.score.View()),
-		lipgloss.NewStyle().Width(m.width).Render(m.atom.Synopsis()),
+		m.grid.Column(3, 0, 0).Style().Render(m.atom.Synopsis()),
 	)
 }

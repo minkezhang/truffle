@@ -25,10 +25,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/disintegration/imaging"
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/minkezhang/truffle/tui/util/grid"
 	"golang.org/x/image/webp"
 )
 
 type O struct {
+	Layout grid.L
+
 	URL            string
 	Width          int // Pixels
 	Height         int // Pixels
@@ -36,19 +39,20 @@ type O struct {
 }
 
 type M struct {
+	layout grid.L
+	height int
+
 	url       string
 	filepath  string
 	directory string
 
-	width  int
-	height int
-	cache  string
+	cache string
 }
 
 func New(o O) *M {
 	return &M{
 		url:       o.URL,
-		width:     o.Width,
+		layout:    o.Layout,
 		height:    o.Height,
 		directory: o.CacheDirectory,
 	}
@@ -127,7 +131,7 @@ func (m *M) data() (string, error) {
 //
 // From https://github.com/knipferrc/fm.
 func (m *M) render(img image.Image) string {
-	img = imaging.Fit(img, m.width, m.height, imaging.Lanczos)
+	img = imaging.Fit(img, m.layout.Content, m.height, imaging.Lanczos)
 
 	buf := strings.Builder{}
 
@@ -173,7 +177,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *M) View() string {
 	return lipgloss.Place(
-		m.width,
+		m.layout.Content,
 		// Two vertical pixels per character may leave a pixel
 		// unaccounted for.
 		m.height/2+1,
