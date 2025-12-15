@@ -1,9 +1,10 @@
 package atom
 
 import (
+	"fmt"
 	"math"
+	"strings"
 
-	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
@@ -11,6 +12,7 @@ import (
 
 	image_ui "github.com/minkezhang/truffle/tui/component/atom/image"
 	book_ui "github.com/minkezhang/truffle/tui/component/atom/metadata/book"
+	score_ui "github.com/minkezhang/truffle/tui/component/atom/score"
 	titles_ui "github.com/minkezhang/truffle/tui/component/atom/titles"
 )
 
@@ -28,7 +30,7 @@ type M struct {
 	atom     *atom.A
 	metadata *book_ui.M
 	image    *image_ui.M
-	score    progress.Model
+	score    *score_ui.M
 	titles   *titles_ui.M
 }
 
@@ -45,10 +47,9 @@ func New(o O) *M {
 			Height:         height,
 			URL:            o.Atom.PreviewURL(),
 		}),
-		score: progress.New(
-			progress.WithFillCharacters('☆', '.'),
-			progress.WithWidth(10),
-		),
+		score: score_ui.New(score_ui.O{
+			Score: o.Atom.Score(),
+		}),
 		titles: titles_ui.New(titles_ui.O{
 			Titles: o.Atom.Titles(),
 		}),
@@ -82,22 +83,30 @@ func (m *M) View() string {
 		lipgloss.Left,
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			lipgloss.Place(
-				width,
-				// Two vertical pixels per character may leave
-				// a pixel unaccounted for.
-				height/2+1,
-				lipgloss.Top,
-				lipgloss.Center,
-				m.image.View(),
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				lipgloss.Place(
+					width,
+					// Two vertical pixels per character may leave
+					// a pixel unaccounted for.
+					height/2+1,
+					lipgloss.Top,
+					lipgloss.Center,
+					m.image.View(),
+				),
 			),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				lipgloss.NewStyle().MarginBottom(1).Width(width*2).Render(m.titles.View()),
-				m.score.ViewAs(float64(m.atom.Score())/100),
 				m.metadata.View(),
+				fmt.Sprintf(
+					"%s:%s",
+					strings.ReplaceAll(m.atom.APIType().String(), "API_", ""),
+					m.atom.APIID(),
+				),
+				m.score.View(),
 			),
 		),
+		lipgloss.NewStyle().Width(width*3).Render(m.titles.View()),
 		lipgloss.NewStyle().Width(width*3).Render(m.atom.Synopsis()),
 	)
 }

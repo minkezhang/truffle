@@ -53,9 +53,15 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return nil, nil }
 
 func (m *M) View() string {
 	var parts []string
-	for _, t := range m.titles {
+	for i, t := range m.titles {
+		styleTitle := lipgloss.NewStyle()
+		if i == 0 {
+			styleTitle = styleTitle.Bold(true)
+		} else {
+			styleTitle = styleTitle.Foreground(lipgloss.Color("8"))
+		}
 		parts = append(parts, strings.Join([]string{
-			t.Title,
+			styleTitle.Render(t.Title),
 			lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(t.Localization),
 		}, " "))
 	}
