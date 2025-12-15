@@ -2,8 +2,6 @@ package atom
 
 import (
 	"math"
-	"sort"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbletea"
@@ -11,8 +9,9 @@ import (
 	"github.com/minkezhang/truffle-api/db/atom"
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
 
-	image_ui "github.com/minkezhang/truffle/tui/component/image"
-	book_ui "github.com/minkezhang/truffle/tui/component/metadata/book"
+	image_ui "github.com/minkezhang/truffle/tui/component/atom/image"
+	book_ui "github.com/minkezhang/truffle/tui/component/atom/metadata/book"
+	titles_ui "github.com/minkezhang/truffle/tui/component/atom/titles"
 )
 
 var (
@@ -30,6 +29,7 @@ type M struct {
 	metadata *book_ui.M
 	image    *image_ui.M
 	score    progress.Model
+	titles   *titles_ui.M
 }
 
 func New(o O) *M {
@@ -49,6 +49,9 @@ func New(o O) *M {
 			progress.WithFillCharacters('☆', '.'),
 			progress.WithWidth(10),
 		),
+		titles: titles_ui.New(titles_ui.O{
+			Titles: o.Atom.Titles(),
+		}),
 	}
 }
 
@@ -57,6 +60,7 @@ func (m *M) Init() tea.Cmd {
 		m.image.Init(),
 		m.metadata.Init(),
 		m.score.Init(),
+		m.titles.Init(),
 	)
 }
 
@@ -71,38 +75,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
-}
-
-func (m *M) titles() string {
-	priority := map[string]int{
-		"en": 0,
-		"":   1,
-		"ja": 2,
-	}
-	titles := m.atom.Titles()
-	sort.SliceStable(
-		titles,
-		func(i, j int) bool {
-			if titles[i].Localization == titles[j].Localization {
-				return titles[i].Title < titles[j].Title
-			}
-			u, ok := priority[titles[i].Localization]
-			if !ok {
-				u = int(^uint(0) >> 1)
-			}
-			v, ok := priority[titles[j].Localization]
-			if !ok {
-				v = int(^uint(0) >> 1)
-			}
-			return u < v
-		},
-	)
-
-	var parts []string
-	for _, t := range titles {
-		parts = append(parts, strings.Join([]string{t.Title, t.Localization}, " "))
-	}
-	return strings.Join(parts, "\n")
 }
 
 func (m *M) View() string {
@@ -121,7 +93,7 @@ func (m *M) View() string {
 			),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				lipgloss.NewStyle().MarginBottom(1).Width(width*2).Render(m.titles()),
+				lipgloss.NewStyle().MarginBottom(1).Width(width*2).Render(m.titles.View()),
 				m.score.ViewAs(float64(m.atom.Score())/100),
 				m.metadata.View(),
 			),
