@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
 )
 
@@ -53,7 +54,10 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return nil, nil }
 func (m *M) View() string {
 	var parts []string
 	for _, t := range m.titles {
-		parts = append(parts, strings.Join([]string{t.Title, t.Localization}, " "))
+		parts = append(parts, strings.Join([]string{
+			t.Title,
+			lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(t.Localization),
+		}, " "))
 	}
 	return strings.Join(parts, "\n")
 }
