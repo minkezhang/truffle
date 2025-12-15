@@ -3,6 +3,8 @@
 //
 // TOOD(minkezhang): Implement graphics via Kitty when available
 // https://github.com/charmbracelet/bubbletea/issues/163.
+//
+// TODO(minkezhang): Support animated gifs.
 package image
 
 import (
@@ -28,8 +30,8 @@ import (
 
 type O struct {
 	URL            string
-	Width          int
-	Height         int
+	Width          int // Pixels
+	Height         int // Pixels
 	CacheDirectory string
 }
 

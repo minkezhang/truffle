@@ -1,6 +1,8 @@
 package atom
 
 import (
+	"math"
+
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
@@ -8,6 +10,11 @@ import (
 
 	image_ui "github.com/minkezhang/truffle/tui/component/image"
 	book_ui "github.com/minkezhang/truffle/tui/component/metadata/book"
+)
+
+var (
+	width  int = 30                                      // In pixels
+	height int = int(math.Trunc(float64(width) * 1.414)) // A4 ratio; in pixels
 )
 
 type O struct {
@@ -25,12 +32,13 @@ func New(o O) *M {
 	return &M{
 		atom: o.Atom,
 		metadata: book_ui.New(book_ui.O{
-			Book: o.Atom.Metadata().(*book.M),
+			Book:  o.Atom.Metadata().(*book.M),
+			Width: width * 2,
 		}),
 		image: image_ui.New(image_ui.O{
 			CacheDirectory: o.CacheDirectory,
-			Width:          50,
-			Height:         100,
+			Width:          width,
+			Height:         height,
 			URL:            o.Atom.PreviewURL(),
 		}),
 	}
@@ -61,9 +69,17 @@ func (m *M) View() string {
 		lipgloss.Left,
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			m.image.View(),
+			lipgloss.Place(
+				width,
+				// Two vertical pixels per character may leave
+				// a pixel unaccounted for.
+				height/2+1,
+				lipgloss.Top,
+				lipgloss.Center,
+				m.image.View(),
+			),
 			m.metadata.View(),
 		),
-		lipgloss.NewStyle().Width(80).Render(m.atom.Synopsis()),
+		lipgloss.NewStyle().Width(width*3).Render(m.atom.Synopsis()),
 	)
 }

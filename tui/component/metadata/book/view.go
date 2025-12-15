@@ -13,7 +13,7 @@ func (m *M) View() string {
 
 	bold := lipgloss.NewStyle().Bold(true)
 
-	tab := table.New().Border(lipgloss.HiddenBorder())
+	tab := table.New().Border(lipgloss.HiddenBorder()).Width(m.width)
 	if m.hover {
 		tab = tab.Border(lipgloss.NormalBorder())
 	}

@@ -30,7 +30,7 @@ func New(o O) *M {
 	})
 	a, _ := c.Get(context.Background(), query.G{
 		AtomType: epb.Type_TYPE_BOOK,
-		ID:       "107562",
+		ID:       "1", //"107562",
 	})
 
 	return &M{
