@@ -168,30 +168,41 @@ func (m *M) View() string {
 	iStart := m.iStart
 	iEnd := m.iStart
 
-	length := lipgloss.Width(left) + lipgloss.Width(right)
+	length := 0 // lipgloss.Width(left) + lipgloss.Width(right)
 
 	for i, l := range lengths[iStart:] {
 		if length+l < m.layout.Content {
 			length += l
 			iEnd = i
+			if iEnd == len(lengths)-1 {
+				length -= lipgloss.Width(right)
+			}
 		} else if iEnd > m.index { // Render only the last chunk of iEnd
 			break
 		} else { // Need to advance iStart
 			length += (-lengths[iStart] + lengths[i])
+			if iStart == 0 {
+				length += lipgloss.Width(left)
+			}
 			iStart += 1
 			iEnd = i
+			if iEnd == len(lengths)-1 {
+				length -= lipgloss.Width(right)
+			}
 		}
+	}
+
+	parts = parts[iStart : iEnd+1]
+	if iStart > 0 {
+		parts = append([]string{left}, parts...)
+	}
+	if iEnd < len(lengths)-1 {
+		parts = append(parts, right)
 	}
 	return lipgloss.NewStyle().Width(m.layout.Content).Border(lipgloss.NormalBorder()).Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			append([]string{
-				zone.Mark(m.kLeft, arrows.Render("<")),
-			}, append(
-				parts[iStart:iEnd+1],
-				zone.Mark(m.kRight, arrows.Render(">")),
-			)...,
-			)...,
+			parts...,
 		),
 	)
 }
