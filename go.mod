@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/x/mosaic v0.0.0-20251215102626-e0db08df7383
 	github.com/disintegration/imaging v1.6.2
 	github.com/lrstanley/bubblezone v1.0.0
-	github.com/minkezhang/truffle-api v0.0.0-20251211123525-1ebf478254fe
+	github.com/minkezhang/truffle-api v0.0.0-20251216081745-53d2c3ba4e30
 	golang.org/x/image v0.34.0
 )
 

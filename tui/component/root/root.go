@@ -2,15 +2,19 @@ package root
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle-api/client"
 	"github.com/minkezhang/truffle-api/client/mal"
-	"github.com/minkezhang/truffle-api/client/query"
+	"github.com/minkezhang/truffle-api/db"
+	"github.com/minkezhang/truffle-api/db/query"
 	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
-	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
+	node_ui "github.com/minkezhang/truffle/tui/component/node"
 )
 
 type O struct {
@@ -19,32 +23,46 @@ type O struct {
 
 type M struct {
 	directory string
-	atom      tea.Model
+	node      tea.Model
 }
 
 func New(o O) *M {
-	c := mal.New(mal.O{
-		ClientID:         "6114d00ca681b7701d1e15fe11a4987e",
-		PopularityCutoff: 10000,
-		MaxResults:       2,
-		NSFW:             true,
+	truffle, err := db.New(context.Background(), db.O{
+		Clients: []client.C{
+			mal.New(mal.O{
+				ClientID:         "6114d00ca681b7701d1e15fe11a4987e",
+				PopularityCutoff: 10000,
+				MaxResults:       2,
+				NSFW:             true,
+			}),
+		},
 	})
-	a, _ := c.Get(context.Background(), query.G{
-		AtomType: epb.Type_TYPE_BOOK,
-		ID:       "148467",
-	})
+	if err != nil {
+		slog.Error(fmt.Sprintf("new error: %v", err))
+		return nil
+	}
+
+	ns, err := truffle.Query(context.Background(), query.New(query.O{
+		APIs:      []epb.API{epb.API_API_MAL},
+		AtomTypes: []epb.Type{epb.Type_TYPE_BOOK},
+		Title:     "The Apothecary Diaries",
+	}))
+	if err != nil {
+		slog.Error(fmt.Sprintf("query error: %v", err))
+		return nil
+	}
 
 	return &M{
 		directory: o.CacheDirectory,
-		atom: atom_ui.New(atom_ui.O{
-			Layout:         grid.L{Width: 90, Content: 90},
+		node: node_ui.New(node_ui.O{
+			Layout:         grid.L{Content: 120, Width: 120},
 			CacheDirectory: o.CacheDirectory,
-			Atom:           a,
+			Node:           ns[0],
 		}),
 	}
 }
 
-func (m *M) Init() tea.Cmd { return m.atom.Init() }
+func (m *M) Init() tea.Cmd { return m.node.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -60,10 +78,10 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg: // Clear buffer
 		return m, tea.ClearScreen
 	}
-	_, c := m.atom.Update(msg)
+	_, c := m.node.Update(msg)
 	return m, c
 }
 
 func (m *M) View() string {
-	return zone.Scan(m.atom.View())
+	return zone.Scan(m.node.View())
 }

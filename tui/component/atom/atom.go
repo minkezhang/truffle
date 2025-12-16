@@ -11,6 +11,7 @@ import (
 	"github.com/minkezhang/truffle-api/db/atom/metadata/book"
 	"github.com/minkezhang/truffle/tui/util/grid"
 
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	image_ui "github.com/minkezhang/truffle/tui/component/atom/image"
 	book_ui "github.com/minkezhang/truffle/tui/component/atom/metadata/book"
 	score_ui "github.com/minkezhang/truffle/tui/component/atom/score"
@@ -90,6 +91,18 @@ func height(width int) int {
 }
 
 func (m *M) View() string {
+	var id string
+	switch t := m.atom.APIType(); t {
+	case epb.API_API_VIRTUAL:
+		id = "truffle"
+	default:
+		id = fmt.Sprintf(
+			"%s/%s",
+			strings.ToLower(strings.ReplaceAll(m.atom.APIType().String(), "API_", "")),
+			m.atom.APIID(),
+		)
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.grid.Column(3, 0, 0).Style().MarginBottom(1).Render(m.titles.View()),
@@ -98,13 +111,7 @@ func (m *M) View() string {
 			m.image.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				m.grid.Column(2, 1, 0).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(
-					fmt.Sprintf(
-						"%s/%s",
-						strings.ToLower(strings.ReplaceAll(m.atom.APIType().String(), "API_", "")),
-						m.atom.APIID(),
-					),
-				),
+				m.grid.Column(2, 1, 0).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(id),
 				m.metadata.View(),
 				m.grid.Column(2, 1, 0).Style().MarginTop(1).Render(m.score.View()),
 			),
