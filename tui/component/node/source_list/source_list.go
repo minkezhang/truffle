@@ -107,15 +107,43 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.MouseMsg:
 		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
-			for i, k := range m.order {
-				if i != m.index && zone.Get(k).InBounds(msg) {
-					src := m.order[m.index]
-					dst := m.order[i]
-					m.index = i
-					return m, func() tea.Msg {
-						return SelectMsg{
-							Blur:  m.sources[src],
-							Focus: m.sources[dst],
+			if zone.Get(m.kLeft).InBounds(msg) {
+				src := m.order[m.index]
+				m.index = m.index - 1
+				dst := m.order[m.index]
+				if m.index < m.iStart {
+					m.iStart = m.index
+				}
+				return m, func() tea.Msg {
+					return SelectMsg{
+						Blur:  m.sources[src],
+						Focus: m.sources[dst],
+					}
+				}
+			} else if zone.Get(m.kRight).InBounds(msg) {
+				src := m.order[m.index]
+				m.index = m.index + 1
+				dst := m.order[m.index]
+				if m.index < m.iStart {
+					m.iStart = m.index
+				}
+				return m, func() tea.Msg {
+					return SelectMsg{
+						Blur:  m.sources[src],
+						Focus: m.sources[dst],
+					}
+				}
+			} else {
+				for i, k := range m.order {
+					if i != m.index && zone.Get(k).InBounds(msg) {
+						src := m.order[m.index]
+						dst := m.order[i]
+						m.index = i
+						return m, func() tea.Msg {
+							return SelectMsg{
+								Blur:  m.sources[src],
+								Focus: m.sources[dst],
+							}
 						}
 					}
 				}
@@ -136,7 +164,7 @@ var (
 			lipgloss.NormalBorder(), false, false, true, false,
 		).BorderForeground(lipgloss.Color("6")).Foreground(lipgloss.Color("6")),
 	}
-	arrows = lipgloss.NewStyle().Padding(0, 0).Margin(0, 1, 1, 1).Background(lipgloss.Color("5"))
+	arrows = lipgloss.NewStyle().Padding(0, 0).Margin(0, 1, 1, 1)
 )
 
 func (m *M) View() string {
@@ -202,7 +230,7 @@ func (m *M) View() string {
 	if iEnd < len(lengths)-1 {
 		parts = append(parts, right)
 	}
-	return lipgloss.NewStyle().Width(m.layout.Content).Border(lipgloss.NormalBorder()).Render(
+	return lipgloss.NewStyle().Width(m.layout.Content).Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			parts...,
@@ -216,14 +244,15 @@ func (m *M) partial(i int, w int) string {
 	k := m.order[i]
 	s := m.sources[k].String()
 	if w == 0 {
-		return ""
+		style := borders[active].Copy().MarginRight(0).PaddingRight(0).PaddingLeft(0).MarginLeft(0)
+		return zone.Mark(k, style.Render(""))
 	} else if w == 1 {
 		style := borders[active].Copy().MarginRight(0).PaddingRight(0).PaddingLeft(0)
 		return zone.Mark(k, style.Render(""))
-	} else if w < len(s)+2 {
+	} else if w < len(s)+3 {
 		style := borders[active].Copy().MarginRight(0).PaddingRight(0)
 		return zone.Mark(k, style.Render(s[:w-2]))
-	} else if w < len(s)+3 {
+	} else if w < len(s)+4 {
 		style := borders[active].Copy().MarginRight(0)
 		return zone.Mark(k, style.Render(s))
 	} else {
