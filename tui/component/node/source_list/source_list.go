@@ -168,7 +168,7 @@ func (m *M) View() string {
 	iStart := m.iStart
 	iEnd := m.iStart
 
-	length := 0 // lipgloss.Width(left) + lipgloss.Width(right)
+	length := lipgloss.Width(left) + lipgloss.Width(right)
 
 	for i, l := range lengths[iStart:] {
 		if length+l < m.layout.Content {
@@ -177,7 +177,30 @@ func (m *M) View() string {
 			if iEnd == len(lengths)-1 {
 				length -= lipgloss.Width(right)
 			}
-		} else if iEnd > m.index { // Render only the last chunk of iEnd
+		} else if i > m.index { // Render only the last chunk of iEnd
+			if i == len(lengths)-1 {
+				length -= lipgloss.Width(right)
+			}
+			leftover := m.layout.Content - length
+			if leftover > 0 { // Attempt to render leftover chunk
+				active := m.index == i
+				k := m.order[i]
+				s := m.sources[k].String()
+				if leftover == 1 {
+					style := borders[active].Copy().PaddingLeft(0).PaddingRight(0).MarginRight(0)
+					parts[i] = style.Render("")
+				} else if leftover == 2 {
+					style := borders[active].Copy().PaddingRight(0).MarginRight(0)
+					parts[i] = style.Render("")
+				} else if leftover < len(s)+2 {
+					style := borders[active].Copy().PaddingRight(0).MarginRight(0)
+					parts[i] = style.Render(s[leftover-2:])
+				} else if leftover < len(s)+3 {
+					style := borders[active].Copy().MarginRight(0)
+					parts[i] = style.Render(s)
+				}
+				iEnd = i
+			}
 			break
 		} else { // Need to advance iStart
 			length += (-lengths[iStart] + lengths[i])
