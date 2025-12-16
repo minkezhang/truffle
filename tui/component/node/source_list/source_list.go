@@ -142,12 +142,7 @@ var (
 func (m *M) View() string {
 	parts := []string{}
 	lengths := []int{}
-	/*
-		parts = append(
-			parts,
-			zone.Mark(m.kLeft, arrows.Render("<")),
-		)
-	*/
+
 	for i, k := range m.order {
 		active := (m.index == i)
 		p := zone.Mark(k, borders[active].Render(m.sources[k].String()))
@@ -155,52 +150,37 @@ func (m *M) View() string {
 		parts = append(parts, p)
 		lengths = append(lengths, lipgloss.Width(p))
 	}
-	/*
-		parts = append(
-			parts,
-			zone.Mark(m.kRight, arrows.Render(">")),
-		)
-	*/
 
 	left := zone.Mark(m.kLeft, arrows.Render("<"))
 	right := zone.Mark(m.kRight, arrows.Render(">"))
+	ll := lipgloss.Width(left)
+	lr := lipgloss.Width(right)
 
 	iStart := m.iStart
 	iEnd := m.iStart
 
-	length := lipgloss.Width(left) + lipgloss.Width(right)
+	length := ll + lr
 
 	for i, l := range lengths[iStart:] {
 		if length+l < m.layout.Content {
 			length += l
 			iEnd = i
-			if iEnd == len(lengths)-1 {
-				length -= lipgloss.Width(right)
-			}
-		} else if i > m.index { // Render only the last chunk of iEnd
-			if i == len(lengths)-1 {
-				length -= lipgloss.Width(right)
-			}
-			leftover := m.layout.Content - length
-			if leftover > 0 { // Attempt to render leftover chunk
-				active := m.index == i
-				k := m.order[i]
-				s := m.sources[k].String()
-				if leftover == 1 {
-					style := borders[active].Copy().PaddingLeft(0).PaddingRight(0).MarginRight(0)
-					parts[i] = style.Render("")
-				} else if leftover == 2 {
-					style := borders[active].Copy().PaddingRight(0).MarginRight(0)
-					parts[i] = style.Render("")
-				} else if leftover < len(s)+2 {
-					style := borders[active].Copy().PaddingRight(0).MarginRight(0)
-					parts[i] = style.Render(s[leftover-2:])
-				} else if leftover < len(s)+3 {
-					style := borders[active].Copy().MarginRight(0)
-					parts[i] = style.Render(s)
-				}
+		} else if i == len(lengths)-1 {
+			// Won't need the right arrow, discount it from length
+			// calculations
+			length -= lr
+			if length+l < m.layout.Content { // Last tab now wholy fits
+				length += l
 				iEnd = i
+			} else { // Append partial
+				iEnd = i
+				parts[i] = m.partial(i, m.layout.Content-length)
 			}
+		} else if i > m.index {
+			// The active element is already in the tab list, so add the
+			// last partial tab and return
+			iEnd = i
+			parts[i] = m.partial(i, m.layout.Content-length)
 			break
 		} else { // Need to advance iStart
 			length += (-lengths[iStart] + lengths[i])
@@ -228,4 +208,25 @@ func (m *M) View() string {
 			parts...,
 		),
 	)
+}
+
+// partial renders a partial tab, truncated on the right.
+func (m *M) partial(i int, w int) string {
+	active := m.index == i
+	k := m.order[i]
+	s := m.sources[k].String()
+	if w == 0 {
+		return ""
+	} else if w == 1 {
+		style := borders[active].Copy().MarginRight(0).PaddingRight(0).PaddingLeft(0)
+		return zone.Mark(k, style.Render(""))
+	} else if w < len(s)+2 {
+		style := borders[active].Copy().MarginRight(0).PaddingRight(0)
+		return zone.Mark(k, style.Render(s[:w-2]))
+	} else if w < len(s)+3 {
+		style := borders[active].Copy().MarginRight(0)
+		return zone.Mark(k, style.Render(s))
+	} else {
+		return zone.Mark(k, borders[active].Render(s))
+	}
 }
