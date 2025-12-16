@@ -15,6 +15,7 @@ import (
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	node_ui "github.com/minkezhang/truffle/tui/component/node"
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 type O struct {
@@ -24,6 +25,9 @@ type O struct {
 type M struct {
 	directory string
 	node      tea.Model
+
+	// e is the global error handler
+	e tea.Model
 }
 
 func New(o O) *M {
@@ -59,6 +63,8 @@ func New(o O) *M {
 			CacheDirectory: o.CacheDirectory,
 			Node:           ns[0],
 		}),
+
+		e: model_ui.E,
 	}
 }
 
@@ -81,12 +87,12 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.ClearScreen
 	}
 
-	_, c := m.node.Update(msg)
-	cmds = append(cmds, c)
+	for _, n := range []tea.Model{m.node, m.e} {
+		_, c := n.Update(msg)
+		cmds = append(cmds, c)
+	}
 
 	return m, tea.Batch(cmds...)
 }
 
-func (m *M) View() string {
-	return zone.Scan(m.node.View())
-}
+func (m *M) View() string { return zone.Scan(m.node.View()) }

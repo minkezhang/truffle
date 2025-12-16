@@ -8,7 +8,7 @@ import (
 
 var (
 	// E is the global error model.
-	E = Error{}
+	E = &Error{}
 )
 
 // ErrorMsg may be returned by tea.Cmd in the case of an error.

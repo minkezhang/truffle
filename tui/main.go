@@ -14,6 +14,8 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/root"
+
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 const (
@@ -39,8 +41,15 @@ func main() {
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),
 	)
+
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Run() returned unexpected error: %v", err)
+		fmt.Printf("Run() returned unexpected error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Check for any propagated errors.
+	if err := model_ui.E.Error(); err != nil {
+		fmt.Printf("Truffle() returned unexpected error: %v\n", err)
 		os.Exit(1)
 	}
 }
