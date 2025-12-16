@@ -15,7 +15,6 @@ import (
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	node_ui "github.com/minkezhang/truffle/tui/component/node"
-	source_list_ui "github.com/minkezhang/truffle/tui/component/node/source_list"
 )
 
 type O struct {
@@ -25,7 +24,6 @@ type O struct {
 type M struct {
 	directory string
 	node      tea.Model
-	debug     *source_list_ui.M
 }
 
 func New(o O) *M {
@@ -61,47 +59,6 @@ func New(o O) *M {
 			CacheDirectory: o.CacheDirectory,
 			Node:           ns[0],
 		}),
-		debug: source_list_ui.New(source_list_ui.O{
-			Layout: grid.L{Content: 50, Width: 50},
-			Values: []source_list_ui.V{
-				source_list_ui.V{
-					API: epb.API_API_VIRTUAL,
-					ID:  "",
-				},
-				source_list_ui.V{
-					API: epb.API_API_TRUFFLE,
-					ID:  "abc",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "123",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "4",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "5",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "6",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "7",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "8",
-				},
-				source_list_ui.V{
-					API: epb.API_API_MAL,
-					ID:  "9",
-				},
-			},
-		}),
 	}
 }
 
@@ -124,16 +81,12 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.ClearScreen
 	}
 
-	_, c := m.debug.Update(msg)
-	cmds = append(cmds, c)
-
-	_, c = m.node.Update(msg)
+	_, c := m.node.Update(msg)
 	cmds = append(cmds, c)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m *M) View() string {
-	return zone.Scan(m.debug.View())
-	// return zone.Scan(m.node.View())
+	return zone.Scan(m.node.View())
 }
