@@ -62,7 +62,7 @@ func New(o O) *M {
 	}
 
 	m.sources = source_list_ui.New(source_list_ui.O{
-		Layout: m.grid.Column(1, 0, 0),
+		Layout: m.grid.Column(3, 0, 0),
 		Values: vs,
 	})
 
@@ -103,6 +103,11 @@ func (m *M) View() string {
 		notes = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("N/A")
 	}
 
+	atom := ""
+	if a, ok := m.atoms[m.focus]; ok {
+		atom = a.View()
+	}
+
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		lipgloss.JoinVertical(
@@ -118,7 +123,7 @@ func (m *M) View() string {
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 			),
-			m.atoms[m.focus].View(),
+			atom,
 		),
 	)
 }
