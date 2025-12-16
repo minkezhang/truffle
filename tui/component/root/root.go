@@ -62,6 +62,7 @@ func New(o O) *M {
 			Node:           ns[0],
 		}),
 		debug: source_list_ui.New(source_list_ui.O{
+			Layout: grid.L{Content: 50, Width: 50},
 			Values: []source_list_ui.V{
 				source_list_ui.V{
 					API: epb.API_API_VIRTUAL,
@@ -74,6 +75,30 @@ func New(o O) *M {
 				source_list_ui.V{
 					API: epb.API_API_MAL,
 					ID:  "123",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "4",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "5",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "6",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "7",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "8",
+				},
+				source_list_ui.V{
+					API: epb.API_API_MAL,
+					ID:  "9",
 				},
 			},
 		}),

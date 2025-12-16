@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
@@ -36,10 +37,16 @@ type M struct {
 	sources map[string]V // { key: V }
 	order   []string     // keys
 	index   int
+	layout  grid.L
+
+	kLeft  string
+	kRight string
+	iStart int
 }
 
 type O struct {
 	Values []V
+	Layout grid.L
 }
 
 func New(o O) *M {
@@ -56,6 +63,9 @@ func New(o O) *M {
 		sources: sources,
 		order:   order,
 		index:   0,
+		layout:  o.Layout,
+		kLeft:   zone.NewPrefix(),
+		kRight:  zone.NewPrefix(),
 	}
 }
 
@@ -72,6 +82,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.index = len(m.order) - 1
 			}
 			dst := m.order[m.index]
+			if m.index < m.iStart {
+				m.iStart = m.index
+			}
 			return m, func() tea.Msg {
 				return SelectMsg{
 					Blur:  m.sources[src],
@@ -82,6 +95,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			src := m.order[m.index]
 			m.index = (m.index + 1) % len(m.order)
 			dst := m.order[m.index]
+			if m.index < m.iStart {
+				m.iStart = m.index
+			}
 			return m, func() tea.Msg {
 				return SelectMsg{
 					Blur:  m.sources[src],
@@ -90,7 +106,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case tea.MouseMsg:
-		if msg.Button == tea.MouseButtonLeft {
+		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
 			for i, k := range m.order {
 				if i != m.index && zone.Get(k).InBounds(msg) {
 					src := m.order[m.index]
@@ -120,19 +136,62 @@ var (
 			lipgloss.NormalBorder(), false, false, true, false,
 		).BorderForeground(lipgloss.Color("6")).Foreground(lipgloss.Color("6")),
 	}
+	arrows = lipgloss.NewStyle().Padding(0, 0).Margin(0, 1, 1, 1).Background(lipgloss.Color("5"))
 )
 
 func (m *M) View() string {
 	parts := []string{}
-	for i, k := range m.order {
-		active := (m.index == i)
+	lengths := []int{}
+	/*
 		parts = append(
 			parts,
-			zone.Mark(k, borders[active].Render(m.sources[k].String())),
+			zone.Mark(m.kLeft, arrows.Render("<")),
 		)
+	*/
+	for i, k := range m.order {
+		active := (m.index == i)
+		p := zone.Mark(k, borders[active].Render(m.sources[k].String()))
+
+		parts = append(parts, p)
+		lengths = append(lengths, lipgloss.Width(p))
 	}
-	return lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		parts...,
+	/*
+		parts = append(
+			parts,
+			zone.Mark(m.kRight, arrows.Render(">")),
+		)
+	*/
+
+	left := zone.Mark(m.kLeft, arrows.Render("<"))
+	right := zone.Mark(m.kRight, arrows.Render(">"))
+
+	iStart := m.iStart
+	iEnd := m.iStart
+
+	length := lipgloss.Width(left) + lipgloss.Width(right)
+
+	for i, l := range lengths[iStart:] {
+		if length+l < m.layout.Content {
+			length += l
+			iEnd = i
+		} else if iEnd > m.index { // Render only the last chunk of iEnd
+			break
+		} else { // Need to advance iStart
+			length += (-lengths[iStart] + lengths[i])
+			iStart += 1
+			iEnd = i
+		}
+	}
+	return lipgloss.NewStyle().Width(m.layout.Content).Border(lipgloss.NormalBorder()).Render(
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			append([]string{
+				zone.Mark(m.kLeft, arrows.Render("<")),
+			}, append(
+				parts[iStart:iEnd+1],
+				zone.Mark(m.kRight, arrows.Render(">")),
+			)...,
+			)...,
+		),
 	)
 }
