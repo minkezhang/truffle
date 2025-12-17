@@ -45,12 +45,12 @@ func New(o O) *M {
 		atom:   o.Atom,
 		metadata: book_ui.New(book_ui.O{
 			Book:   o.Atom.Metadata().(*book.M),
-			Column: g.Column(2, 1, 0),
+			Column: g.Column(2).WithMargin(1),
 		}),
 		image: image_ui.New(image_ui.O{
 			CacheDirectory: o.CacheDirectory,
-			Column:         g.Column(1, 0, 0),
-			Height:         height(g.Column(1, 0, 0).Content),
+			Column:         g.Column(1),
+			Height:         height(g.Column(1).Content),
 			URL:            o.Atom.PreviewURL(),
 		}),
 		score: score_ui.New(score_ui.O{
@@ -105,17 +105,17 @@ func (m *M) View() string {
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		m.grid.Column(3, 0, 0).Style().MarginBottom(1).Render(m.titles.View()),
+		m.grid.Column(3).Style().MarginBottom(1).Render(m.titles.View()),
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			m.image.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				m.grid.Column(2, 1, 0).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(id),
+				m.grid.Column(2).WithMargin(1).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(id),
 				m.metadata.View(),
-				m.grid.Column(2, 1, 0).Style().MarginTop(1).Render(m.score.View()),
+				m.grid.Column(2).WithMargin(1).Style().MarginTop(1).Render(m.score.View()),
 			),
 		),
-		m.grid.Column(3, 0, 0).Style().Render(m.atom.Synopsis()),
+		m.grid.Column(3).Style().Render(m.atom.Synopsis()),
 	)
 }

@@ -53,18 +53,14 @@ type G struct {
 	N     int
 }
 
-func (g G) Column(n int, m int, p int) C {
+func (g G) Column(n int) C {
 	if n == 0 {
 		return C{}
 	}
 	if n > g.N {
 		n = g.N
 	}
-	w := n * g.Width / g.N
-	c := w - 2*(m+p)
 	return C{
-		Content: c,
-		Margin:  m,
-		Padding: p,
+		Content: n * g.Width / g.N,
 	}
 }

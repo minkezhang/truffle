@@ -92,7 +92,7 @@ func TestColumn(t *testing.T) {
 	}
 	for _, c := range configs {
 		t.Run(c.name, func(t *testing.T) {
-			if got := c.g.Column(c.n, c.m, c.p); got != c.want {
+			if got := c.g.Column(c.n).WithMargin(c.m).WithPadding(c.p); got != c.want {
 				t.Errorf("Column() = %v, want = %v", got, c.want)
 			}
 		})

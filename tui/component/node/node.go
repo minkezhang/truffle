@@ -50,7 +50,7 @@ func New(o O) *M {
 			ID:  a.APIID(),
 		}
 		m.atoms[v] = atom_ui.New(atom_ui.O{
-			Column:         g.Column(3, 0, 0),
+			Column:         g.Column(3),
 			CacheDirectory: o.CacheDirectory,
 			Atom:           a,
 		})
@@ -62,7 +62,7 @@ func New(o O) *M {
 	}
 
 	m.sources = source_list_ui.New(source_list_ui.O{
-		Column: m.grid.Column(3, 0, 0),
+		Column: m.grid.Column(3),
 		Values: vs,
 	})
 
@@ -112,10 +112,10 @@ func (m *M) View() string {
 		lipgloss.Top,
 		lipgloss.JoinVertical(
 			lipgloss.Left,
-			m.grid.Column(1, 1, 0).Style().Bold(true).Render("Queued"),
-			m.grid.Column(1, 1, 1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
-			m.grid.Column(1, 1, 0).Style().MarginTop(1).MarginBottom(1).Bold(true).Render("Notes"),
-			m.grid.Column(1, 1, 0).Style().Render(notes),
+			m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
+			m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
+			m.grid.Column(1).WithMargin(1).Style().MarginTop(1).MarginBottom(1).Bold(true).Render("Notes"),
+			m.grid.Column(1).WithMargin(1).Style().Render(notes),
 		),
 		lipgloss.JoinVertical(
 			lipgloss.Left,
