@@ -64,7 +64,9 @@ func New(o O) *M {
 	}
 
 	m.sources = source_list_ui.New(source_list_ui.O{
-		Column: m.grid.Column(3),
+		O: model_ui.O{
+			Column: m.grid.Column(3),
+		},
 		Values: vs,
 	})
 

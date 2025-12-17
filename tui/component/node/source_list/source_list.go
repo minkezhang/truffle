@@ -14,9 +14,9 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 type V struct {
@@ -41,10 +41,11 @@ func (v V) String() string {
 }
 
 type M struct {
+	*model_ui.Base
+
 	sources map[string]V // { key: V }
 	order   []string     // keys
 	index   int
-	column  grid.C
 
 	kLeft  string
 	kRight string
@@ -52,8 +53,8 @@ type M struct {
 }
 
 type O struct {
+	model_ui.O
 	Values []V
-	Column grid.C
 }
 
 func New(o O) *M {
@@ -67,10 +68,10 @@ func New(o O) *M {
 	}
 
 	return &M{
+		Base:    model_ui.New(o.O),
 		sources: sources,
 		order:   order,
 		index:   0,
-		column:  o.Column,
 		kLeft:   zone.NewPrefix(),
 		kRight:  zone.NewPrefix(),
 	}
@@ -200,25 +201,25 @@ func (m *M) View() string {
 	length := ll + lr
 
 	for i, l := range lengths[iStart:] {
-		if length+l < m.column.Content {
+		if length+l < m.Column().Content {
 			length += l
 			iEnd = i
 		} else if i == len(lengths)-1 {
 			// Won't need the right arrow, discount it from length
 			// calculations
 			length -= lr
-			if length+l < m.column.Content { // Last tab now wholy fits
+			if length+l < m.Column().Content { // Last tab now wholy fits
 				length += l
 				iEnd = i
 			} else { // Append partial
 				iEnd = i
-				parts[i] = m.partial(i, m.column.Content-length)
+				parts[i] = m.partial(i, m.Column().Content-length)
 			}
 		} else if i > m.index {
 			// The active element is already in the tab list, so add the
 			// last partial tab and return
 			iEnd = i
-			parts[i] = m.partial(i, m.column.Content-length)
+			parts[i] = m.partial(i, m.Column().Content-length)
 			break
 		} else { // Need to advance iStart
 			length += (-lengths[iStart] + lengths[i])
@@ -240,10 +241,12 @@ func (m *M) View() string {
 	if iEnd < len(lengths)-1 {
 		parts = append(parts, right)
 	}
-	return lipgloss.NewStyle().Width(m.column.Content).Render(
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			parts...,
+	return m.RenderOrDie(
+		lipgloss.NewStyle().Width(m.Column().Content).Render(
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				parts...,
+			),
 		),
 	)
 }
