@@ -14,13 +14,13 @@ import (
 )
 
 type O struct {
-	Layout         grid.L
+	Column         grid.C
 	CacheDirectory string
 	Node           *node.N
 }
 
 type M struct {
-	layout    grid.L
+	column    grid.C
 	grid      grid.G
 	directory string
 
@@ -33,9 +33,9 @@ type M struct {
 }
 
 func New(o O) *M {
-	g := o.Layout.Grid(4)
+	g := o.Column.Grid(4)
 	m := &M{
-		layout:    o.Layout,
+		column:    o.Column,
 		grid:      g,
 		directory: o.CacheDirectory,
 		node:      o.Node,
@@ -50,7 +50,7 @@ func New(o O) *M {
 			ID:  a.APIID(),
 		}
 		m.atoms[v] = atom_ui.New(atom_ui.O{
-			Layout:         g.Column(3, 0, 0),
+			Column:         g.Column(3, 0, 0),
 			CacheDirectory: o.CacheDirectory,
 			Atom:           a,
 		})
@@ -62,7 +62,7 @@ func New(o O) *M {
 	}
 
 	m.sources = source_list_ui.New(source_list_ui.O{
-		Layout: m.grid.Column(3, 0, 0),
+		Column: m.grid.Column(3, 0, 0),
 		Values: vs,
 	})
 

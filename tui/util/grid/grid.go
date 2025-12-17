@@ -10,59 +10,59 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// L defines the column layout
-type L struct {
+// C defines the column layout
+type C struct {
 	Content int
 	Margin  int
 	Padding int
 }
 
-func (l L) Width() int { return l.Content + 2*(l.Margin+l.Padding) }
+func (c C) Width() int { return c.Content + 2*(c.Margin+c.Padding) }
 
-func (l L) Style() lipgloss.Style {
+func (c C) Style() lipgloss.Style {
 	return lipgloss.NewStyle().Width(
-		l.Content+2*l.Padding,
-	).Margin(0, l.Margin).Padding(0, l.Padding)
+		c.Content+2*c.Padding,
+	).Margin(0, c.Margin).Padding(0, c.Padding)
 }
 
-func (l L) WithPadding(n int) L {
-	return L{
-		Content: l.Content - 2*(n-l.Padding),
-		Margin:  l.Margin,
+func (c C) WithPadding(n int) C {
+	return C{
+		Content: c.Content - 2*(n-c.Padding),
+		Margin:  c.Margin,
 		Padding: n,
 	}
 }
 
-func (l L) WithMargin(n int) L {
-	return L{
-		Content: l.Content - 2*(n-l.Margin),
+func (c C) WithMargin(n int) C {
+	return C{
+		Content: c.Content - 2*(n-c.Margin),
 		Margin:  n,
-		Padding: l.Padding,
+		Padding: c.Padding,
 	}
 }
 
-func (l L) Grid(n int) G {
+func (c C) Grid(n int) G {
 	return G{
-		Width:    l.Content,
-		NColumns: n,
+		Width: c.Content,
+		N:     n,
 	}
 }
 
 type G struct {
-	Width    int
-	NColumns int
+	Width int
+	N     int
 }
 
-func (g G) Column(n int, m int, p int) L {
+func (g G) Column(n int, m int, p int) C {
 	if n == 0 {
-		return L{}
+		return C{}
 	}
-	if n > g.NColumns {
-		n = g.NColumns
+	if n > g.N {
+		n = g.N
 	}
-	w := n * g.Width / g.NColumns
+	w := n * g.Width / g.N
 	c := w - 2*(m+p)
-	return L{
+	return C{
 		Content: c,
 		Margin:  m,
 		Padding: p,

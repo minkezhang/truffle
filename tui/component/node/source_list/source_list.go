@@ -44,7 +44,7 @@ type M struct {
 	sources map[string]V // { key: V }
 	order   []string     // keys
 	index   int
-	layout  grid.L
+	column  grid.C
 
 	kLeft  string
 	kRight string
@@ -53,7 +53,7 @@ type M struct {
 
 type O struct {
 	Values []V
-	Layout grid.L
+	Column grid.C
 }
 
 func New(o O) *M {
@@ -70,7 +70,7 @@ func New(o O) *M {
 		sources: sources,
 		order:   order,
 		index:   0,
-		layout:  o.Layout,
+		column:  o.Column,
 		kLeft:   zone.NewPrefix(),
 		kRight:  zone.NewPrefix(),
 	}
@@ -200,25 +200,25 @@ func (m *M) View() string {
 	length := ll + lr
 
 	for i, l := range lengths[iStart:] {
-		if length+l < m.layout.Content {
+		if length+l < m.column.Content {
 			length += l
 			iEnd = i
 		} else if i == len(lengths)-1 {
 			// Won't need the right arrow, discount it from length
 			// calculations
 			length -= lr
-			if length+l < m.layout.Content { // Last tab now wholy fits
+			if length+l < m.column.Content { // Last tab now wholy fits
 				length += l
 				iEnd = i
 			} else { // Append partial
 				iEnd = i
-				parts[i] = m.partial(i, m.layout.Content-length)
+				parts[i] = m.partial(i, m.column.Content-length)
 			}
 		} else if i > m.index {
 			// The active element is already in the tab list, so add the
 			// last partial tab and return
 			iEnd = i
-			parts[i] = m.partial(i, m.layout.Content-length)
+			parts[i] = m.partial(i, m.column.Content-length)
 			break
 		} else { // Need to advance iStart
 			length += (-lengths[iStart] + lengths[i])
@@ -240,7 +240,7 @@ func (m *M) View() string {
 	if iEnd < len(lengths)-1 {
 		parts = append(parts, right)
 	}
-	return lipgloss.NewStyle().Width(m.layout.Content).Render(
+	return lipgloss.NewStyle().Width(m.column.Content).Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			parts...,

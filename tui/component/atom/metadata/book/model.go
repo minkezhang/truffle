@@ -12,18 +12,18 @@ var (
 
 type O struct {
 	Book   *book.M
-	Layout grid.L
+	Column grid.C
 }
 
 func New(o O) *M {
 	return &M{
 		book:   o.Book,
-		layout: o.Layout,
+		column: o.Column,
 	}
 }
 
 type M struct {
-	layout grid.L
+	column grid.C
 
 	book *book.M
 }

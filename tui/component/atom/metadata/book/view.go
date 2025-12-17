@@ -7,8 +7,8 @@ import (
 )
 
 func (m *M) View() string {
-	k := m.layout.Style().Bold(true)
-	v := m.layout.WithMargin(m.layout.Margin + 1).Style().Foreground(lipgloss.Color("5"))
+	k := m.column.Style().Bold(true)
+	v := m.column.WithMargin(m.column.Margin + 1).Style().Foreground(lipgloss.Color("5"))
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		k.Foreground(lipgloss.Color("5")).Render(R{}.BookType(m.book)),

@@ -33,7 +33,7 @@ import (
 )
 
 type O struct {
-	Layout grid.L
+	Column grid.C
 
 	URL            string
 	Width          int // Pixels
@@ -42,7 +42,7 @@ type O struct {
 }
 
 type M struct {
-	layout grid.L
+	column grid.C
 	height int
 
 	url       string
@@ -55,7 +55,7 @@ type M struct {
 func New(o O) *M {
 	return &M{
 		url:       o.URL,
-		layout:    o.Layout,
+		column:    o.Column,
 		height:    o.Height,
 		directory: o.CacheDirectory,
 	}
@@ -118,7 +118,7 @@ func (m *M) data() (string, error) {
 // TODO(minkezhang): Use Sixel support when it lands. See
 // https://github.com/charmbracelet/bubbletea/issues/163.
 func (m *M) render(img image.Image) string {
-	img = imaging.Fit(img, m.layout.Content, m.height, imaging.Lanczos)
+	img = imaging.Fit(img, m.column.Content, m.height, imaging.Lanczos)
 
 	// TODO(minkezhang): Width must be manually adjusted. See
 	//
@@ -151,7 +151,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *M) View() string {
 	return lipgloss.Place(
-		m.layout.Content,
+		m.column.Content,
 		// Two vertical pixels per character may leave a pixel
 		// unaccounted for.
 		m.height/2+1,

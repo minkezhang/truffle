@@ -19,13 +19,13 @@ import (
 )
 
 type O struct {
-	Layout         grid.L // Total width of the element
+	Column         grid.C // Total width of the element
 	Atom           *atom.A
 	CacheDirectory string
 }
 
 type M struct {
-	layout grid.L
+	column grid.C
 	grid   grid.G
 
 	atom     *atom.A
@@ -36,20 +36,20 @@ type M struct {
 }
 
 func New(o O) *M {
-	l := o.Layout
-	g := l.Grid(3)
+	c := o.Column
+	g := c.Grid(3)
 
 	return &M{
-		layout: l,
+		column: c,
 		grid:   g,
 		atom:   o.Atom,
 		metadata: book_ui.New(book_ui.O{
 			Book:   o.Atom.Metadata().(*book.M),
-			Layout: g.Column(2, 1, 0),
+			Column: g.Column(2, 1, 0),
 		}),
 		image: image_ui.New(image_ui.O{
 			CacheDirectory: o.CacheDirectory,
-			Layout:         g.Column(1, 0, 0),
+			Column:         g.Column(1, 0, 0),
 			Height:         height(g.Column(1, 0, 0).Content),
 			URL:            o.Atom.PreviewURL(),
 		}),

@@ -5,12 +5,12 @@ import (
 )
 
 func TestWithPadding(t *testing.T) {
-	c := L{
+	c := C{
 		Content: 100,
 		Margin:  1,
 		Padding: 1,
 	}
-	want := L{
+	want := C{
 		Content: 98,
 		Margin:  1,
 		Padding: 2,
@@ -27,18 +27,18 @@ func TestColumn(t *testing.T) {
 		n    int
 		m    int
 		p    int
-		want L
+		want C
 	}{
 		{
 			name: "C=2/N=1",
 			g: G{
-				Width:    100,
-				NColumns: 2,
+				Width: 100,
+				N:     2,
 			},
 			n: 1,
 			m: 0,
 			p: 0,
-			want: L{
+			want: C{
 				Content: 50,
 				Margin:  0,
 				Padding: 0,
@@ -47,13 +47,13 @@ func TestColumn(t *testing.T) {
 		{
 			name: "C=3/N=2",
 			g: G{
-				Width:    300,
-				NColumns: 3,
+				Width: 300,
+				N:     3,
 			},
 			n: 2,
 			m: 0,
 			p: 0,
-			want: L{
+			want: C{
 				Content: 200,
 				Margin:  0,
 				Padding: 0,
@@ -62,13 +62,13 @@ func TestColumn(t *testing.T) {
 		{
 			name: "C=3/N=3",
 			g: G{
-				Width:    300,
-				NColumns: 3,
+				Width: 300,
+				N:     3,
 			},
 			n: 3,
 			m: 0,
 			p: 0,
-			want: L{
+			want: C{
 				Content: 300,
 				Margin:  0,
 				Padding: 0,
@@ -77,13 +77,13 @@ func TestColumn(t *testing.T) {
 		{
 			name: "C=3/N=2/M/P",
 			g: G{
-				Width:    300,
-				NColumns: 3,
+				Width: 300,
+				N:     3,
 			},
 			n: 2,
 			m: 1,
 			p: 1,
-			want: L{
+			want: C{
 				Content: 196,
 				Margin:  1,
 				Padding: 1,

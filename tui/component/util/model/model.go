@@ -17,22 +17,22 @@ import (
 
 type Model interface {
 	tea.Model
-	Layout() grid.L
+	Column() grid.C
 	Focus() (tea.Model, tea.Cmd)
 	Blur() (tea.Model, tea.Cmd)
 }
 
 type O struct {
-	Layout grid.L
+	Column grid.C
 }
 
 type Base struct {
-	layout grid.L
+	column grid.C
 }
 
 func New(o O) *Base {
 	return &Base{
-		layout: o.Layout,
+		column: o.Column,
 	}
 }
 
@@ -45,7 +45,7 @@ func (m *Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 // View fulfills the tea.Model interface and is unused.
 func (m *Base) View() string { return "" }
 
-func (m *Base) Layout() grid.L { return m.layout }
+func (m *Base) Column() grid.C { return m.column }
 
 // ValidateOrDie will be called from parent Model.View() functions.
 //
@@ -55,8 +55,8 @@ func (m *Base) Layout() grid.L { return m.layout }
 //	  return m.ValidateOrDie(lipgloss.NewStyle().Render(...))
 //	}
 func (m *Base) ValidateOrDie(s string) string {
-	if w := lipgloss.Width(s); w > m.layout.Content {
-		E.Append(fmt.Errorf("rendered string exceeded bounding box: %d > %d", w, m.layout.Content))
+	if w := lipgloss.Width(s); w > m.column.Content {
+		E.Append(fmt.Errorf("rendered string exceeded bounding box: %d > %d", w, m.column.Content))
 		return ""
 	}
 	return s
