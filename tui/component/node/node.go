@@ -102,8 +102,8 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *M) View() string {
-	var notes = lipgloss.NewStyle().Render(m.node.Notes())
-	if notes == "" {
+	var notes = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(m.node.Notes())
+	if m.node.Notes() == "" {
 		notes = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("N/A")
 	}
 
@@ -113,20 +113,18 @@ func (m *M) View() string {
 	}
 
 	return m.RenderOrDie(
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
-				m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
-				m.grid.Column(1).WithMargin(1).Style().MarginTop(1).MarginBottom(1).Bold(true).Render("Notes"),
-				m.grid.Column(1).WithMargin(1).Style().Render(notes),
-			),
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				m.sources.View(),
-				lipgloss.JoinHorizontal(
-					lipgloss.Top,
+		lipgloss.JoinVertical(
+			lipgloss.Right,
+			m.sources.View(),
+
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				lipgloss.JoinVertical(
+					lipgloss.Left,
+					m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
+					m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
+					m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Notes"),
+					m.grid.Column(1).WithMargin(1).Style().Render(notes),
 				),
 				atom,
 			),
