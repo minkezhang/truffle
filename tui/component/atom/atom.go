@@ -2,7 +2,6 @@ package atom
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -16,6 +15,7 @@ import (
 	book_ui "github.com/minkezhang/truffle/tui/component/atom/metadata/book"
 	score_ui "github.com/minkezhang/truffle/tui/component/atom/score"
 	titles_ui "github.com/minkezhang/truffle/tui/component/atom/titles"
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 type O struct {
@@ -48,9 +48,10 @@ func New(o O) *M {
 			Column: g.Column(2).WithMargin(1),
 		}),
 		image: image_ui.New(image_ui.O{
+			O: model_ui.O{
+				Column: g.Column(1),
+			},
 			CacheDirectory: o.CacheDirectory,
-			Column:         g.Column(1),
-			Height:         height(g.Column(1).Content),
 			URL:            o.Atom.PreviewURL(),
 		}),
 		score: score_ui.New(score_ui.O{
@@ -82,12 +83,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
-}
-
-func height(width int) int {
-	return int( // A4 ratio; in pixels
-		math.Trunc(float64(width) * 1.414),
-	)
 }
 
 func (m *M) View() string {

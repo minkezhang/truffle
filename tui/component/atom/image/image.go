@@ -8,42 +8,39 @@
 package image
 
 import (
+	"math"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	_ "golang.org/x/image/webp"
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	_ "image/jpeg"
-	_ "image/png"
-
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/mosaic"
 	"github.com/disintegration/imaging"
-	"github.com/minkezhang/truffle/tui/util/grid"
 
-	_ "golang.org/x/image/webp"
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 type O struct {
-	Column grid.C
+	model_ui.O
 
 	URL            string
-	Width          int // Pixels
-	Height         int // Pixels
 	CacheDirectory string
 }
 
 type M struct {
-	column grid.C
-	height int
+	*model_ui.Base
 
 	url       string
 	filepath  string
@@ -54,9 +51,8 @@ type M struct {
 
 func New(o O) *M {
 	return &M{
+		Base:      model_ui.New(o.O),
 		url:       o.URL,
-		column:    o.Column,
-		height:    o.Height,
 		directory: o.CacheDirectory,
 	}
 }
@@ -64,6 +60,12 @@ func New(o O) *M {
 type message struct {
 	s string
 	e error
+}
+
+func height(width int) int {
+	return int( // A4 ratio; in pixels
+		math.Trunc(float64(width) * 1.414),
+	)
 }
 
 func (m *M) data() (string, error) {
@@ -118,7 +120,7 @@ func (m *M) data() (string, error) {
 // TODO(minkezhang): Use Sixel support when it lands. See
 // https://github.com/charmbracelet/bubbletea/issues/163.
 func (m *M) render(img image.Image) string {
-	img = imaging.Fit(img, m.column.Content, m.height, imaging.Lanczos)
+	img = imaging.Fit(img, m.Column().Content, height(m.Column().Content), imaging.Lanczos)
 
 	// TODO(minkezhang): Width must be manually adjusted. See
 	//
@@ -146,17 +148,19 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cache = msg.s
 		}
 	}
-	return nil, nil
+	return m, nil
 }
 
 func (m *M) View() string {
-	return lipgloss.Place(
-		m.column.Content,
-		// Two vertical pixels per character may leave a pixel
-		// unaccounted for.
-		m.height/2+1,
-		lipgloss.Top,
-		lipgloss.Center,
-		m.cache,
+	return m.RenderOrDie(
+		lipgloss.Place(
+			m.Column().Content,
+			// Two vertical pixels per character may leave a pixel
+			// unaccounted for.
+			height(m.Column().Content)/2+1,
+			lipgloss.Top,
+			lipgloss.Center,
+			m.cache,
+		),
 	)
 }

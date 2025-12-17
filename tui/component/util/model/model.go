@@ -52,9 +52,9 @@ func (m *Base) Column() grid.C { return m.column }
 // Example:
 //
 //	func (m *M) View() string {
-//	  return m.ValidateOrDie(lipgloss.NewStyle().Render(...))
+//	  return m.RenderOrDie(lipgloss.NewStyle().Render(...))
 //	}
-func (m *Base) ValidateOrDie(s string) string {
+func (m *Base) RenderOrDie(s string) string {
 	if w := lipgloss.Width(s); w > m.column.Content {
 		E.Append(fmt.Errorf("rendered string exceeded bounding box: %d > %d", w, m.column.Content))
 		return ""
