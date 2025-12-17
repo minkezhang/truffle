@@ -4,6 +4,22 @@ import (
 	"testing"
 )
 
+func TestWithPadding(t *testing.T) {
+	c := L{
+		Content: 100,
+		Margin:  1,
+		Padding: 1,
+	}
+	want := L{
+		Content: 98,
+		Margin:  1,
+		Padding: 2,
+	}
+	if got := c.WithPadding(2); got != want {
+		t.Errorf("WithPadding() = %v, want = %v", got, want)
+	}
+}
+
 func TestColumn(t *testing.T) {
 	configs := []struct {
 		name string
@@ -11,7 +27,7 @@ func TestColumn(t *testing.T) {
 		n    int
 		m    int
 		p    int
-		want C
+		want L
 	}{
 		{
 			name: "C=2/N=1",
@@ -23,7 +39,6 @@ func TestColumn(t *testing.T) {
 			m: 0,
 			p: 0,
 			want: L{
-				Width:   50,
 				Content: 50,
 				Margin:  0,
 				Padding: 0,
@@ -39,7 +54,6 @@ func TestColumn(t *testing.T) {
 			m: 0,
 			p: 0,
 			want: L{
-				Width:   200,
 				Content: 200,
 				Margin:  0,
 				Padding: 0,
@@ -55,7 +69,6 @@ func TestColumn(t *testing.T) {
 			m: 0,
 			p: 0,
 			want: L{
-				Width:   300,
 				Content: 300,
 				Margin:  0,
 				Padding: 0,
@@ -71,7 +84,6 @@ func TestColumn(t *testing.T) {
 			m: 1,
 			p: 1,
 			want: L{
-				Width:   200,
 				Content: 196,
 				Margin:  1,
 				Padding: 1,

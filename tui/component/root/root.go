@@ -59,7 +59,7 @@ func New(o O) *M {
 	return &M{
 		directory: o.CacheDirectory,
 		node: node_ui.New(node_ui.O{
-			Layout:         grid.L{Content: 120, Width: 120},
+			Layout:         grid.L{Content: 120},
 			CacheDirectory: o.CacheDirectory,
 			Node:           ns[0],
 		}),

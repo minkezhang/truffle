@@ -56,7 +56,7 @@ func (m *Base) Layout() grid.L { return m.layout }
 //	}
 func (m *Base) ValidateOrDie(s string) string {
 	if w := lipgloss.Width(s); w > m.layout.Content {
-		E.Append(fmt.Errorf("rendered string exceeded bounding box: %i > %i", w, m.layout.Content))
+		E.Append(fmt.Errorf("rendered string exceeded bounding box: %d > %d", w, m.layout.Content))
 		return ""
 	}
 	return s

@@ -12,28 +12,22 @@ import (
 
 // L defines the column layout
 type L struct {
-	Width   int
 	Content int
 	Margin  int
 	Padding int
 }
 
+func (l L) Width() int { return l.Content + 2*(l.Margin+l.Padding) }
+
 func (l L) Style() lipgloss.Style {
 	return lipgloss.NewStyle().Width(
 		l.Content+2*l.Padding,
-	).Margin(
-		0,
-		l.Margin,
-	).Padding(
-		0,
-		l.Padding,
-	)
+	).Margin(0, l.Margin).Padding(0, l.Padding)
 }
 
 func (l L) WithPadding(n int) L {
 	return L{
-		Width:   l.Width,
-		Content: l.Content + 2*(l.Padding-n),
+		Content: l.Content - 2*(n-l.Padding),
 		Margin:  l.Margin,
 		Padding: n,
 	}
@@ -41,8 +35,7 @@ func (l L) WithPadding(n int) L {
 
 func (l L) WithMargin(n int) L {
 	return L{
-		Width:   l.Width,
-		Content: l.Content + 2*(l.Margin-n),
+		Content: l.Content - 2*(n-l.Margin),
 		Margin:  n,
 		Padding: l.Padding,
 	}
@@ -70,7 +63,6 @@ func (g G) Column(n int, m int, p int) L {
 	w := n * g.Width / g.NColumns
 	c := w - 2*(m+p)
 	return L{
-		Width:   w,
 		Content: c,
 		Margin:  m,
 		Padding: p,
