@@ -21,7 +21,7 @@ func (c C) Width() int { return c.Content + 2*(c.Margin+c.Padding) }
 
 func (c C) Style() lipgloss.Style {
 	return lipgloss.NewStyle().Width(
-		c.Content+2*c.Padding,
+		c.Content,
 	).Margin(0, c.Margin).Padding(0, c.Padding)
 }
 

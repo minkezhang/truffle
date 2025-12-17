@@ -44,8 +44,10 @@ func New(o O) *M {
 		grid:   g,
 		atom:   o.Atom,
 		metadata: book_ui.New(book_ui.O{
-			Book:   o.Atom.Metadata().(*book.M),
-			Column: g.Column(2).WithMargin(1),
+			O: model_ui.O{
+				Column: g.Column(2).WithMargin(1),
+			},
+			Book: o.Atom.Metadata().(*book.M),
 		}),
 		image: image_ui.New(image_ui.O{
 			O: model_ui.O{

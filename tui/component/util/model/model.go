@@ -9,6 +9,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,8 +19,8 @@ import (
 type Model interface {
 	tea.Model
 	Column() grid.C
-	Focus() (tea.Model, tea.Cmd)
-	Blur() (tea.Model, tea.Cmd)
+	Focus() (tea.Model, tea.Cmd) // TODO
+	Blur() (tea.Model, tea.Cmd)  // TODO
 }
 
 type O struct {
@@ -55,9 +56,41 @@ func (m *Base) Column() grid.C { return m.column }
 //	  return m.RenderOrDie(lipgloss.NewStyle().Render(...))
 //	}
 func (m *Base) RenderOrDie(s string) string {
-	if w := lipgloss.Width(s); w > m.column.Content {
-		E.Append(fmt.Errorf("rendered string exceeded bounding box: %d > %d", w, m.column.Content))
+	if err := check(s, m.column); err != nil {
+		E.Append(err)
 		return ""
 	}
 	return s
+}
+
+func axis(w int) string {
+	return strings.Repeat("|----:----", w/10) + []string{
+		"",
+		"|",
+		"|-",
+		"|--",
+		"|---",
+		"|----",
+		"|----:",
+		"|----:-",
+		"|----:--",
+		"|----:---",
+	}[w%10]
+}
+
+func check(s string, c grid.C) error {
+	if w := lipgloss.Width(s); w > c.Width() {
+		return fmt.Errorf(
+			"rendered string exceeded bounding box: %d > %d\n"+
+				"```\n"+
+				"%s\n"+
+				"%s\n"+
+				"```\n",
+			w,
+			c.Content,
+			axis(w),
+			strings.ReplaceAll(s, " ", "."),
+		)
+	}
+	return nil
 }

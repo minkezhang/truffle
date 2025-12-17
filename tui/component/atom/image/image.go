@@ -8,7 +8,6 @@
 package image
 
 import (
-	"math"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
@@ -20,6 +19,7 @@ import (
 	_ "image/png"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
