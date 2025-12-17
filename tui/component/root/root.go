@@ -59,7 +59,9 @@ func New(o O) *M {
 	return &M{
 		directory: o.CacheDirectory,
 		node: node_ui.New(node_ui.O{
-			Column:         grid.C{Content: 120},
+			O: model_ui.O{
+				Column: grid.C{Content: 120},
+			},
 			CacheDirectory: o.CacheDirectory,
 			Node:           ns[0],
 		}),

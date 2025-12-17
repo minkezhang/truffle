@@ -11,31 +11,31 @@ import (
 
 	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
 	source_list_ui "github.com/minkezhang/truffle/tui/component/node/source_list"
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 type O struct {
-	Column         grid.C
+	model_ui.O
 	CacheDirectory string
 	Node           *node.N
 }
 
 type M struct {
-	column    grid.C
-	grid      grid.G
-	directory string
+	*model_ui.Base
+	grid grid.G
 
-	node *node.N
+	directory string
+	node      *node.N
 
 	sources tea.Model
-
-	atoms map[source_list_ui.V]tea.Model
-	focus source_list_ui.V
+	atoms   map[source_list_ui.V]tea.Model
+	focus   source_list_ui.V
 }
 
 func New(o O) *M {
 	g := o.Column.Grid(4)
 	m := &M{
-		column:    o.Column,
+		Base:      model_ui.New(o.O),
 		grid:      g,
 		directory: o.CacheDirectory,
 		node:      o.Node,
@@ -50,7 +50,9 @@ func New(o O) *M {
 			ID:  a.APIID(),
 		}
 		m.atoms[v] = atom_ui.New(atom_ui.O{
-			Column:         g.Column(3),
+			O: model_ui.O{
+				Column: g.Column(3),
+			},
 			CacheDirectory: o.CacheDirectory,
 			Atom:           a,
 		})
@@ -108,22 +110,24 @@ func (m *M) View() string {
 		atom = a.View()
 	}
 
-	return lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
-			m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
-			m.grid.Column(1).WithMargin(1).Style().MarginTop(1).MarginBottom(1).Bold(true).Render("Notes"),
-			m.grid.Column(1).WithMargin(1).Style().Render(notes),
-		),
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.sources.View(),
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
+	return m.RenderOrDie(
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
+				m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
+				m.grid.Column(1).WithMargin(1).Style().MarginTop(1).MarginBottom(1).Bold(true).Render("Notes"),
+				m.grid.Column(1).WithMargin(1).Style().Render(notes),
 			),
-			atom,
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				m.sources.View(),
+				lipgloss.JoinHorizontal(
+					lipgloss.Top,
+				),
+				atom,
+			),
 		),
 	)
 }

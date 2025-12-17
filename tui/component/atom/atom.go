@@ -19,14 +19,14 @@ import (
 )
 
 type O struct {
-	Column         grid.C // Total width of the element
+	model_ui.O
 	Atom           *atom.A
 	CacheDirectory string
 }
 
 type M struct {
-	column grid.C
-	grid   grid.G
+	*model_ui.Base
+	grid grid.G
 
 	atom     *atom.A
 	metadata tea.Model
@@ -40,9 +40,9 @@ func New(o O) *M {
 	g := c.Grid(3)
 
 	return &M{
-		column: c,
-		grid:   g,
-		atom:   o.Atom,
+		Base: model_ui.New(o.O),
+		grid: g,
+		atom: o.Atom,
 		metadata: book_ui.New(book_ui.O{
 			O: model_ui.O{
 				Column: g.Column(2).WithMargin(1),
@@ -100,19 +100,21 @@ func (m *M) View() string {
 		)
 	}
 
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		m.grid.Column(3).Style().MarginBottom(1).Render(m.titles.View()),
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			m.image.View(),
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				m.grid.Column(2).WithMargin(1).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(id),
-				m.metadata.View(),
-				m.grid.Column(2).WithMargin(1).Style().MarginTop(1).Render(m.score.View()),
+	return m.RenderOrDie(
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			m.grid.Column(3).Style().MarginBottom(1).Render(m.titles.View()),
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				m.image.View(),
+				lipgloss.JoinVertical(
+					lipgloss.Left,
+					m.grid.Column(2).WithMargin(1).Style().Bold(true).Foreground(lipgloss.Color("5")).Render(id),
+					m.metadata.View(),
+					m.grid.Column(2).WithMargin(1).Style().MarginTop(1).Render(m.score.View()),
+				),
 			),
+			m.grid.Column(3).Style().Render(m.atom.Synopsis()),
 		),
-		m.grid.Column(3).Style().Render(m.atom.Synopsis()),
 	)
 }
