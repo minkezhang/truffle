@@ -6,15 +6,18 @@ import (
 	"log/slog"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/client"
 	"github.com/minkezhang/truffle-api/client/mal"
 	"github.com/minkezhang/truffle-api/db"
+	"github.com/minkezhang/truffle-api/db/node"
 	"github.com/minkezhang/truffle-api/db/query"
 	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	node_ui "github.com/minkezhang/truffle/tui/component/node"
+	search_ui "github.com/minkezhang/truffle/tui/component/search"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
@@ -23,8 +26,11 @@ type O struct {
 }
 
 type M struct {
+	truffle *db.DB
+
 	directory string
 	node      tea.Model
+	search    tea.Model
 
 	// e is the global error handler
 	e tea.Model
@@ -57,6 +63,7 @@ func New(o O) *M {
 	}
 
 	return &M{
+		truffle:   truffle,
 		directory: o.CacheDirectory,
 		node: node_ui.New(node_ui.O{
 			O: model_ui.O{
@@ -66,11 +73,17 @@ func New(o O) *M {
 			Node:           ns[0],
 		}),
 
-		e: model_ui.E,
+		search: search_ui.New(search_ui.O{}),
+		e:      model_ui.E,
 	}
 }
 
-func (m *M) Init() tea.Cmd { return m.node.Init() }
+func (m *M) Init() tea.Cmd {
+	return tea.Batch(
+		m.node.Init(),
+		m.search.Init(),
+	)
+}
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
@@ -87,9 +100,21 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg: // Clear buffer
 		return m, tea.ClearScreen
+	case search_ui.QueryMsg:
+		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
+	case QueryResponseMsg:
+		if len([]*node.N(msg)) > 0 {
+			m.node = node_ui.New(node_ui.O{
+				O: model_ui.O{
+					Column: grid.C{Content: 120},
+				},
+				CacheDirectory: m.directory,
+				Node:           []*node.N(msg)[0],
+			})
+		}
 	}
 
-	for _, n := range []tea.Model{m.node, m.e} {
+	for _, n := range []tea.Model{m.node, m.e, m.search} {
 		_, c := n.Update(msg)
 		cmds = append(cmds, c)
 	}
@@ -97,4 +122,28 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *M) View() string { return zone.Scan(m.node.View()) }
+type QueryResponseMsg []*node.N
+
+func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
+	ns, err := m.truffle.Query(context.Background(), query.New(query.O{
+		APIs:      []epb.API{epb.API_API_MAL},
+		AtomTypes: []epb.Type{epb.Type_TYPE_BOOK},
+		Title:     string(msg),
+	}))
+	if err != nil {
+		return model_ui.ErrorMsg(err)
+	}
+	return ns
+}
+
+func (m *M) View() string {
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		m.search.View(),
+		zone.Scan(
+			lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(
+				m.node.View(),
+			),
+		),
+	)
+}
