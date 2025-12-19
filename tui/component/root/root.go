@@ -115,10 +115,19 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	for _, n := range []tea.Model{m.node, m.e, m.search} {
-		_, c := n.Update(msg)
-		cmds = append(cmds, c)
-	}
+	var c tea.Cmd
+
+	m.node, c = m.node.Update(msg)
+
+	cmds = append(cmds, c)
+
+	m.e, c = m.e.Update(msg)
+
+	cmds = append(cmds, c)
+
+	m.search, c = m.search.Update(msg)
+
+	cmds = append(cmds, c)
 
 	return m, tea.Batch(cmds...)
 }

@@ -93,11 +93,15 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.focus = msg.Focus
 	}
 
-	for _, a := range m.atoms {
-		_, c := a.Update(msg)
+	var c tea.Cmd
+
+	for i, a := range m.atoms {
+		m.atoms[i], c = a.Update(msg)
 		cmds = append(cmds, c)
 	}
-	_, c := m.sources.Update(msg)
+
+	m.sources, c = m.sources.Update(msg)
+
 	cmds = append(cmds, c)
 
 	return m, tea.Batch(cmds...)
