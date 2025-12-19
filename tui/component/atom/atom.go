@@ -2,6 +2,7 @@ package atom
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -57,9 +58,15 @@ func New(o O) *M {
 			URL:            o.Atom.PreviewURL(),
 		}),
 		score: score_ui.New(score_ui.O{
+			O: model_ui.O{
+				Column: g.Column(2),
+			},
 			Score: o.Atom.Score(),
 		}),
 		titles: titles_ui.New(titles_ui.O{
+			O: model_ui.O{
+				Column: g.Column(3),
+			},
 			Titles: o.Atom.Titles(),
 		}),
 	}
@@ -74,8 +81,41 @@ func (m *M) Init() tea.Cmd {
 	)
 }
 
+type updateAtomMsg struct {
+	model_ui.BaseMsg
+	payload *atom.A
+}
+
+func UpdateAtomAsync(m tea.Model, v *atom.A) tea.Cmd {
+	if m, ok := m.(*M); ok {
+		return func() tea.Msg {
+			return updateAtomMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				payload: v,
+			}
+		}
+	}
+	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
+}
+
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+
+	switch msg := msg.(type) {
+	case updateAtomMsg:
+		if m.ID() == msg.ID {
+			m.atom = msg.payload
+			cmds = append(cmds, tea.Batch(
+				image_ui.UpdateImageAsync(m.image, m.atom.PreviewURL()),
+				book_ui.UpdateBookAsync(m.metadata, m.atom.Metadata().(*book.M)),
+				score_ui.UpdateScoreAsync(m.score, m.atom.Score()),
+				titles_ui.UpdateTitlesAsync(m.titles, m.atom.Titles()),
+			))
+		}
+	}
+
 	for _, n := range []tea.Model{
 		m.image,
 		m.metadata,

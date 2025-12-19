@@ -13,6 +13,7 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/util/grid"
 )
 
@@ -27,15 +28,26 @@ type O struct {
 	Column grid.C
 }
 
+type BaseMsg struct {
+	ID string
+}
+
 type Base struct {
+	id     string // Runtime UUID
 	column grid.C
 }
 
 func New(o O) *Base {
 	return &Base{
+		id:     zone.NewPrefix(),
 		column: o.Column,
 	}
 }
+
+// ID is used to uniquely identify a model.
+//
+// This is useful for passing messages to specific models.
+func (m *Base) ID() string { return m.id }
 
 // Init fulfills the tea.Model interface and is unused.
 func (m *Base) Init() tea.Cmd { return nil }

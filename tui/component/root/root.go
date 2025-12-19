@@ -104,13 +104,10 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
 	case QueryResponseMsg:
 		if len([]*node.N(msg)) > 0 {
-			m.node = node_ui.New(node_ui.O{
-				O: model_ui.O{
-					Column: grid.C{Content: 120},
-				},
-				CacheDirectory: m.directory,
-				Node:           []*node.N(msg)[0],
-			})
+			cmds = append(
+				cmds,
+				node_ui.UpdateNodeAsync(m.node, []*node.N(msg)[0]),
+			)
 		}
 	}
 
@@ -133,7 +130,7 @@ func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 	if err != nil {
 		return model_ui.ErrorMsg(err)
 	}
-	return ns
+	return QueryResponseMsg(ns)
 }
 
 func (m *M) View() string {

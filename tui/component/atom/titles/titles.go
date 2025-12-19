@@ -1,12 +1,16 @@
 package title
 
 import (
+	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
+
+	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
 var (
@@ -18,16 +22,57 @@ var (
 )
 
 type O struct {
+	model_ui.O
+
 	Titles []atom.T
 }
 
 type M struct {
+	*model_ui.Base
+
 	titles []atom.T
+}
+
+type updateTitlesMsg struct {
+	model_ui.BaseMsg
+	payload []atom.T
+}
+
+func UpdateTitlesAsync(m tea.Model, v []atom.T) tea.Cmd {
+	if m, ok := m.(*M); ok {
+		return func() tea.Msg {
+			f := func(i, j int) bool {
+				if v[i].Localization == v[j].Localization {
+					return v[i].Title < v[j].Title
+				}
+				u, ok := priority[v[i].Localization]
+				if !ok {
+					u = int(^uint(0) >> 1)
+				}
+				w, ok := priority[v[j].Localization]
+				if !ok {
+					w = int(^uint(0) >> 1)
+				}
+				return u < w
+			}
+			v = append([]atom.T{}, v...)
+			sort.SliceStable(v, f)
+			return updateTitlesMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				payload: v,
+			}
+		}
+	}
+
+	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
 }
 
 func New(o O) *M {
 	m := &M{
 		titles: append([]atom.T{}, o.Titles...),
+		Base:   model_ui.New(o.O),
 	}
 	f := func(i, j int) bool {
 		if m.titles[i].Localization == m.titles[j].Localization {
@@ -49,7 +94,15 @@ func New(o O) *M {
 
 func (m *M) Init() tea.Cmd { return nil }
 
-func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return nil, nil }
+func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case updateTitlesMsg:
+		if m.ID() == msg.ID {
+			m.titles = msg.payload
+		}
+	}
+	return m, nil
+}
 
 func (m *M) View() string {
 	var parts []string
@@ -62,5 +115,5 @@ func (m *M) View() string {
 		}
 		parts = append(parts, styleTitle.Render(t.Title))
 	}
-	return strings.Join(parts, "\n")
+	return m.RenderOrDie(strings.Join(parts, "\n"))
 }

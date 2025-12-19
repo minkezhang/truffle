@@ -14,6 +14,11 @@ var (
 // ErrorMsg may be returned by tea.Cmd in the case of an error.
 type ErrorMsg error
 
+// ErrorCmd wraps returning a command when some processing returns an error.
+func ErrorCmd(e error) tea.Cmd {
+	return func() tea.Msg { return ErrorMsg(e) }
+}
+
 type Error struct {
 	errors []error
 }

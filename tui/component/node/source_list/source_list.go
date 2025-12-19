@@ -9,6 +9,7 @@ package source_list
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -77,10 +78,42 @@ func New(o O) *M {
 	}
 }
 
+type updateSourcesMsg struct {
+	model_ui.BaseMsg
+	payload []V
+}
+
+func UpdateSourcesAsync(m tea.Model, v []V) tea.Cmd {
+	if m, ok := m.(*M); ok {
+		return func() tea.Msg {
+			return updateSourcesMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				payload: v,
+			}
+		}
+	}
+	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
+}
+
 func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case updateSourcesMsg:
+		if m.ID() == msg.ID {
+			sources := map[string]V{}
+			order := []string{}
+			for _, v := range msg.payload {
+				k := zone.NewPrefix()
+				sources[k] = v
+				order = append(order, k)
+				m.sources = sources
+				m.order = order
+			}
+			m.index = 0
+		}
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyLeft, tea.KeyShiftTab:

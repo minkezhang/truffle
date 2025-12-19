@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -55,11 +56,6 @@ func New(o O) *M {
 		url:       o.URL,
 		directory: o.CacheDirectory,
 	}
-}
-
-type message struct {
-	s string
-	e error
 }
 
 func height(width int) int {
@@ -129,23 +125,36 @@ func (m *M) render(img image.Image) string {
 	return n.Render(img)
 }
 
-func (m *M) Init() tea.Cmd {
-	return func() tea.Msg {
-		s, err := m.data()
-		return message{
-			s: s,
-			e: err,
+type updateImageMsg struct {
+	model_ui.BaseMsg
+	payload string
+}
+
+func UpdateImageAsync(m tea.Model, v string) tea.Cmd {
+	if m, ok := m.(*M); ok {
+		return func() tea.Msg {
+			if s, err := m.data(); err == nil {
+				return updateImageMsg{
+					BaseMsg: model_ui.BaseMsg{
+						ID: m.ID(),
+					},
+					payload: s,
+				}
+			} else {
+				return model_ui.ErrorMsg(err)
+			}
 		}
 	}
+	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
 }
+
+func (m *M) Init() tea.Cmd { return UpdateImageAsync(m, m.url) }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case message:
-		if msg.e != nil {
-			slog.Error(fmt.Sprintf("image.go: %v", msg.e))
-		} else {
-			m.cache = msg.s
+	case updateImageMsg:
+		if m.ID() == msg.ID {
+			m.cache = string(msg.payload)
 		}
 	}
 	return m, nil
