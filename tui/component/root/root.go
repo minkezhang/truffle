@@ -16,6 +16,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
+	node_card_ui "github.com/minkezhang/truffle/tui/component/node/card"
 	node_full_ui "github.com/minkezhang/truffle/tui/component/node/full"
 	search_ui "github.com/minkezhang/truffle/tui/component/search"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
@@ -24,7 +25,13 @@ import (
 type ViewMode int
 
 const (
-	ViewModeFull ViewMode = iota
+	ViewModeNone ViewMode = iota
+	ViewModeCard
+	ViewModeFull
+)
+
+var (
+	column = grid.C{Content: 120}
 )
 
 type O struct {
@@ -38,6 +45,7 @@ type M struct {
 	full      tea.Model
 	search    tea.Model
 	mode      ViewMode
+	card      tea.Model
 
 	// e is the global error handler
 	e tea.Model
@@ -49,7 +57,7 @@ func New(o O) *M {
 			mal.New(mal.O{
 				ClientID:         "6114d00ca681b7701d1e15fe11a4987e",
 				PopularityCutoff: 10000,
-				MaxResults:       2,
+				MaxResults:       10,
 				NSFW:             true,
 			}),
 		},
@@ -72,9 +80,15 @@ func New(o O) *M {
 	return &M{
 		truffle:   truffle,
 		directory: o.CacheDirectory,
+		card: node_card_ui.Make(node_card_ui.O{
+			O: model_ui.O{
+				Column: column,
+			},
+			Nodes: nil,
+		}),
 		full: node_full_ui.Make(node_full_ui.O{
 			O: model_ui.O{
-				Column: grid.C{Content: 120},
+				Column: column,
 			},
 			CacheDirectory: o.CacheDirectory,
 			Node:           ns[0],
@@ -89,6 +103,7 @@ func (m *M) Init() tea.Cmd {
 	return tea.Batch(
 		m.full.Init(),
 		m.search.Init(),
+		m.card.Init(),
 	)
 }
 
@@ -110,16 +125,25 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case search_ui.QueryMsg:
 		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
 	case QueryResponseMsg:
-		if len([]*node.N(msg)) > 0 {
-			m.full = node_full_ui.Make(node_full_ui.O{
-				O: model_ui.O{
-					Column: grid.C{Content: 120},
-				},
-				CacheDirectory: m.directory,
-				Node:           []*node.N(msg)[0],
-			})
-			cmds = append(cmds, m.full.Init())
-		}
+		m.mode = ViewModeCard
+		m.card = node_card_ui.Make(node_card_ui.O{
+			O: model_ui.O{
+				Column: column,
+			},
+			Nodes: []*node.N(msg),
+		})
+		/*
+			if len([]*node.N(msg)) > 0 {
+				m.full = node_full_ui.Make(node_full_ui.O{
+					O: model_ui.O{
+						Column: column,
+					},
+					CacheDirectory: m.directory,
+					Node:           []*node.N(msg)[0],
+				})
+				cmds = append(cmds, m.full.Init())
+			}
+		*/
 	}
 
 	var c tea.Cmd
@@ -133,6 +157,10 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, c)
 
 	m.search, c = m.search.Update(msg)
+
+	cmds = append(cmds, c)
+
+	m.card, c = m.card.Update(msg)
 
 	cmds = append(cmds, c)
 
@@ -154,8 +182,11 @@ func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 }
 
 func (m *M) body() string {
-	if m.mode == ViewModeFull {
+	switch v := m.mode; v {
+	case ViewModeFull:
 		return m.full.View()
+	case ViewModeCard:
+		return m.card.View()
 	}
 	return ""
 }

@@ -1,12 +1,12 @@
 package title
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/atom"
+	"github.com/minkezhang/truffle/tui/util/titles"
 
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
@@ -32,25 +32,8 @@ type M struct {
 }
 
 func Make(o O) M {
-	titles := append([]atom.T{}, o.Titles...)
-	f := func(i, j int) bool {
-		if titles[i].Localization == titles[j].Localization {
-			return titles[i].Title < titles[j].Title
-		}
-		u, ok := priority[titles[i].Localization]
-		if !ok {
-			u = int(^uint(0) >> 1)
-		}
-		v, ok := priority[titles[j].Localization]
-		if !ok {
-			v = int(^uint(0) >> 1)
-		}
-		return u < v
-	}
-	sort.SliceStable(titles, f)
-
 	m := M{
-		titles: titles,
+		titles: titles.Sort(o.Titles),
 		Base:   model_ui.New(o.O),
 	}
 	return m
