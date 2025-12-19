@@ -1,9 +1,6 @@
 package search
 
 import (
-	"fmt"
-	"log/slog"
-
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -37,12 +34,14 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			slog.Debug(fmt.Sprintf("sending query request to root: %v\n", m.search.Value()))
-			cmds = append(cmds, func() tea.Msg { return QueryMsg(m.search.Value()) })
+			v := m.search.Value()
+			cmds = append(cmds, func() tea.Msg { return QueryMsg(v) })
+			m.search.SetValue("")
 		}
 	}
 
 	var c tea.Cmd
+
 	m.search, c = m.search.Update(msg)
 
 	cmds = append(cmds, c)

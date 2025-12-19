@@ -65,14 +65,20 @@ func (m M) View() string {
 	if len(m.titles) > 2 {
 		titles = titles[:2]
 	}
-	for i, t := range titles {
-		styleTitle := lipgloss.NewStyle()
-		if i == 0 {
-			styleTitle = styleTitle.Bold(true)
-		} else {
-			styleTitle = styleTitle.Foreground(lipgloss.Color("8"))
+
+	if len(titles) == 0 {
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8"))
+		parts = append(parts, style.Render("Unknown Title"))
+	} else {
+		for i, t := range titles {
+			style := lipgloss.NewStyle()
+			if i == 0 {
+				style = style.Bold(true)
+			} else {
+				style = style.Foreground(lipgloss.Color("8"))
+			}
+			parts = append(parts, style.Render(t.Title))
 		}
-		parts = append(parts, styleTitle.Render(t.Title))
 	}
 	return m.RenderOrDie(strings.Join(parts, "\n"))
 }

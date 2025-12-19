@@ -10,7 +10,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/grid"
 
 	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
-	source_list_ui "github.com/minkezhang/truffle/tui/component/node/source_list"
+	source_list_ui "github.com/minkezhang/truffle/tui/component/node/full/source_list"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
