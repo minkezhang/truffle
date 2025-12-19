@@ -1,8 +1,6 @@
 package title
 
 import (
-	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -33,80 +31,41 @@ type M struct {
 	titles []atom.T
 }
 
-type updateTitlesMsg struct {
-	model_ui.BaseMsg
-	payload []atom.T
-}
-
-func UpdateTitlesAsync(m tea.Model, v []atom.T) tea.Cmd {
-	if m, ok := m.(*M); ok {
-		return func() tea.Msg {
-			f := func(i, j int) bool {
-				if v[i].Localization == v[j].Localization {
-					return v[i].Title < v[j].Title
-				}
-				u, ok := priority[v[i].Localization]
-				if !ok {
-					u = int(^uint(0) >> 1)
-				}
-				w, ok := priority[v[j].Localization]
-				if !ok {
-					w = int(^uint(0) >> 1)
-				}
-				return u < w
-			}
-			v = append([]atom.T{}, v...)
-			sort.SliceStable(v, f)
-			return updateTitlesMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
-				payload: v,
-			}
-		}
-	}
-
-	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
-}
-
-func New(o O) *M {
-	m := &M{
-		titles: append([]atom.T{}, o.Titles...),
-		Base:   model_ui.New(o.O),
-	}
+func Make(o O) M {
+	titles := append([]atom.T{}, o.Titles...)
 	f := func(i, j int) bool {
-		if m.titles[i].Localization == m.titles[j].Localization {
-			return m.titles[i].Title < m.titles[j].Title
+		if titles[i].Localization == titles[j].Localization {
+			return titles[i].Title < titles[j].Title
 		}
-		u, ok := priority[m.titles[i].Localization]
+		u, ok := priority[titles[i].Localization]
 		if !ok {
 			u = int(^uint(0) >> 1)
 		}
-		v, ok := priority[m.titles[j].Localization]
+		v, ok := priority[titles[j].Localization]
 		if !ok {
 			v = int(^uint(0) >> 1)
 		}
 		return u < v
 	}
-	sort.SliceStable(m.titles, f)
+	sort.SliceStable(titles, f)
+
+	m := M{
+		titles: titles,
+		Base:   model_ui.New(o.O),
+	}
 	return m
 }
 
-func (m *M) Init() tea.Cmd { return nil }
+func (m M) Init() tea.Cmd                           { return nil }
+func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
-func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case updateTitlesMsg:
-		if m.ID() == msg.ID {
-			m.titles = msg.payload
-		}
-	}
-	return m, nil
-}
-
-func (m *M) View() string {
+func (m M) View() string {
 	var parts []string
-	for i, t := range m.titles[:2] {
+	titles := m.titles
+	if len(m.titles) > 2 {
+		titles = titles[:2]
+	}
+	for i, t := range titles {
 		styleTitle := lipgloss.NewStyle()
 		if i == 0 {
 			styleTitle = styleTitle.Bold(true)

@@ -2,7 +2,6 @@ package atom
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -27,7 +26,8 @@ type O struct {
 
 type M struct {
 	*model_ui.Base
-	grid grid.G
+	grid      grid.G
+	directory string
 
 	atom     *atom.A
 	metadata tea.Model
@@ -36,15 +36,16 @@ type M struct {
 	titles   tea.Model
 }
 
-func New(o O) *M {
+func Make(o O) M {
 	c := o.Column
 	g := c.Grid(3)
 
-	return &M{
-		Base: model_ui.New(o.O),
-		grid: g,
-		atom: o.Atom,
-		metadata: book_ui.New(book_ui.O{
+	return M{
+		Base:      model_ui.New(o.O),
+		grid:      g,
+		directory: o.CacheDirectory,
+		atom:      o.Atom,
+		metadata: book_ui.Make(book_ui.O{
 			O: model_ui.O{
 				Column: g.Column(2).WithMargin(1),
 			},
@@ -57,13 +58,13 @@ func New(o O) *M {
 			CacheDirectory: o.CacheDirectory,
 			URL:            o.Atom.PreviewURL(),
 		}),
-		score: score_ui.New(score_ui.O{
+		score: score_ui.Make(score_ui.O{
 			O: model_ui.O{
 				Column: g.Column(2),
 			},
 			Score: o.Atom.Score(),
 		}),
-		titles: titles_ui.New(titles_ui.O{
+		titles: titles_ui.Make(titles_ui.O{
 			O: model_ui.O{
 				Column: g.Column(3),
 			},
@@ -72,7 +73,7 @@ func New(o O) *M {
 	}
 }
 
-func (m *M) Init() tea.Cmd {
+func (m M) Init() tea.Cmd {
 	return tea.Batch(
 		m.image.Init(),
 		m.metadata.Init(),
@@ -81,53 +82,23 @@ func (m *M) Init() tea.Cmd {
 	)
 }
 
-type updateAtomMsg struct {
-	model_ui.BaseMsg
-	payload *atom.A
-}
-
-func UpdateAtomAsync(m tea.Model, v *atom.A) tea.Cmd {
-	if m, ok := m.(*M); ok {
-		return func() tea.Msg {
-			return updateAtomMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
-				payload: v,
-			}
-		}
-	}
-	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
-}
-
-func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	switch msg := msg.(type) {
-	case updateAtomMsg:
-		if m.ID() == msg.ID {
-			m.atom = msg.payload
-			cmds = append(cmds, tea.Batch(
-				image_ui.UpdateImageAsync(m.image, m.atom.PreviewURL()),
-				book_ui.UpdateBookAsync(m.metadata, m.atom.Metadata().(*book.M)),
-				score_ui.UpdateScoreAsync(m.score, m.atom.Score()),
-				titles_ui.UpdateTitlesAsync(m.titles, m.atom.Titles()),
-			))
-		}
-	}
+	var c tea.Cmd
 
-	for _, n := range []tea.Model{
-		m.image,
-		m.metadata,
-	} {
-		_, c := n.Update(msg)
-		cmds = append(cmds, c)
-	}
+	m.metadata, c = m.metadata.Update(msg)
+
+	cmds = append(cmds, c)
+
+	m.image, c = m.image.Update(msg)
+
+	cmds = append(cmds, c)
 
 	return m, tea.Batch(cmds...)
 }
 
-func (m *M) View() string {
+func (m M) View() string {
 	var id string
 	switch t := m.atom.APIType(); t {
 	case epb.API_API_VIRTUAL:

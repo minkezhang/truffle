@@ -1,9 +1,6 @@
 package score
 
 import (
-	"fmt"
-	"reflect"
-
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbletea"
 
@@ -23,8 +20,8 @@ type M struct {
 	progress progress.Model
 }
 
-func New(o O) *M {
-	return &M{
+func Make(o O) M {
+	return M{
 		Base:  model_ui.New(o.O),
 		score: o.Score,
 		progress: progress.New(
@@ -34,35 +31,7 @@ func New(o O) *M {
 	}
 }
 
-type updateScoreMsg struct {
-	model_ui.BaseMsg
-	payload int64
-}
+func (m M) Init() tea.Cmd                           { return nil }
+func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
-func UpdateScoreAsync(m tea.Model, v int64) tea.Cmd {
-	if m, ok := m.(*M); ok {
-		return func() tea.Msg {
-			return updateScoreMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
-				payload: v,
-			}
-		}
-	}
-	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
-}
-
-func (m *M) Init() tea.Cmd { return nil }
-
-func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case updateScoreMsg:
-		if m.ID() == msg.ID {
-			m.score = msg.payload
-		}
-	}
-	return m, nil
-}
-
-func (m *M) View() string { return m.RenderOrDie(m.progress.ViewAs(float64(m.score) / 100)) }
+func (m M) View() string { return m.RenderOrDie(m.progress.ViewAs(float64(m.score) / 100)) }

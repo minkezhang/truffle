@@ -2,7 +2,6 @@ package node
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,6 +16,7 @@ import (
 
 type O struct {
 	model_ui.O
+
 	CacheDirectory string
 	Node           *node.N
 }
@@ -33,28 +33,9 @@ type M struct {
 	focus   source_list_ui.V
 }
 
-type updateNodeMsg struct {
-	model_ui.BaseMsg
-	payload *node.N
-}
-
-func UpdateNodeAsync(m tea.Model, v *node.N) tea.Cmd {
-	if m, ok := m.(*M); ok {
-		return func() tea.Msg {
-			return updateNodeMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
-				payload: v,
-			}
-		}
-	}
-	return model_ui.ErrorCmd(fmt.Errorf("incorrect model type: %v", reflect.TypeOf(m)))
-}
-
-func New(o O) *M {
+func Make(o O) M {
 	g := o.Column.Grid(4)
-	m := &M{
+	m := M{
 		Base:      model_ui.New(o.O),
 		grid:      g,
 		directory: o.CacheDirectory,
@@ -69,7 +50,7 @@ func New(o O) *M {
 			API: a.APIType(),
 			ID:  a.APIID(),
 		}
-		m.atoms[v] = atom_ui.New(atom_ui.O{
+		m.atoms[v] = atom_ui.Make(atom_ui.O{
 			O: model_ui.O{
 				Column: g.Column(3),
 			},
@@ -93,7 +74,7 @@ func New(o O) *M {
 	return m
 }
 
-func (m *M) Init() tea.Cmd {
+func (m M) Init() tea.Cmd {
 	cmds := []tea.Cmd{}
 
 	for _, a := range m.atoms {
@@ -104,45 +85,12 @@ func (m *M) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case source_list_ui.SelectMsg:
 		m.focus = msg.Focus
-	case updateNodeMsg:
-		if m.ID() == msg.ID {
-			m.node = msg.payload
-			vs := []source_list_ui.V{}
-			for _, a := range append([]*atom.A{
-				msg.payload.Virtual(),
-			}, msg.payload.Atoms()...) {
-				v := source_list_ui.V{
-					API: a.APIType(),
-					ID:  a.APIID(),
-				}
-				m.atoms = map[source_list_ui.V]tea.Model{}
-				b := atom_ui.New(atom_ui.O{
-					O: model_ui.O{
-						Column: m.grid.Column(3),
-					},
-					CacheDirectory: m.directory,
-					Atom:           a,
-				})
-				cmds = append(cmds, tea.Batch(
-					b.Init(),
-				))
-				m.atoms[v] = b
-				vs = append(vs, v)
-			}
-
-			if len(vs) > 0 {
-				m.focus = vs[0]
-			}
-
-			cmds = append(cmds, source_list_ui.UpdateSourcesAsync(m.sources, vs))
-
-		}
 	}
 
 	for _, a := range m.atoms {
@@ -155,7 +103,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *M) View() string {
+func (m M) View() string {
 	var notes = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(m.node.Notes())
 	if m.node.Notes() == "" {
 		notes = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("N/A")

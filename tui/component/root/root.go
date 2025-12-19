@@ -65,7 +65,7 @@ func New(o O) *M {
 	return &M{
 		truffle:   truffle,
 		directory: o.CacheDirectory,
-		node: node_ui.New(node_ui.O{
+		node: node_ui.Make(node_ui.O{
 			O: model_ui.O{
 				Column: grid.C{Content: 120},
 			},
@@ -104,10 +104,14 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
 	case QueryResponseMsg:
 		if len([]*node.N(msg)) > 0 {
-			cmds = append(
-				cmds,
-				node_ui.UpdateNodeAsync(m.node, []*node.N(msg)[0]),
-			)
+			m.node = node_ui.Make(node_ui.O{
+				O: model_ui.O{
+					Column: grid.C{Content: 120},
+				},
+				CacheDirectory: m.directory,
+				Node:           []*node.N(msg)[0],
+			})
+			cmds = append(cmds, m.node.Init())
 		}
 	}
 
