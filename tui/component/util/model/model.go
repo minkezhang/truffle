@@ -38,8 +38,8 @@ type Base struct {
 	column grid.C
 }
 
-func New(o O) *Base {
-	return &Base{
+func Make(o O) Base {
+	return Base{
 		id:     zone.NewPrefix(),
 		column: o.Column,
 	}

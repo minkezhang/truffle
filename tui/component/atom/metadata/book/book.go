@@ -18,13 +18,13 @@ type O struct {
 
 func Make(o O) M {
 	return M{
-		Base: model_ui.New(o.O),
+		Base: model_ui.Make(o.O),
 		book: o.Book,
 	}
 }
 
 type M struct {
-	*model_ui.Base
+	model_ui.Base
 
 	book *book.M
 }

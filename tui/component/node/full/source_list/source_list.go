@@ -41,7 +41,7 @@ func (v V) String() string {
 }
 
 type M struct {
-	*model_ui.Base
+	model_ui.Base
 
 	sources map[string]V // { key: V }
 	order   []string     // keys
@@ -68,7 +68,7 @@ func New(o O) *M {
 	}
 
 	return &M{
-		Base:    model_ui.New(o.O),
+		Base:    model_ui.Make(o.O),
 		sources: sources,
 		order:   order,
 		index:   0,
