@@ -84,6 +84,9 @@ func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case model_ui.FocusMsg:
+		m.focus = m.ID() == msg.ID
+		return m, nil
 	case model_ui.BlurMsg:
 		m.focus = m.ID() != msg.ID
 		return m, nil
