@@ -26,7 +26,6 @@ type V struct {
 
 // Emitted to parents upon focus change.
 type SelectMsg struct {
-	Blur  V
 	Focus V
 }
 
@@ -41,17 +40,14 @@ func (v V) String() string {
 }
 
 type M struct {
-	model_ui.Base
+	*model_ui.Base
 
 	sources map[string]V // { key: V }
 	order   []string     // keys
-	index   int
 
 	kLeft  string
 	kRight string
 	iStart int
-
-	focus bool
 }
 
 type O struct {
@@ -70,148 +66,89 @@ func New(o O) *M {
 	}
 
 	return &M{
-		Base:    model_ui.Make(o.O),
+		Base: model_ui.New(model_ui.O{
+			Column:   o.Column,
+			MaxIndex: len(o.Values) - 1,
+		}),
 		sources: sources,
 		order:   order,
-		index:   0,
 		kLeft:   zone.NewPrefix(),
 		kRight:  zone.NewPrefix(),
-		focus:   false,
 	}
 }
 
 func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	var c tea.Cmd
+
+	// TODO(minkezhang): Fix
+	var b tea.Model
+	b, c = m.Base.Update(msg)
+	d := b.(model_ui.Base)
+	m.Base = &(d)
+	cmds = append(cmds, c)
+
 	switch msg := msg.(type) {
 	case model_ui.FocusMsg:
-		m.focus = m.ID() == msg.ID
-		return m, nil
-	case model_ui.BlurMsg:
-		m.focus = m.ID() != msg.ID
-		return m, nil
-	case model_ui.BlurAllMsg:
-		m.focus = m.ID() == msg.ID
-		return m, nil
+		if m.ID() == msg.ID {
+			cmds = append(cmds, model_ui.ToCommand(SelectMsg{
+				Focus: m.sources[m.order[m.Index()]],
+			}))
+		}
 	case tea.KeyMsg:
-		if !m.focus {
+		if !m.Focus() {
 			return m, nil
 		}
 		switch t := msg.Type; t {
-		case tea.KeyLeft, tea.KeyShiftTab:
-			if t == tea.KeyShiftTab && m.index == 0 {
-				return m, model_ui.ToCommand(model_ui.BlurMsg{
-					BaseMsg: model_ui.BaseMsg{
-						ID: m.ID(),
-					},
-					IsEnd: false,
-				})
-			}
-			src := m.order[m.index]
-			m.index = (m.index - 1) % len(m.order)
-			if m.index < 0 {
-				m.index = len(m.order) - 1
-			}
-			dst := m.order[m.index]
-			if m.index < m.iStart {
-				m.iStart = m.index
-			}
-			return m, func() tea.Msg {
-				return SelectMsg{
-					Blur:  m.sources[src],
-					Focus: m.sources[dst],
-				}
-			}
-		case tea.KeyRight, tea.KeyTab:
-			if t == tea.KeyTab && m.index == len(m.order)-1 {
-				return m, model_ui.ToCommand(model_ui.BlurMsg{
-					BaseMsg: model_ui.BaseMsg{
-						ID: m.ID(),
-					},
-					IsEnd: true,
-				})
-			}
-			src := m.order[m.index]
-			m.index = (m.index + 1) % len(m.order)
-			dst := m.order[m.index]
-			if m.index < m.iStart {
-				m.iStart = m.index
-			}
-			return m, func() tea.Msg {
-				return SelectMsg{
-					Blur:  m.sources[src],
-					Focus: m.sources[dst],
-				}
-			}
+		case tea.KeyLeft:
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				Index: m.Index() - 1,
+			}))
+		case tea.KeyRight:
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				Index: m.Index() + 1,
+			}))
 		}
 	case tea.MouseMsg:
 		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
 			if zone.Get(m.kLeft).InBounds(msg) {
-				m.focus = true
-				src := m.order[m.index]
-				m.index = (m.index - 1) % len(m.order)
-				if m.index < 0 {
-					m.index = len(m.order) - 1
-				}
-				dst := m.order[m.index]
-				if m.index < m.iStart {
-					m.iStart = m.index
-				}
-				return m, tea.Batch(
-					func() tea.Msg {
-						return SelectMsg{
-							Blur:  m.sources[src],
-							Focus: m.sources[dst],
-						}
-					},
-					model_ui.ToCommand(model_ui.BlurAllMsg{
+				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+					BaseMsg: model_ui.BaseMsg{
 						ID: m.ID(),
-					}),
-				)
+					},
+					Index: m.Index() - 1,
+				}))
 			} else if zone.Get(m.kRight).InBounds(msg) {
-				m.focus = true
-				src := m.order[m.index]
-				m.index = (m.index + 1) % len(m.order)
-				dst := m.order[m.index]
-				if m.index < m.iStart {
-					m.iStart = m.index
-				}
-				return m, tea.Batch(
-					func() tea.Msg {
-						return SelectMsg{
-							Blur:  m.sources[src],
-							Focus: m.sources[dst],
-						}
-					},
-					model_ui.ToCommand(model_ui.BlurAllMsg{
+				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+					BaseMsg: model_ui.BaseMsg{
 						ID: m.ID(),
-					}),
-				)
+					},
+					Index: m.Index() + 1,
+				}))
 			} else {
 				for i, k := range m.order {
 					if zone.Get(k).InBounds(msg) {
-						m.focus = true
-						src := m.order[m.index]
-						dst := m.order[i]
-						m.index = i
-						return m, tea.Batch(
-							func() tea.Msg {
-								return SelectMsg{
-									Blur:  m.sources[src],
-									Focus: m.sources[dst],
-								}
-							},
-							model_ui.ToCommand(model_ui.BlurAllMsg{
+						cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+							BaseMsg: model_ui.BaseMsg{
 								ID: m.ID(),
-							}),
-						)
+							},
+							Index: i,
+						}))
 					}
 				}
 			}
 		}
 	}
 
-	return m, nil
+	return m, tea.Batch(cmds...)
 }
 
 var (
@@ -232,7 +169,7 @@ func (m *M) View() string {
 	lengths := []int{}
 
 	for i, k := range m.order {
-		active := (m.index == i)
+		active := (m.Index() == i)
 		p := zone.Mark(k, borders[active].Render(m.sources[k].String()))
 
 		parts = append(parts, p)
@@ -264,7 +201,7 @@ func (m *M) View() string {
 				iEnd = i
 				parts[i] = m.partial(i, m.Column().Content-length)
 			}
-		} else if i > m.index {
+		} else if i > m.Index() {
 			// The active element is already in the tab list, so add the
 			// last partial tab and return
 			iEnd = i
@@ -302,7 +239,7 @@ func (m *M) View() string {
 
 // partial renders a partial tab, truncated on the right.
 func (m *M) partial(i int, w int) string {
-	active := m.index == i
+	active := m.Index() == i
 	k := m.order[i]
 	s := m.sources[k].String()
 	if w == 0 {

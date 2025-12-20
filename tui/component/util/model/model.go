@@ -5,6 +5,8 @@
 //
 //  1. must always ensure the rendered output is within the bounding box
 //  2. will quit if the error field is set -- this may be set in
+//
+// TODO(minkezhang): Change back to New()
 package model
 
 import (
@@ -39,10 +41,14 @@ type BlurMsg struct {
 
 // FocusMsg is published by the parent node to a specific child. The ID is the
 // child ID.
-type FocusMsg BlurMsg
+type FocusMsg struct {
+	BaseMsg
+	Index int
+}
 
 type O struct {
-	Column grid.C
+	Column   grid.C
+	MaxIndex int
 }
 
 type BaseMsg struct {
@@ -50,15 +56,38 @@ type BaseMsg struct {
 }
 
 type Base struct {
-	id     string // Runtime UUID
-	column grid.C
+	id       string // Runtime UUID
+	column   grid.C
+	focus    bool
+	index    int
+	maxIndex int
+}
+
+func New(o O) *Base {
+	m := Make(o)
+	return &m
 }
 
 func Make(o O) Base {
 	return Base{
-		id:     zone.NewPrefix(),
-		column: o.Column,
+		id:       zone.NewPrefix(),
+		column:   o.Column,
+		focus:    false,
+		index:    0,
+		maxIndex: o.MaxIndex,
 	}
+}
+
+func (m Base) Focus() bool       { return m.focus }
+func (m *Base) SetFocus(v bool)  { m.focus = v }
+func (m Base) Index() int        { return m.index }
+func (m Base) MaxIndex() int     { return m.maxIndex }
+func (m Base) SetMaxIndex(v int) { m.maxIndex = v }
+
+func (m *Base) SetIndex(v int) int {
+	i := m.index
+	m.index = v
+	return i
 }
 
 // ID is used to uniquely identify a model.
@@ -70,7 +99,54 @@ func (m Base) ID() string { return m.id }
 func (m Base) Init() tea.Cmd { return nil }
 
 // Update fulfills the tea.Model interface and is unused.
-func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
+func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case FocusMsg:
+		m.SetFocus(m.ID() == msg.ID)
+		if m.Focus() {
+			if msg.Index > m.MaxIndex() {
+				m.SetIndex(msg.Index % (m.MaxIndex() + 1))
+				// TODO
+			} else if msg.Index < 0 {
+				m.SetIndex(msg.Index + m.MaxIndex() + 1)
+			} else {
+				m.SetIndex(msg.Index)
+			}
+		}
+		return m, nil
+	case BlurMsg:
+		m.SetFocus(m.ID() != msg.ID)
+	case tea.KeyMsg:
+		if !m.Focus() {
+			break
+		}
+		switch t := msg.Type; t {
+		case tea.KeyShiftTab:
+			dst := m.index - 1
+			if dst < 0 {
+				return m, ToCommand(BlurMsg{
+					BaseMsg: BaseMsg{
+						ID: m.ID(),
+					},
+					IsEnd: false,
+				})
+			}
+			m.index -= 1
+		case tea.KeyTab:
+			dst := m.index + 1
+			if dst > m.MaxIndex() {
+				return m, ToCommand(BlurMsg{
+					BaseMsg: BaseMsg{
+						ID: m.ID(),
+					},
+					IsEnd: false,
+				})
+			}
+			m.index += 1
+		}
+	}
+	return m, nil
+}
 
 // View fulfills the tea.Model interface and is unused.
 func (m Base) View() string { return "" }
