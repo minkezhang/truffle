@@ -21,26 +21,24 @@ import (
 
 func ToCommand(msg tea.Msg) tea.Cmd { return func() tea.Msg { return msg } }
 
-// BlurAllMsg is published by a specific node takes control due to a mouse
-// event. All other nodes will stop handling keyboard input (except for root
-// which handles Ctrl + C). The ID included in the message is the originating
-// node.
-//
-// All nodes which handles user input in some way must handle this message.
-type BlurAllMsg BaseMsg
-
 // BlurMsg is published by a specific node which instructs the parent node to
 // advance the internal tab index. The ID included in the message is the
 // originating node.
 //
 // Nodes that need to manage a tab index must handle this message.
+//
+// Upon node deletion, the node must publish a BlurMsg with IsEnd = false. This
+// will allow the parent node to appropriately handle this event.
 type BlurMsg struct {
 	BaseMsg
 	IsEnd bool
 }
 
-// FocusMsg is published by the parent node to a specific child. The ID is the
-// child ID.
+// FocusMsg is published by a specific node takes control due to a mouse event.
+// All other nodes will stop handling keyboard input (except for root which
+// handles Ctrl + C). The ID included in the message is the originating node.
+//
+// All nodes which handles user input in some way must handle this message.
 type FocusMsg struct {
 	BaseMsg
 	Index int
