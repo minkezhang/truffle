@@ -144,6 +144,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
 			if zone.Get(m.kLeft).InBounds(msg) {
+				m.focus = true
 				src := m.order[m.index]
 				m.index = (m.index - 1) % len(m.order)
 				if m.index < 0 {
@@ -165,6 +166,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}),
 				)
 			} else if zone.Get(m.kRight).InBounds(msg) {
+				m.focus = true
 				src := m.order[m.index]
 				m.index = (m.index + 1) % len(m.order)
 				dst := m.order[m.index]
@@ -184,7 +186,8 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			} else {
 				for i, k := range m.order {
-					if i != m.index && zone.Get(k).InBounds(msg) {
+					if zone.Get(k).InBounds(msg) {
+						m.focus = true
 						src := m.order[m.index]
 						dst := m.order[i]
 						m.index = i
