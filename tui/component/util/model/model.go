@@ -19,6 +19,7 @@ import (
 
 type Model interface {
 	tea.Model
+
 	Column() grid.C
 	Focus() (tea.Model, tea.Cmd) // TODO
 	Blur() (tea.Model, tea.Cmd)  // TODO
@@ -47,18 +48,18 @@ func New(o O) *Base {
 // ID is used to uniquely identify a model.
 //
 // This is useful for passing messages to specific models.
-func (m *Base) ID() string { return m.id }
+func (m Base) ID() string { return m.id }
 
 // Init fulfills the tea.Model interface and is unused.
-func (m *Base) Init() tea.Cmd { return nil }
+func (m Base) Init() tea.Cmd { return nil }
 
 // Update fulfills the tea.Model interface and is unused.
-func (m *Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
+func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
 // View fulfills the tea.Model interface and is unused.
-func (m *Base) View() string { return "" }
+func (m Base) View() string { return "" }
 
-func (m *Base) Column() grid.C { return m.column }
+func (m Base) Column() grid.C { return m.column }
 
 // ValidateOrDie will be called from parent Model.View() functions.
 //
@@ -67,7 +68,7 @@ func (m *Base) Column() grid.C { return m.column }
 //	func (m *M) View() string {
 //	  return m.RenderOrDie(lipgloss.NewStyle().Render(...))
 //	}
-func (m *Base) RenderOrDie(s string) string {
+func (m Base) RenderOrDie(s string) string {
 	if err := check(s, m.column); err != nil {
 		E.Append(err)
 		return ""
