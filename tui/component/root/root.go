@@ -96,7 +96,7 @@ func New(o O) *M {
 
 		search: search_ui.New(search_ui.O{}),
 		e:      model_ui.E,
-		mode: ViewModeFull,
+		mode:   ViewModeFull,
 	}
 }
 

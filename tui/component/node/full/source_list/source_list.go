@@ -50,6 +50,8 @@ type M struct {
 	kLeft  string
 	kRight string
 	iStart int
+
+	focus bool
 }
 
 type O struct {
@@ -74,6 +76,7 @@ func New(o O) *M {
 		index:   0,
 		kLeft:   zone.NewPrefix(),
 		kRight:  zone.NewPrefix(),
+		focus:   false,
 	}
 }
 
@@ -81,9 +84,26 @@ func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case model_ui.BlurMsg:
+		m.focus = m.ID() != msg.ID
+		return m, nil
+	case model_ui.BlurAllMsg:
+		m.focus = m.ID() == msg.ID
+		return m, nil
 	case tea.KeyMsg:
-		switch msg.Type {
+		if !m.focus {
+			return m, nil
+		}
+		switch t := msg.Type; t {
 		case tea.KeyLeft, tea.KeyShiftTab:
+			if t == tea.KeyShiftTab && m.index == 0 {
+				return m, model_ui.ToCommand(model_ui.BlurMsg{
+					BaseMsg: model_ui.BaseMsg{
+						ID: m.ID(),
+					},
+					IsEnd: false,
+				})
+			}
 			src := m.order[m.index]
 			m.index = (m.index - 1) % len(m.order)
 			if m.index < 0 {
@@ -100,6 +120,14 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case tea.KeyRight, tea.KeyTab:
+			if t == tea.KeyTab && m.index == len(m.order)-1 {
+				return m, model_ui.ToCommand(model_ui.BlurMsg{
+					BaseMsg: model_ui.BaseMsg{
+						ID: m.ID(),
+					},
+					IsEnd: true,
+				})
+			}
 			src := m.order[m.index]
 			m.index = (m.index + 1) % len(m.order)
 			dst := m.order[m.index]
@@ -125,12 +153,17 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.index < m.iStart {
 					m.iStart = m.index
 				}
-				return m, func() tea.Msg {
-					return SelectMsg{
-						Blur:  m.sources[src],
-						Focus: m.sources[dst],
-					}
-				}
+				return m, tea.Batch(
+					func() tea.Msg {
+						return SelectMsg{
+							Blur:  m.sources[src],
+							Focus: m.sources[dst],
+						}
+					},
+					model_ui.ToCommand(model_ui.BlurAllMsg{
+						ID: m.ID(),
+					}),
+				)
 			} else if zone.Get(m.kRight).InBounds(msg) {
 				src := m.order[m.index]
 				m.index = (m.index + 1) % len(m.order)
@@ -138,24 +171,34 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.index < m.iStart {
 					m.iStart = m.index
 				}
-				return m, func() tea.Msg {
-					return SelectMsg{
-						Blur:  m.sources[src],
-						Focus: m.sources[dst],
-					}
-				}
+				return m, tea.Batch(
+					func() tea.Msg {
+						return SelectMsg{
+							Blur:  m.sources[src],
+							Focus: m.sources[dst],
+						}
+					},
+					model_ui.ToCommand(model_ui.BlurAllMsg{
+						ID: m.ID(),
+					}),
+				)
 			} else {
 				for i, k := range m.order {
 					if i != m.index && zone.Get(k).InBounds(msg) {
 						src := m.order[m.index]
 						dst := m.order[i]
 						m.index = i
-						return m, func() tea.Msg {
-							return SelectMsg{
-								Blur:  m.sources[src],
-								Focus: m.sources[dst],
-							}
-						}
+						return m, tea.Batch(
+							func() tea.Msg {
+								return SelectMsg{
+									Blur:  m.sources[src],
+									Focus: m.sources[dst],
+								}
+							},
+							model_ui.ToCommand(model_ui.BlurAllMsg{
+								ID: m.ID(),
+							}),
+						)
 					}
 				}
 			}

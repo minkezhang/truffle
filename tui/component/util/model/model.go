@@ -17,12 +17,24 @@ import (
 	"github.com/minkezhang/truffle/tui/util/grid"
 )
 
-type Model interface {
-	tea.Model
+func ToCommand(msg tea.Msg) tea.Cmd { return func() tea.Msg { return msg } }
 
-	Column() grid.C
-	Focus() (tea.Model, tea.Cmd) // TODO
-	Blur() (tea.Model, tea.Cmd)  // TODO
+// BlurAllMsg is published by a specific node takes control due to a mouse
+// event. All other nodes will stop handling keyboard input (except for root
+// which handles Ctrl + C). The ID included in the message is the originating
+// node.
+//
+// All nodes which handles user input in some way must handle this message.
+type BlurAllMsg BaseMsg
+
+// BlurMsg is published by a specific node which instructs the parent node to
+// advance the internal tab index. The ID included in the message is the
+// originating node.
+//
+// Nodes that need to manage a tab index must handle this message.
+type BlurMsg struct {
+	BaseMsg
+	IsEnd bool
 }
 
 type O struct {
