@@ -37,6 +37,10 @@ type BlurMsg struct {
 	IsEnd bool
 }
 
+// FocusMsg is published by the parent node to a specific child. The ID is the
+// child ID.
+type FocusMsg BlurMsg
+
 type O struct {
 	Column grid.C
 }
