@@ -77,7 +77,7 @@ type O struct {
 }
 
 type M struct {
-	model_ui.Base
+	*model_ui.Base
 
 	list list.Model
 }
@@ -97,7 +97,7 @@ func Make(o O) M {
 	)
 	l.DisableQuitKeybindings()
 	return M{
-		Base: model_ui.Make(o.O),
+		Base: model_ui.New(o.O),
 		list: l,
 	}
 }

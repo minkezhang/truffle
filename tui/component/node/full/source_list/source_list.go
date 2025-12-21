@@ -9,7 +9,6 @@ package source_list
 
 import (
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -67,10 +66,7 @@ func New(o O) *M {
 	}
 
 	return &M{
-		Base: model_ui.New(model_ui.O{
-			Column: o.Column,
-			NTabs:  len(o.Values),
-		}),
+		Base:    model_ui.New(o.WithNTabs(len(o.Values))),
 		sources: sources,
 		order:   order,
 		kLeft:   zone.NewPrefix(),
@@ -81,15 +77,9 @@ func New(o O) *M {
 func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var c tea.Cmd
-
-	// TODO(minkezhang): Fix
-	var b tea.Model
-	b, c = m.Base.Update(msg)
-	d := b.(model_ui.Base)
-	m.Base = &(d)
-	cmds = append(cmds, c)
+	cmds := append([]tea.Cmd{
+		m.Base.Update(msg),
+	})
 
 	switch msg := msg.(type) {
 	case model_ui.FocusMsg:

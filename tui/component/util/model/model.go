@@ -1,12 +1,12 @@
-// Package model is a Truffle-specific tea.Model interface with some rendering
-// bolt-ons.
+// Package model defines a base class for Truffle nodes to allow easy rendering
+// and tab switching.
 //
-// Specifically, model.Model
+// Specifically, a tea.Model
 //
 //  1. must always ensure the rendered output is within the bounding box
 //  2. will quit if the error field is set -- this may be set in
 //
-// TODO(minkezhang): Change back to New()
+// TODO(minkezhang): Add documentation on tabs.
 package model
 
 import (
@@ -49,6 +49,13 @@ type O struct {
 	NTabs  int
 }
 
+func (o O) WithNTabs(v int) O {
+	return O{
+		Column: o.Column,
+		NTabs:  v,
+	}
+}
+
 type BaseMsg struct {
 	ID string
 }
@@ -62,12 +69,7 @@ type Base struct {
 }
 
 func New(o O) *Base {
-	m := Make(o)
-	return &m
-}
-
-func Make(o O) Base {
-	return Base{
+	return &Base{
 		id:     zone.NewPrefix(),
 		column: o.Column,
 		focus:  false,
@@ -76,11 +78,11 @@ func Make(o O) Base {
 	}
 }
 
-func (m Base) Focus() bool      { return m.focus }
+func (m *Base) Focus() bool     { return m.focus }
 func (m *Base) SetFocus(v bool) { m.focus = v }
-func (m Base) Index() int       { return m.index }
-func (m Base) NTabs() int       { return m.tabs }
-func (m Base) SetNTabs(v int)   { m.tabs = v }
+func (m *Base) Index() int      { return m.index }
+func (m *Base) NTabs() int      { return m.tabs }
+func (m *Base) SetNTabs(v int)  { m.tabs = v }
 
 func (m *Base) SetIndex(v int) int {
 	i := m.index
@@ -91,13 +93,10 @@ func (m *Base) SetIndex(v int) int {
 // ID is used to uniquely identify a model.
 //
 // This is useful for passing messages to specific models.
-func (m Base) ID() string { return m.id }
+func (m *Base) ID() string { return m.id }
 
-// Init fulfills the tea.Model interface and is unused.
-func (m Base) Init() tea.Cmd { return nil }
-
-// Update fulfills the tea.Model interface and is unused.
-func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Update renders
+func (m *Base) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case FocusMsg:
 		m.SetFocus(m.ID() == msg.ID)
@@ -111,7 +110,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.SetIndex(msg.Index)
 			}
 		}
-		return m, nil
+		return nil
 	case BlurMsg:
 		m.SetFocus(m.ID() != msg.ID)
 	case tea.KeyMsg:
@@ -122,7 +121,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyShiftTab:
 			dst := m.Index() - 1
 			if dst < 0 {
-				return m, ToCommand(BlurMsg{
+				return ToCommand(BlurMsg{
 					BaseMsg: BaseMsg{
 						ID: m.ID(),
 					},
@@ -130,7 +129,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			} else {
 				m.SetIndex(dst)
-				return m, ToCommand(FocusMsg{
+				return ToCommand(FocusMsg{
 					BaseMsg: BaseMsg{
 						ID: m.ID(),
 					},
@@ -140,7 +139,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyTab:
 			dst := m.Index() + 1
 			if dst >= m.NTabs() {
-				return m, ToCommand(BlurMsg{
+				return ToCommand(BlurMsg{
 					BaseMsg: BaseMsg{
 						ID: m.ID(),
 					},
@@ -148,7 +147,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			} else {
 				m.SetIndex(dst)
-				return m, ToCommand(FocusMsg{
+				return ToCommand(FocusMsg{
 					BaseMsg: BaseMsg{
 						ID: m.ID(),
 					},
@@ -157,13 +156,10 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	return m, nil
+	return nil
 }
 
-// View fulfills the tea.Model interface and is unused.
-func (m Base) View() string { return "" }
-
-func (m Base) Column() grid.C { return m.column }
+func (m *Base) Column() grid.C { return m.column }
 
 // ValidateOrDie will be called from parent Model.View() functions.
 //
@@ -172,7 +168,7 @@ func (m Base) Column() grid.C { return m.column }
 //	func (m *M) View() string {
 //	  return m.RenderOrDie(lipgloss.NewStyle().Render(...))
 //	}
-func (m Base) RenderOrDie(s string) string {
+func (m *Base) RenderOrDie(s string) string {
 	if err := check(s, m.column); err != nil {
 		E.Append(err)
 		return ""

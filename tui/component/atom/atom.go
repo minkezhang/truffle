@@ -25,7 +25,7 @@ type O struct {
 }
 
 type M struct {
-	model_ui.Base
+	*model_ui.Base
 	grid      grid.G
 	directory string
 
@@ -41,7 +41,7 @@ func Make(o O) M {
 	g := c.Grid(3)
 
 	return M{
-		Base:      model_ui.Make(o.O),
+		Base:      model_ui.New(o.O),
 		grid:      g,
 		directory: o.CacheDirectory,
 		atom:      o.Atom,

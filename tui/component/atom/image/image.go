@@ -29,7 +29,7 @@ type O struct {
 }
 
 type M struct {
-	model_ui.Base
+	*model_ui.Base
 
 	url       string
 	filepath  string
@@ -40,7 +40,7 @@ type M struct {
 
 func New(o O) *M {
 	return &M{
-		Base:      model_ui.Make(o.O),
+		Base:      model_ui.New(o.O),
 		url:       o.URL,
 		directory: o.CacheDirectory,
 	}
@@ -61,7 +61,7 @@ func (m *M) render(img image.Image) string {
 }
 
 type updateImageMsg struct {
-	model_ui.BaseMsg
+	*model_ui.BaseMsg
 	payload string
 }
 
@@ -72,7 +72,7 @@ func (m *M) Init() tea.Cmd {
 		}
 		if s, err := data(*m); err == nil {
 			return updateImageMsg{
-				BaseMsg: model_ui.BaseMsg{
+				BaseMsg: &model_ui.BaseMsg{
 					ID: m.ID(),
 				},
 				payload: s,
