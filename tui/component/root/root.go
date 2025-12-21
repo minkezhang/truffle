@@ -94,9 +94,13 @@ func New(o O) *M {
 			Node:           ns[0],
 		}),
 
-		search: search_ui.New(search_ui.O{}),
-		e:      model_ui.E,
-		mode:   ViewModeFull,
+		search: search_ui.New(search_ui.O{
+			O: model_ui.O{
+				Column: column,
+			},
+		}),
+		e:    model_ui.E,
+		mode: ViewModeFull,
 	}
 }
 
@@ -125,6 +129,17 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.ClearScreen
 	case search_ui.QueryMsg:
 		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
+	case model_ui.BlurMsg:
+		switch id := msg.ID; id {
+		case m.full.(model_ui.I).ID():
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+			}))
+		case m.search.(model_ui.I).ID():
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
+			}))
+		}
 	case QueryResponseMsg:
 		m.mode = ViewModeCard
 		m.card = node_card_ui.Make(node_card_ui.O{
