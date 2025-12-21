@@ -132,12 +132,13 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}))
 			case tea.KeyEnter:
 				v := m.list.SelectedItem().(*I)
-				cmds = append(cmds,
+				cmds = append(
+					cmds,
 					model_ui.ToCommand(SelectMsg(v.node)),
 					model_ui.ToCommand(model_ui.BlurMsg{
 						BaseMsg: model_ui.BaseMsg{ID: m.ID()},
-					},
-					))
+					}),
+				)
 			}
 		}
 	}

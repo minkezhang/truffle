@@ -80,12 +80,13 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			v := m.search.Value()
 			m.search.SetValue("")
-			cmds = append(cmds,
+			cmds = append(
+				cmds,
 				model_ui.ToCommand(QueryMsg(v)),
 				model_ui.ToCommand(model_ui.BlurMsg{
 					BaseMsg: model_ui.BaseMsg{ID: m.ID()},
-				},
-				))
+				}),
+			)
 		}
 	}
 
