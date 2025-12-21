@@ -13,6 +13,7 @@ import (
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle-api/db/node"
 	"github.com/minkezhang/truffle-api/db/query"
+	"github.com/minkezhang/truffle/tui/component/util/overlay"
 	"github.com/minkezhang/truffle/tui/util/grid"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -42,9 +43,9 @@ type M struct {
 	truffle *db.DB
 
 	directory string
+	mode      ViewMode
 	full      tea.Model
 	search    tea.Model
-	mode      ViewMode
 	card      tea.Model
 
 	// e is the global error handler
@@ -57,7 +58,7 @@ func New(o O) *M {
 			mal.New(mal.O{
 				ClientID:         "6114d00ca681b7701d1e15fe11a4987e",
 				PopularityCutoff: 10000,
-				MaxResults:       10,
+				MaxResults:       20,
 				NSFW:             true,
 			}),
 		},
@@ -144,8 +145,12 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
 			}))
+		case m.card.(model_ui.I).ID():
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+			}))
 		}
-	case QueryResponseMsg:
+	case ResponseMsg:
 		m.mode = ViewModeCard
 		m.card = node_card_ui.Make(node_card_ui.O{
 			O: model_ui.O{
@@ -153,6 +158,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 			Nodes: []*node.N(msg),
 		})
+		cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+			BaseMsg: model_ui.BaseMsg{ID: m.card.(model_ui.I).ID()},
+		}))
 		/*
 			if len([]*node.N(msg)) > 0 {
 				m.full = node_full_ui.Make(node_full_ui.O{
@@ -188,7 +196,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-type QueryResponseMsg []*node.N
+type ResponseMsg []*node.N
 
 func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 	ns, err := m.truffle.Query(context.Background(), query.New(query.O{
@@ -199,14 +207,16 @@ func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 	if err != nil {
 		return model_ui.ErrorMsg(err)
 	}
-	return QueryResponseMsg(ns)
+	return ResponseMsg(ns)
 }
 
 func (m *M) body() string {
 	switch v := m.mode; v {
 	case ViewModeFull:
+		return overlay.M{FG: m.full, BG: m.card}.View()
 		return m.full.View()
 	case ViewModeCard:
+		return overlay.M{BG: m.full, FG: m.card}.View()
 		return m.card.View()
 	}
 	return ""

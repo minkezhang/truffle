@@ -89,6 +89,7 @@ func Make(o O) M {
 			node: n,
 		})
 	}
+
 	l := list.New(
 		items,
 		list.NewDefaultDelegate(),
@@ -96,19 +97,46 @@ func Make(o O) M {
 		50,
 	)
 	l.DisableQuitKeybindings()
+	l.SetFilteringEnabled(false)
+	l.SetShowStatusBar(false)
+	l.SetShowTitle(false)
+	l.SetShowHelp(false)
+
 	return M{
-		Base: model_ui.New(o.O),
+		Base: model_ui.New(o.O.WithNTabs(len(o.Nodes))),
 		list: l,
 	}
 }
 
 func (m M) Init() tea.Cmd { return nil }
 func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var c tea.Cmd
+	cmds := []tea.Cmd{
+		m.Base.Update(msg),
+	}
 
-	m.list, c = m.list.Update(msg)
+	switch msg := msg.(type) {
+	case model_ui.FocusMsg:
+		if m.ID() == msg.ID {
+			m.list.Select(msg.Index)
+		}
+	case tea.KeyMsg:  // TODO(minkezhang): Enter, Esc
+	}
 
-	return m, c
+	// Sync list tab index with Truffle state.
+	if m.Focus() {
+		var c tea.Cmd
+		m.list, c = m.list.Update(msg)
+		cmds = append(cmds, c)
+
+		m.SetIndex(m.list.GlobalIndex())
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
-func (m M) View() string { return m.RenderOrDie(m.list.View()) }
+func (m M) View() string {
+	if m.Focus() {
+		return m.RenderOrDie(m.list.View())
+	}
+	return ""
+}

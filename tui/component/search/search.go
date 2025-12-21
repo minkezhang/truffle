@@ -31,7 +31,7 @@ func New(o O) *M {
 	return m
 }
 
-func (m *M) Init() tea.Cmd { return m.search.Focus() }
+func (m *M) Init() tea.Cmd { return nil } // return m.search.Focus() }
 
 type QueryMsg string
 
@@ -39,6 +39,12 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{m.Base.Update(msg)}
 
 	switch msg := msg.(type) {
+	case model_ui.FocusMsg:
+		if m.ID() == msg.ID {
+			cmds = append(cmds, m.search.Focus())
+		} else {
+			m.search.Blur()
+		}
 	case tea.MouseMsg:
 		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
 			if zone.Get(m.ID()).InBounds(msg) {

@@ -10,6 +10,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/lrstanley/bubblezone v1.0.0
 	github.com/minkezhang/truffle-api v0.0.0-20251216081745-53d2c3ba4e30
+	github.com/yorukot/superfile v1.4.0
 	golang.org/x/image v0.34.0
 )
 
@@ -33,6 +34,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/nstratos/go-myanimelist v0.9.5 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
