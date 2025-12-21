@@ -6,7 +6,46 @@
 //  1. must always ensure the rendered output is within the bounding box
 //  2. will quit if the error field is set -- this may be set in
 //
-// TODO(minkezhang): Add documentation on tabs.
+// Example:
+//
+//   // M is a tea.Model instance which has user input, e.g. tabs, forms, etc.
+//   type M struct {
+//     *model_ui.Base
+//   }
+//
+//   func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+//     cmds := []tea.Cmd{ m.Base.Update(msg) }  // Handle tabs
+//     switch msg := msg.(type) {
+//     // Some element is being selected in this node
+//     model_ui.FocusMsg:
+//       if m.ID() == msg.ID() { ... }
+//     // Used if this is a parent with child nodes handling FocusMsg (all the
+//     // way up the chain)
+//     model_ui.BlurMsg:
+//       ...
+//     case tea.KeyMsg:
+//       if !m.Focus() { cmds = append(cmds, nil) }  // Drop keyboard input
+//     case tea.MouseMsg:
+//       ...
+//       if zone.Get(k).InBounds(msg) {  // Directly select a UI element
+//         cmd = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+//           BaseMsg: model_ui.BaseMsg{ ID: m.ID() },
+//           Index: ...,
+//         }))
+//       }
+//     }
+//   }
+//
+//   func (m M) View() string { return m.RenderOrDie(...) }
+//
+// Note that only nodes which explicitly needs to handle user input will need to
+// handle FocusMsg messages -- if a child node handles user input, the node
+// itself will still need to check BlurMsg and propagate this up (substituting
+// the parent ID instead of the child) the tree.
+//
+// See component/node/full/source_list/source_list.go for an example of UI
+// handling, and component/node/full/node.go for a parent class handling
+// example.
 package model
 
 import (
@@ -63,9 +102,12 @@ type BaseMsg struct {
 type Base struct {
 	id     string // Runtime UUID
 	column grid.C
-	focus  bool
 	index  int
 	tabs   int
+
+	// focus instructs the node to listen to keyboard inputs.
+	focus  bool
+
 }
 
 func New(o O) *Base {

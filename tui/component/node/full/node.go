@@ -91,6 +91,16 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case source_list_ui.SelectMsg:
 		m.focus = msg.Focus
+	case model_ui.BlurMsg:
+		// There is only one interactable element in this node.
+		if m.sources.(*source_list_ui.M).ID() == msg.ID {
+			cmds = append(cmds, model_ui.ToCommand(model_ui.BlurMsg{
+				BaseMsg: model_ui.BaseMsg{
+					ID: m.ID(),
+				},
+				IsEnd: msg.IsEnd,
+			}))
+		}
 	}
 
 	var c tea.Cmd

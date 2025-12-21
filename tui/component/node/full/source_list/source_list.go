@@ -1,10 +1,4 @@
 // Package source_list provides a tab bar for a list of API:IDs.
-//
-// TODO(minkezhang): Implement tests for rendering narrow regions.
-// TODO(minkezhang): Extrapolate model styling into a struct to guarantee
-// content falls within the width.
-// TODO(minkezhang): When at end of list and last element still doesn't fit,
-// truncate left-most element instead.
 package source_list
 
 import (
