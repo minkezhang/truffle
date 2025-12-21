@@ -102,17 +102,16 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 		m.SetFocus(m.ID() == msg.ID)
 		if m.Focus() {
 			if msg.Index >= m.NTabs() {
-				m.SetIndex(msg.Index % (m.NTabs()))
-				// TODO
+				m.SetIndex(msg.Index % m.NTabs())
 			} else if msg.Index < 0 {
-				m.SetIndex(msg.Index + m.NTabs())
+				m.SetIndex(((msg.Index % m.NTabs()) + m.NTabs()) % m.NTabs())
 			} else {
 				m.SetIndex(msg.Index)
 			}
 		}
 		return nil
 	case BlurMsg:
-		m.SetFocus(m.ID() != msg.ID)
+		m.SetFocus(m.Focus() && m.ID() != msg.ID)
 	case tea.KeyMsg:
 		if !m.Focus() {
 			break
