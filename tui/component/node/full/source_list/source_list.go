@@ -9,6 +9,7 @@ package source_list
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -67,8 +68,8 @@ func New(o O) *M {
 
 	return &M{
 		Base: model_ui.New(model_ui.O{
-			Column:   o.Column,
-			MaxIndex: len(o.Values) - 1,
+			Column: o.Column,
+			NTabs:  len(o.Values),
 		}),
 		sources: sources,
 		order:   order,

@@ -45,8 +45,8 @@ type FocusMsg struct {
 }
 
 type O struct {
-	Column   grid.C
-	MaxIndex int
+	Column grid.C
+	NTabs  int
 }
 
 type BaseMsg struct {
@@ -54,11 +54,11 @@ type BaseMsg struct {
 }
 
 type Base struct {
-	id       string // Runtime UUID
-	column   grid.C
-	focus    bool
-	index    int
-	maxIndex int
+	id     string // Runtime UUID
+	column grid.C
+	focus  bool
+	index  int
+	tabs   int
 }
 
 func New(o O) *Base {
@@ -68,19 +68,19 @@ func New(o O) *Base {
 
 func Make(o O) Base {
 	return Base{
-		id:       zone.NewPrefix(),
-		column:   o.Column,
-		focus:    false,
-		index:    0,
-		maxIndex: o.MaxIndex,
+		id:     zone.NewPrefix(),
+		column: o.Column,
+		focus:  false,
+		index:  0,
+		tabs:   o.NTabs,
 	}
 }
 
-func (m Base) Focus() bool       { return m.focus }
-func (m *Base) SetFocus(v bool)  { m.focus = v }
-func (m Base) Index() int        { return m.index }
-func (m Base) MaxIndex() int     { return m.maxIndex }
-func (m Base) SetMaxIndex(v int) { m.maxIndex = v }
+func (m Base) Focus() bool      { return m.focus }
+func (m *Base) SetFocus(v bool) { m.focus = v }
+func (m Base) Index() int       { return m.index }
+func (m Base) NTabs() int       { return m.tabs }
+func (m Base) SetNTabs(v int)   { m.tabs = v }
 
 func (m *Base) SetIndex(v int) int {
 	i := m.index
@@ -102,11 +102,11 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case FocusMsg:
 		m.SetFocus(m.ID() == msg.ID)
 		if m.Focus() {
-			if msg.Index > m.MaxIndex() {
-				m.SetIndex(msg.Index % (m.MaxIndex() + 1))
+			if msg.Index >= m.NTabs() {
+				m.SetIndex(msg.Index % (m.NTabs()))
 				// TODO
 			} else if msg.Index < 0 {
-				m.SetIndex(msg.Index + m.MaxIndex() + 1)
+				m.SetIndex(msg.Index + m.NTabs())
 			} else {
 				m.SetIndex(msg.Index)
 			}
@@ -120,7 +120,7 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		switch t := msg.Type; t {
 		case tea.KeyShiftTab:
-			dst := m.index - 1
+			dst := m.Index() - 1
 			if dst < 0 {
 				return m, ToCommand(BlurMsg{
 					BaseMsg: BaseMsg{
@@ -128,19 +128,33 @@ func (m Base) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					},
 					IsEnd: false,
 				})
+			} else {
+				m.SetIndex(dst)
+				return m, ToCommand(FocusMsg{
+					BaseMsg: BaseMsg{
+						ID: m.ID(),
+					},
+					Index: m.Index(),
+				})
 			}
-			m.index -= 1
 		case tea.KeyTab:
-			dst := m.index + 1
-			if dst > m.MaxIndex() {
+			dst := m.Index() + 1
+			if dst >= m.NTabs() {
 				return m, ToCommand(BlurMsg{
 					BaseMsg: BaseMsg{
 						ID: m.ID(),
 					},
 					IsEnd: false,
 				})
+			} else {
+				m.SetIndex(dst)
+				return m, ToCommand(FocusMsg{
+					BaseMsg: BaseMsg{
+						ID: m.ID(),
+					},
+					Index: m.Index(),
+				})
 			}
-			m.index += 1
 		}
 	}
 	return m, nil
