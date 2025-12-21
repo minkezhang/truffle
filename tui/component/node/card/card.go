@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/db/node"
+	"github.com/minkezhang/truffle/tui/util/grid"
 	"github.com/minkezhang/truffle/tui/util/titles"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -90,15 +91,16 @@ func Make(o O) M {
 		})
 	}
 
+	d := list.NewDefaultDelegate()
+
 	l := list.New(
 		items,
-		list.NewDefaultDelegate(),
-		o.Column.Content,
+		d,
+		o.Column.Content-grid.GetContent(d.Styles.SelectedTitle),
 		50,
 	)
 	l.DisableQuitKeybindings()
 	l.SetFilteringEnabled(false)
-	l.SetShowStatusBar(false)
 	l.SetShowTitle(false)
 	l.SetShowHelp(false)
 
@@ -119,7 +121,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.ID() == msg.ID {
 			m.list.Select(msg.Index)
 		}
-	case tea.KeyMsg:  // TODO(minkezhang): Enter, Esc
+	case tea.KeyMsg: // TODO(minkezhang): Enter, Esc
 	}
 
 	// Sync list tab index with Truffle state.
@@ -136,7 +138,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m M) View() string {
 	if m.Focus() {
-		return m.RenderOrDie(m.list.View())
+		return m.RenderOrDie(m.Column().Style().Render(m.list.View()))
 	}
 	return ""
 }

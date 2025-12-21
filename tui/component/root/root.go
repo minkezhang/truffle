@@ -83,7 +83,7 @@ func New(o O) *M {
 		directory: o.CacheDirectory,
 		card: node_card_ui.Make(node_card_ui.O{
 			O: model_ui.O{
-				Column: column,
+				Column: column.Grid(4).Column(2).WithPadding(1),
 			},
 			Nodes: nil,
 		}),
@@ -154,7 +154,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.mode = ViewModeCard
 		m.card = node_card_ui.Make(node_card_ui.O{
 			O: model_ui.O{
-				Column: column,
+				Column: column.Grid(4).Column(2).WithPadding(1),
 			},
 			Nodes: []*node.N(msg),
 		})
@@ -227,9 +227,7 @@ func (m *M) View() string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			m.search.View(),
-			lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(
-				m.body(),
-			),
+			m.body(),
 		),
 	)
 }
