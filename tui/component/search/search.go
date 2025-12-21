@@ -27,11 +27,10 @@ func New(o O) *M {
 	m.search.Width = 50 // TODO
 	m.search.Placeholder = "The Apothecary Diaries"
 	m.search.Prompt = "  "
-	// m.search.Cursor TODO
 	return m
 }
 
-func (m *M) Init() tea.Cmd { return nil } // return m.search.Focus() }
+func (m *M) Init() tea.Cmd { return nil }
 
 type QueryMsg string
 
@@ -80,8 +79,13 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			v := m.search.Value()
-			cmds = append(cmds, func() tea.Msg { return QueryMsg(v) })
 			m.search.SetValue("")
+			cmds = append(cmds,
+				model_ui.ToCommand(QueryMsg(v)),
+				model_ui.ToCommand(model_ui.BlurMsg{
+					BaseMsg: model_ui.BaseMsg{ID: m.ID()},
+				},
+				))
 		}
 	}
 

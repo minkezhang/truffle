@@ -110,6 +110,8 @@ func Make(o O) M {
 	}
 }
 
+type SelectMsg *node.N
+
 func (m M) Init() tea.Cmd { return nil }
 func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{
@@ -121,7 +123,23 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.ID() == msg.ID {
 			m.list.Select(msg.Index)
 		}
-	case tea.KeyMsg: // TODO(minkezhang): Enter, Esc
+	case tea.KeyMsg:
+		if m.Focus() {
+			switch msg.Type {
+			case tea.KeyEsc:
+				cmds = append(cmds, model_ui.ToCommand(model_ui.BlurMsg{
+					BaseMsg: model_ui.BaseMsg{ID: m.ID()},
+				}))
+			case tea.KeyEnter:
+				v := m.list.SelectedItem().(*I)
+				cmds = append(cmds,
+					model_ui.ToCommand(SelectMsg(v.node)),
+					model_ui.ToCommand(model_ui.BlurMsg{
+						BaseMsg: model_ui.BaseMsg{ID: m.ID()},
+					},
+					))
+			}
+		}
 	}
 
 	// Sync list tab index with Truffle state.

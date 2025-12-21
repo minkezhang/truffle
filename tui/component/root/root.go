@@ -130,11 +130,15 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case tea.KeyCtrlZ:
 			return m, tea.Suspend
+		case tea.KeyCtrlL:
+			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+			}))
 		}
 	case tea.WindowSizeMsg: // Clear buffer
 		return m, tea.ClearScreen
 	case search_ui.QueryMsg:
-		cmds = append(cmds, func() tea.Msg { return m.query(msg) })
+		cmds = append(cmds, model_ui.ToCommand(m.query(msg)))
 	case model_ui.BlurMsg:
 		switch id := msg.ID; id {
 		case m.full.(model_ui.I).ID():
@@ -150,6 +154,22 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
 			}))
 		}
+	case node_card_ui.SelectMsg:
+		m.mode = ViewModeFull
+		m.full = node_full_ui.Make(node_full_ui.O{
+			O: model_ui.O{
+				Column: column,
+			},
+			CacheDirectory: m.directory,
+			Node:           (*node.N)(msg),
+		})
+		cmds = append(
+			cmds,
+			model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
+			}),
+			m.full.Init(),
+		)
 	case ResponseMsg:
 		m.mode = ViewModeCard
 		m.card = node_card_ui.Make(node_card_ui.O{
@@ -161,18 +181,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 			BaseMsg: model_ui.BaseMsg{ID: m.card.(model_ui.I).ID()},
 		}))
-		/*
-			if len([]*node.N(msg)) > 0 {
-				m.full = node_full_ui.Make(node_full_ui.O{
-					O: model_ui.O{
-						Column: column,
-					},
-					CacheDirectory: m.directory,
-					Node:           []*node.N(msg)[0],
-				})
-				cmds = append(cmds, m.full.Init())
-			}
-		*/
 	}
 
 	var c tea.Cmd
@@ -214,10 +222,8 @@ func (m *M) body() string {
 	switch v := m.mode; v {
 	case ViewModeFull:
 		return overlay.M{FG: m.full, BG: m.card}.View()
-		return m.full.View()
 	case ViewModeCard:
 		return overlay.M{BG: m.full, FG: m.card}.View()
-		return m.card.View()
 	}
 	return ""
 }
