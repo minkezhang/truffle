@@ -54,6 +54,23 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.Focus() {
 			break
 		}
+
+		// Mouse input is being passed into search input as KeyMsg; it
+		// is unclear how or why this is happening.
+		//
+		// Such a KeyMsg is of the form
+		//
+		//   { Type: KeyRunes, Alt: true, Runes: []rune{'['} }
+		//
+		// or
+		//
+		//   { Type: KeyRunes, Alt: false, Runes: []rune{...} }
+		if (len(msg.Runes) <= 1 && !msg.Alt) || msg.Paste {
+			var c tea.Cmd
+			m.search, c = m.search.Update(msg)
+			cmds = append(cmds, c)
+		}
+
 		switch msg.Type {
 		case tea.KeyEnter:
 			v := m.search.Value()
@@ -62,15 +79,8 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var c tea.Cmd
-
-	if m.Focus() {
-		m.search, c = m.search.Update(msg)
-		cmds = append(cmds, c)
-	}
-
 	m.search.Prompt = map[bool]string{
-		true:  "⚲ ", // TODO
+		true:  "⚲ ",
 		false: "  ",
 	}[m.Focus()]
 
@@ -79,13 +89,15 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *M) View() string {
+	style := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).Padding(0, 1)
+	if !m.Focus() {
+		style = style.BorderForeground(lipgloss.Color("8"))
+	}
 	return m.RenderOrDie(lipgloss.JoinVertical(
 		lipgloss.Left,
 		zone.Mark(
 			m.ID(),
-			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).Padding(0, 1).Render(
-				m.search.View(),
-			),
+			style.Render(m.search.View()),
 		),
 	))
 }

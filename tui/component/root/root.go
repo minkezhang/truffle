@@ -106,8 +106,13 @@ func New(o O) *M {
 
 func (m *M) Init() tea.Cmd {
 	return tea.Batch(
+		tea.Sequence(
+			m.search.Init(),
+			model_ui.ToCommand(model_ui.FocusMsg{
+				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+			}),
+		),
 		m.full.Init(),
-		m.search.Init(),
 		m.card.Init(),
 	)
 }
