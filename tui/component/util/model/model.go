@@ -50,6 +50,7 @@ package model
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -237,7 +238,7 @@ func axis(w int) string {
 
 func check(s string, c grid.C) error {
 	if w := lipgloss.Width(s); w > c.Width() {
-		return fmt.Errorf(
+		e := fmt.Errorf(
 			"rendered string exceeded bounding box: %d > %d\n"+
 				"```\n"+
 				"%s\n"+
@@ -248,6 +249,11 @@ func check(s string, c grid.C) error {
 			axis(w),
 			strings.ReplaceAll(s, " ", "."),
 		)
+		_, file, line, ok := runtime.Caller(2)
+		if ok {
+			e = fmt.Errorf("%s:%d: %v", file, line, e)
+		}
+		return e
 	}
 	return nil
 }

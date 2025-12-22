@@ -49,12 +49,13 @@ func (m M) View() string {
 		titles = titles[:2]
 	}
 
+	style := m.Column().Style()
+
 	if len(titles) == 0 {
-		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("8"))
+		style = style.Bold(true).Foreground(lipgloss.Color("8"))
 		parts = append(parts, style.Render("Unknown Title"))
 	} else {
 		for i, t := range titles {
-			style := lipgloss.NewStyle()
 			if i == 0 {
 				style = style.Bold(true)
 			} else {
