@@ -206,6 +206,8 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type ResponseMsg []*node.N
 
+// TODO(minkezhang): Add context deadline.
+// TODO(minkezhang): Add warning display module (WarningMsg, ErrorMsg, FatalMsg).
 func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 	ns, err := m.truffle.Query(context.Background(), query.New(query.O{
 		APIs:      []epb.API{epb.API_API_MAL},
