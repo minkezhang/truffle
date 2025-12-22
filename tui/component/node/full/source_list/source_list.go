@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/util/input"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
@@ -103,7 +104,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}))
 		}
 	case tea.MouseMsg:
-		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
+		if input.IsMouseJustPressed(msg) {
 			if zone.Get(m.kLeft).InBounds(msg) {
 				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 					BaseMsg: model_ui.BaseMsg{

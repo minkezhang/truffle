@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/util/input"
 
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
@@ -45,7 +46,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.search.Blur()
 		}
 	case tea.MouseMsg:
-		if msg.Button == tea.MouseButtonLeft && msg.Action == tea.MouseActionPress {
+		if input.IsMouseJustPressed(msg) {
 			if zone.Get(m.ID()).InBounds(msg) {
 				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 					BaseMsg: model_ui.BaseMsg{

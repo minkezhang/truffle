@@ -65,6 +65,6 @@ func (g G) Column(n int) C {
 	}
 }
 
-func GetContent(s lipgloss.Style) int {
+func GetFrame(s lipgloss.Style) int {
 	return s.GetBorderLeftSize() + s.GetBorderRightSize() + s.GetPaddingLeft() + s.GetPaddingRight() + s.GetMarginLeft() + s.GetMarginRight()
 }

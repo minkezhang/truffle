@@ -2,13 +2,17 @@ package card
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/db/node"
 	"github.com/minkezhang/truffle/tui/util/grid"
+	"github.com/minkezhang/truffle/tui/util/input"
 	"github.com/minkezhang/truffle/tui/util/titles"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -20,7 +24,28 @@ var (
 	_ list.DefaultItem = &I{}
 )
 
+type D struct {
+	width int
+	list.DefaultDelegate
+}
+
+func (d D) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	style := lipgloss.NewStyle().Width(d.width)
+
+	var buf strings.Builder
+	d.DefaultDelegate.Render(&buf, m, index, item)
+	w.Write(
+		[]byte(
+			zone.Mark(
+				item.(*I).key,
+				style.Render(buf.String()),
+			),
+		),
+	)
+}
+
 type I struct {
+	key  string
 	node *node.N
 
 	title string
@@ -80,24 +105,35 @@ type O struct {
 type M struct {
 	*model_ui.Base
 
-	list list.Model
+	order []string // { list.GlobalIndex: key }
+	list  list.Model
 }
 
 func Make(o O) M {
 	items := []list.Item{}
+	order := []string{}
 	for _, n := range o.Nodes {
+		k := zone.NewPrefix()
+		order = append(order, k)
+
 		items = append(items, &I{
+			key:  k,
 			node: n,
 		})
 	}
 
-	d := list.NewDefaultDelegate()
+	delegate := list.NewDefaultDelegate()
+	w := o.Column.Content - grid.GetFrame(delegate.Styles.SelectedTitle)
+	d := D{
+		DefaultDelegate: delegate,
+		width:           w,
+	}
 
 	l := list.New(
 		items,
 		d,
-		o.Column.Content-grid.GetContent(d.Styles.SelectedTitle),
-		50,
+		w,
+		17*d.Height(),
 	)
 	l.DisableQuitKeybindings()
 	l.SetFilteringEnabled(false)
@@ -105,8 +141,9 @@ func Make(o O) M {
 	l.SetShowHelp(false)
 
 	return M{
-		Base: model_ui.New(o.O.WithNTabs(len(o.Nodes))),
-		list: l,
+		Base:  model_ui.New(o.O.WithNTabs(len(o.Nodes))),
+		list:  l,
+		order: order,
 	}
 }
 
@@ -119,6 +156,25 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		if input.IsMouseJustPressed(msg) {
+			for i, k := range m.order {
+				if zone.Get(k).InBounds(msg) {
+					m.list.Select(i)
+					v := m.list.SelectedItem().(*I)
+					cmds = append(
+						cmds,
+						model_ui.ToCommand(SelectMsg(v.node)),
+						model_ui.ToCommand(model_ui.FocusMsg{
+							BaseMsg: model_ui.BaseMsg{
+								ID: m.ID(),
+							},
+							Index: i,
+						}),
+					)
+				}
+			}
+		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
 			m.list.Select(msg.Index)
@@ -148,7 +204,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var c tea.Cmd
 		m.list, c = m.list.Update(msg)
 		cmds = append(cmds, c)
-
+		slog.Debug(fmt.Sprintf("global index: %d", m.list.GlobalIndex()))
 		m.SetIndex(m.list.GlobalIndex())
 	}
 

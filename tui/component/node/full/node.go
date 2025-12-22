@@ -11,6 +11,7 @@ import (
 
 	atom_ui "github.com/minkezhang/truffle/tui/component/atom"
 	source_list_ui "github.com/minkezhang/truffle/tui/component/node/full/source_list"
+	button_ui "github.com/minkezhang/truffle/tui/component/util/button"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
 
@@ -31,6 +32,11 @@ type M struct {
 	sources tea.Model
 	atoms   map[source_list_ui.V]tea.Model
 	focus   source_list_ui.V
+
+	// Buttons
+	button_save *button_ui.M
+	button_edit *button_ui.M
+	button_add  *button_ui.M
 }
 
 func Make(o O) M {
@@ -41,6 +47,24 @@ func Make(o O) M {
 		directory: o.CacheDirectory,
 		node:      o.Node,
 		atoms:     map[source_list_ui.V]tea.Model{},
+		button_save: button_ui.New(button_ui.O{
+			O: model_ui.O{
+				Column: g.Column(1).Grid(3).Column(1).WithPadding(0).WithMargin(1),
+			},
+			Name: "Save",
+		}),
+		button_edit: button_ui.New(button_ui.O{
+			O: model_ui.O{
+				Column: g.Column(1).Grid(3).Column(1).WithPadding(0).WithMargin(1),
+			},
+			Name: "Edit",
+		}),
+		button_add: button_ui.New(button_ui.O{
+			O: model_ui.O{
+				Column: g.Column(1).Grid(3).Column(1).WithPadding(0).WithMargin(1),
+			},
+			Name: "Add",
+		}),
 	}
 	vs := []source_list_ui.V{}
 	for _, a := range append([]*atom.A{
@@ -145,12 +169,20 @@ func (m M) View() string {
 
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
-				lipgloss.JoinVertical(
-					lipgloss.Left,
-					m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
-					m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
-					m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Notes"),
-					m.grid.Column(1).WithMargin(1).Style().Render(notes),
+				lipgloss.NewStyle().Background(lipgloss.Color("9")).Render( // DEBUG
+					lipgloss.JoinVertical(
+						lipgloss.Center,
+						m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Queued"),
+						m.grid.Column(1).WithMargin(1).WithPadding(1).Style().Foreground(lipgloss.Color("5")).Render(fmt.Sprintf("%v", m.node.IsQueued())),
+						m.grid.Column(1).WithMargin(1).Style().Bold(true).Render("Notes"),
+						m.grid.Column(1).WithMargin(1).Style().Render(notes),
+						lipgloss.JoinHorizontal(
+							lipgloss.Top,
+							m.button_add.View(),
+							m.button_edit.View(),
+							m.button_save.View(),
+						),
+					),
 				),
 				atom,
 			),

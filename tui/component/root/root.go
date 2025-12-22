@@ -215,7 +215,10 @@ func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
 	if err != nil {
 		return model_ui.ErrorMsg(err)
 	}
-	return ResponseMsg(ns)
+	if len(ns) > 0 {
+		return ResponseMsg(ns)
+	}
+	return nil
 }
 
 func (m *M) body() string {
