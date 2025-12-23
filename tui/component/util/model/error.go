@@ -2,7 +2,9 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/charmbracelet/bubbletea"
 )
@@ -13,15 +15,31 @@ var (
 )
 
 func ToErrorMsg(e error) ErrorMsg {
+	slog.Error(e.Error())
 	return ErrorMsg{e: e}
 }
 
 func ToWarningMsg(e error) WarningMsg {
 	slog.Warn(e.Error())
-	return WarningMsg{e: e}
+	return WarningMsg{
+		e: fmt.Errorf(
+			"WARNING(%v): %v",
+			time.Now().Format("15:04:05"),
+			e.Error(),
+		),
+	}
 }
 
-func ToNoticeMsg(v string) NoticeMsg { return NoticeMsg(v) }
+func ToNoticeMsg(v string) NoticeMsg {
+	slog.Info(v)
+	return NoticeMsg(
+		fmt.Sprintf(
+			"NOTICE(%v): %v",
+			time.Now().Format("15:04:05"),
+			v,
+		),
+	)
+}
 
 // ErrorMsg may be returned by tea.Cmd in the case of an error.
 //

@@ -124,6 +124,7 @@ func (m *M) Init() tea.Cmd {
 		),
 		m.full.Init(),
 		m.card.Init(),
+		m.notification.Init(),
 	)
 }
 
@@ -250,11 +251,13 @@ func (m *M) body() string {
 
 func (m *M) View() string {
 	return zone.Scan(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			m.search.View(),
-			m.body(),
+		overlay.Overlay(
 			m.notification.View(),
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				m.search.View(),
+				m.body(),
+			),
 		),
 	)
 }

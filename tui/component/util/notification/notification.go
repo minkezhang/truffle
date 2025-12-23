@@ -1,15 +1,12 @@
-// TODO(minkezhang): Add timer.
-// TODO(minkezhang): Add prefix.
 package notification
 
 import (
-	"fmt"
+	"time"
 
+	"github.com/charmbracelet/bubbles/timer"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/util/input"
 
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
@@ -34,11 +31,6 @@ var (
 			return s.Background(lipgloss.Color("3")).Foreground(lipgloss.Color("9")).Bold(true)
 		},
 	}
-
-	prefix = map[Type]string{
-		TypeNotice:  "NOTICE",
-		TypeWarning: "WARNING",
-	}
 )
 
 type O struct {
@@ -47,7 +39,8 @@ type O struct {
 
 func New(o O) *M {
 	return &M{
-		Base: model_ui.New(o.O),
+		Base:  model_ui.New(o.O),
+		timer: timer.New(5 * time.Second),
 	}
 }
 
@@ -59,31 +52,56 @@ type message struct {
 type M struct {
 	*model_ui.Base
 
+	id int
+
 	messages []message
+	timer    timer.Model
 }
 
-func (m *M) Init() tea.Cmd { return nil }
+const (
+	timeout = 5 * time.Second
+)
+
+func (m *M) Init() tea.Cmd { return m.timer.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case tea.MouseMsg:
-		if input.IsMouseJustPressed(msg) {
-			if zone.Get(m.ID()).InBounds(msg) {
-				m.messages = m.messages[:len(m.messages)-1]
-			}
+	case timer.TimeoutMsg:
+		if m.timer.ID() == msg.ID {
+			m.messages = m.messages[:len(m.messages)-1]
+		}
+		if len(m.messages) > 0 {
+			m.timer.Timeout = timeout
+			cmds = append(cmds, m.timer.Start())
 		}
 	case model_ui.NoticeMsg:
+		m.timer.Timeout = timeout
+		if !m.timer.Running() {
+			cmds = append(cmds, m.timer.Start())
+		}
 		m.messages = append(m.messages, message{
 			t: TypeNotice,
 			v: string(msg),
 		})
 	case model_ui.WarningMsg:
+		m.timer.Timeout = timeout
+		if !m.timer.Running() {
+			cmds = append(cmds, m.timer.Start())
+		}
 		m.messages = append(m.messages, message{
 			t: TypeWarning,
 			v: error(msg).Error(),
 		})
 	}
-	return m, nil
+
+	var c tea.Cmd
+
+	m.timer, c = m.timer.Update(msg)
+
+	cmds = append(cmds, c)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *M) head() message {
@@ -94,28 +112,14 @@ func (m *M) head() message {
 }
 
 func (m *M) body(n message) string {
-	message := ""
-	if n.v != "" {
-		message = fmt.Sprintf("%s: %s", prefix[n.t], n.v)
-	}
-	return ansi.Truncate(message, m.Column().Content-2, ellipsis)
+	return ansi.Truncate(n.v, m.Column().Content, ellipsis)
 }
 
 func (m *M) View() string {
-	h := m.head()
-	style := styles[h.t](m.Column().Style()).MarginTop(1)
-	if s := styles[h.t](lipgloss.NewStyle()).Render(m.body(h)); lipgloss.Width(s) > 0 {
-		return m.RenderOrDie(style.Render(
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				zone.Mark(
-					m.ID(),
-					styles[h.t](lipgloss.NewStyle()).Foreground(lipgloss.Color("15")).Bold(true).Render("X"),
-				),
-				styles[h.t](lipgloss.NewStyle()).Render(" "),
-				s,
-			),
-		))
+	if len(m.messages) == 0 {
+		return ""
 	}
-	return m.RenderOrDie(style.Render(""))
+	h := m.head()
+	style := styles[h.t](m.Column().Style()).MarginBottom(1)
+	return m.RenderOrDie(style.Render(m.timer.View() + m.body(h)))
 }
