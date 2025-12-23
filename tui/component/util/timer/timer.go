@@ -10,6 +10,10 @@ const (
 	granularity = 500 * time.Millisecond
 )
 
+type Timeout struct {
+	ID string
+}
+
 type tick struct {
 	id       string
 	enqueued time.Time
@@ -74,12 +78,26 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.id == msg.id {
 			m.running = false
 			m.elapsed += m.now().Sub(msg.enqueued)
+			if m.elapsed >= m.d && m.running {
+				cmds = append(cmds, func() tea.Msg {
+					return Timeout{
+						ID: m.id,
+					}
+				})
+			}
 		}
 	case tick:
 		if m.running && m.id == msg.id {
 			m.elapsed += m.now().Sub(msg.enqueued)
 			if m.elapsed >= m.d {
-				m.running = false
+				if m.running {
+					m.running = false
+					cmds = append(cmds, func() tea.Msg {
+						return Timeout{
+							ID: m.id,
+						}
+					})
+				}
 			} else {
 				enqueued := m.now()
 				cmds = append(cmds, func() tea.Msg {
