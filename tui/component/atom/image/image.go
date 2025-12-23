@@ -78,7 +78,7 @@ func (m *M) Init() tea.Cmd {
 				payload: s,
 			}
 		} else {
-			return model_ui.ErrorMsg(err)
+			return model_ui.ToErrorMsg(err)
 		}
 	}
 }

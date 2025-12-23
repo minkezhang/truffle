@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,6 +22,7 @@ import (
 	node_full_ui "github.com/minkezhang/truffle/tui/component/node/full"
 	search_ui "github.com/minkezhang/truffle/tui/component/search"
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
+	notification_ui "github.com/minkezhang/truffle/tui/component/util/notification"
 )
 
 type ViewMode int
@@ -47,6 +49,8 @@ type M struct {
 	full      tea.Model
 	search    tea.Model
 	card      tea.Model
+
+	notification tea.Model
 
 	// e is the global error handler
 	e tea.Model
@@ -102,6 +106,11 @@ func New(o O) *M {
 		}),
 		e:    model_ui.E,
 		mode: ViewModeFull,
+		notification: notification_ui.New(notification_ui.O{
+			model_ui.O{
+				Column: column,
+			},
+		}),
 	}
 }
 
@@ -201,26 +210,32 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	cmds = append(cmds, c)
 
+	m.notification, c = m.notification.Update(msg)
+
+	cmds = append(cmds, c)
+
 	return m, tea.Batch(cmds...)
 }
 
 type ResponseMsg []*node.N
 
 // TODO(minkezhang): Add context deadline.
-// TODO(minkezhang): Add warning display module (WarningMsg, ErrorMsg, FatalMsg).
 func (m *M) query(msg search_ui.QueryMsg) tea.Msg {
-	ns, err := m.truffle.Query(context.Background(), query.New(query.O{
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	ns, err := m.truffle.Query(ctx, query.New(query.O{
 		APIs:      []epb.API{epb.API_API_MAL},
 		AtomTypes: []epb.Type{epb.Type_TYPE_BOOK},
 		Title:     string(msg),
 	}))
 	if err != nil {
-		return model_ui.ErrorMsg(err)
+		return model_ui.ToWarningMsg(err)
 	}
 	if len(ns) > 0 {
 		return ResponseMsg(ns)
 	}
-	return nil
+	return model_ui.ToNoticeMsg("query returned no search results")
 }
 
 func (m *M) body() string {
@@ -239,6 +254,7 @@ func (m *M) View() string {
 			lipgloss.Left,
 			m.search.View(),
 			m.body(),
+			m.notification.View(),
 		),
 	)
 }
