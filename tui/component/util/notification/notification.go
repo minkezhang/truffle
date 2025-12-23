@@ -3,12 +3,12 @@ package notification
 import (
 	"time"
 
-	"github.com/charmbracelet/bubbles/timer"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
+	timer_ui "github.com/minkezhang/truffle/tui/component/util/timer"
 )
 
 const (
@@ -40,7 +40,7 @@ type O struct {
 func New(o O) *M {
 	return &M{
 		Base:  model_ui.New(o.O),
-		timer: timer.New(5 * time.Second),
+		timer: timer_ui.New(5 * time.Second),
 	}
 }
 
@@ -55,7 +55,7 @@ type M struct {
 	id int
 
 	messages []message
-	timer    timer.Model
+	timer    tea.Model
 }
 
 const (
@@ -66,40 +66,33 @@ func (m *M) Init() tea.Cmd { return m.timer.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+
+	var c tea.Cmd
+
+	m.timer, c = m.timer.Update(msg)
+	cmds = append(cmds, c)
+
 	switch msg := msg.(type) {
-	case timer.TimeoutMsg:
-		if m.timer.ID() == msg.ID {
+	case timer_ui.TimeoutMsg:
+		if m.timer.(*timer_ui.M).ID() == msg.ID {
 			m.messages = m.messages[:len(m.messages)-1]
 		}
 		if len(m.messages) > 0 {
-			m.timer.Timeout = timeout
-			cmds = append(cmds, m.timer.Start())
+			cmds = append(cmds, m.timer.(*timer_ui.M).Reset())
 		}
 	case model_ui.NoticeMsg:
-		m.timer.Timeout = timeout
-		if !m.timer.Running() {
-			cmds = append(cmds, m.timer.Start())
-		}
+		cmds = append(cmds, m.timer.(*timer_ui.M).Reset())
 		m.messages = append(m.messages, message{
 			t: TypeNotice,
 			v: string(msg),
 		})
 	case model_ui.WarningMsg:
-		m.timer.Timeout = timeout
-		if !m.timer.Running() {
-			cmds = append(cmds, m.timer.Start())
-		}
+		cmds = append(cmds, m.timer.(*timer_ui.M).Reset())
 		m.messages = append(m.messages, message{
 			t: TypeWarning,
 			v: error(msg).Error(),
 		})
 	}
-
-	var c tea.Cmd
-
-	m.timer, c = m.timer.Update(msg)
-
-	cmds = append(cmds, c)
 
 	return m, tea.Batch(cmds...)
 }
@@ -121,5 +114,5 @@ func (m *M) View() string {
 	}
 	h := m.head()
 	style := styles[h.t](m.Column().Style()).MarginBottom(1)
-	return m.RenderOrDie(style.Render(m.timer.View() + m.body(h)))
+	return m.RenderOrDie(style.Render(m.body(h)))
 }
