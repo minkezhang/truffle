@@ -165,10 +165,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds = append(
 						cmds,
 						model_ui.ToCommand(SelectMsg(v.node)),
-						model_ui.ToCommand(model_ui.FocusMsg{
-							ID:    m.ID(),
-							Index: i,
-						}),
+						m.FocusCmd(i),
 					)
 				}
 			}
@@ -181,15 +178,13 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.Focus() {
 			switch msg.Type {
 			case tea.KeyEsc:
-				cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{ID: m.ID()}))
+				cmds = append(cmds, m.EOFCmd(false))
 			case tea.KeyEnter:
 				v := m.list.SelectedItem().(*I)
 				cmds = append(
 					cmds,
 					model_ui.ToCommand(SelectMsg(v.node)),
-					model_ui.ToCommand(model_ui.EOFMsg{
-						ID: m.ID(),
-					}),
+					m.EOFCmd(true),
 				)
 			}
 		}

@@ -39,17 +39,11 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case model_ui.EOFMsg:
 		if m.input.(*input_ui.M).ID() == msg.ID {
-			cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{
-				ID:    m.ID(),
-				IsEnd: msg.IsEnd,
-			}))
+			cmds = append(cmds, m.EOFCmd(msg.IsEnd))
 		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
-			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				ID:    m.input.(*input_ui.M).ID(),
-				Index: 0,
-			}))
+			cmds = append(cmds, m.input.(*input_ui.M).FocusCmd(0))
 		}
 	case input_ui.SubmitMsg:
 		if m.input.(*input_ui.M).ID() == msg.ID {

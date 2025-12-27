@@ -99,6 +99,8 @@ func (o O) WithNTabs(v int) O {
 
 type I interface {
 	ID() string
+	EOFCmd(isNext bool) tea.Cmd
+	FocusCmd(index int) tea.Cmd
 }
 
 type Base struct {
@@ -180,18 +182,18 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 		case tea.KeyShiftTab:
 			dst := m.Index() - 1
 			if dst < 0 {
-				return m.EOF(false)
+				return m.EOFCmd(false)
 			} else {
 				m.SetIndex(dst)
-				return m.Focus(m.Index())
+				return m.FocusCmd(m.Index())
 			}
 		case tea.KeyTab:
 			dst := m.Index() + 1
 			if dst >= m.NTabs() {
-				return m.EOF(true)
+				return m.EOFCmd(true)
 			} else {
 				m.SetIndex(dst)
-				return m.Focus(m.Index())
+				return m.FocusCmd(m.Index())
 			}
 		}
 	}

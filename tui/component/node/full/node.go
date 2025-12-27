@@ -118,18 +118,12 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case model_ui.FocusMsg:
 		// There is only one interactable element in this node.
 		if m.ID() == msg.ID {
-			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				ID:    m.sources.(model_ui.I).ID(),
-				Index: msg.Index,
-			}))
+			cmds = append(cmds, m.sources.(model_ui.I).FocusCmd(msg.Index))
 		}
 	case model_ui.EOFMsg:
 		// There is only one interactable element in this node.
 		if m.sources.(model_ui.I).ID() == msg.ID {
-			cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{
-				ID:    m.ID(),
-				IsEnd: msg.IsEnd,
-			}))
+			cmds = append(cmds, m.EOFCmd(msg.IsEnd))
 		}
 	}
 

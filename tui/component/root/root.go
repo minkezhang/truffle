@@ -155,17 +155,11 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case model_ui.EOFMsg:
 		switch id := msg.ID; id {
 		case m.full.(model_ui.I).ID():
-			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				ID: m.search.(model_ui.I).ID(),
-			}))
+			cmds = append(cmds, m.search.(model_ui.I).FocusCmd(0))
 		case m.search.(model_ui.I).ID():
-			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				ID: m.full.(model_ui.I).ID(),
-			}))
+			cmds = append(cmds, m.full.(model_ui.I).FocusCmd(0))
 		case m.card.(model_ui.I).ID():
-			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				ID: m.search.(model_ui.I).ID(),
-			}))
+			cmds = append(cmds, m.search.(model_ui.I).FocusCmd(0))
 		}
 	case node_card_ui.SelectMsg:
 		m.mode = ViewModeFull
@@ -176,13 +170,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			CacheDirectory: m.directory,
 			Node:           (*node.N)(msg),
 		})
-		cmds = append(
-			cmds,
-			model_ui.ToCommand(model_ui.FocusMsg{
-				ID: m.full.(model_ui.I).ID(),
-			}),
-			m.full.Init(),
-		)
+		cmds = append(cmds, m.full.(model_ui.I).FocusCmd(0), m.full.Init())
 	case ResponseMsg:
 		m.mode = ViewModeCard
 		m.card = node_card_ui.Make(node_card_ui.O{
@@ -191,9 +179,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 			Nodes: []*node.N(msg),
 		})
-		cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-			ID: m.card.(model_ui.I).ID(),
-		}))
+		cmds = append(cmds, m.card.(model_ui.I).FocusCmd(0))
 	}
 
 	var c tea.Cmd
