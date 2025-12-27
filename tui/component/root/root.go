@@ -39,9 +39,12 @@ var (
 
 type O struct {
 	CacheDirectory string
+	Version        string
 }
 
 type M struct {
+	version string
+
 	truffle *db.DB
 
 	directory string
@@ -154,15 +157,21 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.full.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
-			}))
+			}),
+				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for full")),
+			)
 		case m.search.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
-			}))
+			}),
+				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for search")),
+			)
 		case m.card.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
-			}))
+			}),
+				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for card")),
+			)
 		}
 	case node_card_ui.SelectMsg:
 		m.mode = ViewModeFull
@@ -190,7 +199,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 		cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
 			BaseMsg: model_ui.BaseMsg{ID: m.card.(model_ui.I).ID()},
-		}))
+		}),
+			model_ui.ToCommand(model_ui.ToNoticeMsg("focusing search results")),
+		)
 	}
 
 	var c tea.Cmd
@@ -252,11 +263,14 @@ func (m *M) body() string {
 func (m *M) View() string {
 	return zone.Scan(
 		overlay.Overlay(
-			m.notification.View(),
+			"",
+			// m.notification.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
+				m.notification.View(),
 				m.search.View(),
 				m.body(),
+				column.Style().Render(m.version),
 			),
 		),
 	)

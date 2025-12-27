@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/root"
+	"github.com/minkezhang/truffle/tui/util/version"
 
 	model_ui "github.com/minkezhang/truffle/tui/component/util/model"
 )
@@ -36,6 +37,7 @@ func main() {
 
 	p := tea.NewProgram(
 		root.New(root.O{
+			Version:        version.Sem(),
 			CacheDirectory: cache,
 		}),
 		tea.WithAltScreen(),

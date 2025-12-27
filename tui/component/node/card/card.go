@@ -149,7 +149,9 @@ func Make(o O) M {
 
 type SelectMsg *node.N
 
-func (m M) Init() tea.Cmd { return nil }
+func (m M) Init() tea.Cmd {
+	return model_ui.ToCommand(model_ui.ToNoticeMsg(fmt.Sprintf("results ID: %v", m.ID())))
+} // DEBUG
 func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{
 		m.Base.Update(msg),
@@ -177,7 +179,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
-			m.list.Select(msg.Index)
+			m.list.Select(msg.Index) // TODO(minkezhang): Investigate why this is being selected over and over.
 		}
 	case tea.KeyMsg:
 		if m.Focus() {

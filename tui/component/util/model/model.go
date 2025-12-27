@@ -69,6 +69,8 @@ func ToCommand(msg tea.Msg) tea.Cmd { return func() tea.Msg { return msg } }
 //
 // Upon node deletion, the node must publish a BlurMsg with IsEnd = false. This
 // will allow the parent node to appropriately handle this event.
+//
+// TOOD(minkezhang): Rename EOFMsg
 type BlurMsg struct {
 	BaseMsg
 	IsEnd bool
@@ -96,7 +98,7 @@ func (o O) WithNTabs(v int) O {
 	}
 }
 
-type BaseMsg struct {
+type BaseMsg struct { // TODO(minkezhang): Delete
 	ID string
 }
 
@@ -143,8 +145,12 @@ func (m *Base) ID() string { return m.id }
 
 // Update renders
 func (m *Base) Update(msg tea.Msg) tea.Cmd {
+	var c tea.Cmd
 	switch msg := msg.(type) {
 	case FocusMsg:
+		if m.ID() == msg.ID {
+			c = ToCommand(NoticeMsg(fmt.Sprintf("FocusMsg for ID = %v", m.ID())))
+		}
 		m.SetFocus(m.ID() == msg.ID)
 		if m.Focus() {
 			if msg.Index >= m.NTabs() {
@@ -157,6 +163,9 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 		}
 		return nil
 	case BlurMsg:
+		if m.ID() == msg.ID {
+			c = ToCommand(ToNoticeMsg(fmt.Sprintf("BlurMsg for ID = %v", m.ID())))
+		}
 		m.SetFocus(m.Focus() && m.ID() != msg.ID)
 	case tea.KeyMsg:
 		if !m.Focus() {
@@ -201,7 +210,7 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 			}
 		}
 	}
-	return nil
+	return c
 }
 
 func (m *Base) Column() grid.C { return m.column }

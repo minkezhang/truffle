@@ -1,8 +1,11 @@
 package textinput
 
 import (
+	"fmt" // DEBUG
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/util/input"
 
@@ -13,6 +16,8 @@ type M struct {
 	*model_ui.Base
 
 	input textinput.Model
+
+	prompts map[bool]string
 }
 
 type O struct {
@@ -31,16 +36,22 @@ func New(o O) *M {
 	m := &M{
 		Base:  model_ui.New(o.O.WithNTabs(1)),
 		input: t,
+		prompts: map[bool]string{
+			false: o.PromptUnfocused,
+			true:  o.PromptFocused,
+		},
 	}
 	return m
 }
 
-type SetValueMsg struct {
+type SubmitMsg struct {
 	ID string
 	V  string
 }
 
-func (m *M) Init() tea.Cmd { return nil }
+func (m *M) Init() tea.Cmd {
+	return model_ui.ToCommand(model_ui.ToNoticeMsg(fmt.Sprintf("Input ID: %v", m.ID()))) // DEBUG
+}
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{
@@ -48,14 +59,14 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
-	case SetValueMsg:
-		if m.ID() == msg.ID {
-			m.input.SetValue(msg.V)
-		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
 			cmds = append(cmds, m.input.Focus())
 		} else {
+			m.input.Blur()
+		}
+	case model_ui.BlurMsg:
+		if m.ID() == msg.ID {
 			m.input.Blur()
 		}
 	case tea.MouseMsg:
@@ -65,7 +76,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					BaseMsg: model_ui.BaseMsg{
 						ID: m.ID(),
 					},
-					Index: m.Index(),
 				},
 			))
 		}
@@ -89,10 +99,46 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input, c = m.input.Update(msg)
 			cmds = append(cmds, c)
 		}
+
+		switch msg.Type {
+		case tea.KeyEnter:
+			v := m.Value()
+			m.input.SetValue("")
+			cmds = append(
+				cmds,
+				tea.Sequence(
+					model_ui.ToCommand(SubmitMsg{
+						ID: m.ID(),
+						V:  v,
+					}),
+					/*
+						model_ui.ToCommand(model_ui.BlurMsg{
+							BaseMsg: model_ui.BaseMsg{
+								ID: m.ID(),
+							},
+						}),
+					*/
+				),
+			)
+		}
 	}
 
-	return m, nil
+	m.input.Prompt = m.prompts[m.Focus()]
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *M) Value() string { return m.input.Value() }
-func (m *M) View() string  { return zone.Mark(m.ID(), m.input.View()) }
+
+func (m *M) View() string {
+	style := lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).Padding(0, 1)
+	if !m.Focus() {
+		style = style.BorderForeground(lipgloss.Color("8"))
+	}
+	return m.RenderOrDie(
+		zone.Mark(
+			m.ID(),
+			style.Render(m.input.View()),
+		),
+	)
+}
