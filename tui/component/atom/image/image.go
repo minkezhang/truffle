@@ -61,7 +61,7 @@ func (m *M) render(img image.Image) string {
 }
 
 type updateImageMsg struct {
-	*model_ui.BaseMsg
+	id      string
 	payload string
 }
 
@@ -72,9 +72,7 @@ func (m *M) Init() tea.Cmd {
 		}
 		if s, err := data(*m); err == nil {
 			return updateImageMsg{
-				BaseMsg: &model_ui.BaseMsg{
-					ID: m.ID(),
-				},
+				id:      m.ID(),
 				payload: s,
 			}
 		} else {
@@ -86,7 +84,7 @@ func (m *M) Init() tea.Cmd {
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case updateImageMsg:
-		if m.ID() == msg.ID {
+		if m.ID() == msg.id {
 			m.cache = string(msg.payload)
 		}
 	}

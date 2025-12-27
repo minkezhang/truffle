@@ -3,7 +3,6 @@ package card
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -149,9 +148,8 @@ func Make(o O) M {
 
 type SelectMsg *node.N
 
-func (m M) Init() tea.Cmd {
-	return model_ui.ToCommand(model_ui.ToNoticeMsg(fmt.Sprintf("results ID: %v", m.ID())))
-} // DEBUG
+func (m M) Init() tea.Cmd { return nil }
+
 func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{
 		m.Base.Update(msg),
@@ -168,9 +166,7 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						cmds,
 						model_ui.ToCommand(SelectMsg(v.node)),
 						model_ui.ToCommand(model_ui.FocusMsg{
-							BaseMsg: model_ui.BaseMsg{
-								ID: m.ID(),
-							},
+							ID:    m.ID(),
 							Index: i,
 						}),
 					)
@@ -179,22 +175,20 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
-			m.list.Select(msg.Index) // TODO(minkezhang): Investigate why this is being selected over and over.
+			m.list.Select(msg.Index)
 		}
 	case tea.KeyMsg:
 		if m.Focus() {
 			switch msg.Type {
 			case tea.KeyEsc:
-				cmds = append(cmds, model_ui.ToCommand(model_ui.BlurMsg{
-					BaseMsg: model_ui.BaseMsg{ID: m.ID()},
-				}))
+				cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{ID: m.ID()}))
 			case tea.KeyEnter:
 				v := m.list.SelectedItem().(*I)
 				cmds = append(
 					cmds,
 					model_ui.ToCommand(SelectMsg(v.node)),
-					model_ui.ToCommand(model_ui.BlurMsg{
-						BaseMsg: model_ui.BaseMsg{ID: m.ID()},
+					model_ui.ToCommand(model_ui.EOFMsg{
+						ID: m.ID(),
 					}),
 				)
 			}
@@ -206,8 +200,9 @@ func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var c tea.Cmd
 		m.list, c = m.list.Update(msg)
 		cmds = append(cmds, c)
-		slog.Debug(fmt.Sprintf("global index: %d", m.list.GlobalIndex()))
-		m.SetIndex(m.list.GlobalIndex())
+		if i := m.list.GlobalIndex(); m.Index() != i {
+			m.SetIndex(m.list.GlobalIndex())
+		}
 	}
 
 	return m, tea.Batch(cmds...)

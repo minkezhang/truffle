@@ -1,8 +1,6 @@
 package textinput
 
 import (
-	"fmt" // DEBUG
-
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -49,9 +47,7 @@ type SubmitMsg struct {
 	V  string
 }
 
-func (m *M) Init() tea.Cmd {
-	return model_ui.ToCommand(model_ui.ToNoticeMsg(fmt.Sprintf("Input ID: %v", m.ID()))) // DEBUG
-}
+func (m *M) Init() tea.Cmd { return nil }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{
@@ -65,7 +61,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.input.Blur()
 		}
-	case model_ui.BlurMsg:
+	case model_ui.EOFMsg:
 		if m.ID() == msg.ID {
 			m.input.Blur()
 		}
@@ -73,9 +69,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if input.IsMouseJustPressed(msg) && zone.Get(m.ID()).InBounds(msg) {
 			cmds = append(cmds, model_ui.ToCommand(
 				model_ui.FocusMsg{
-					BaseMsg: model_ui.BaseMsg{
-						ID: m.ID(),
-					},
+					ID: m.ID(),
 				},
 			))
 		}
@@ -111,13 +105,6 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						ID: m.ID(),
 						V:  v,
 					}),
-					/*
-						model_ui.ToCommand(model_ui.BlurMsg{
-							BaseMsg: model_ui.BaseMsg{
-								ID: m.ID(),
-							},
-						}),
-					*/
 				),
 			)
 		}

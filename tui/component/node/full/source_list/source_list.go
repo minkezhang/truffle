@@ -90,16 +90,12 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch t := msg.Type; t {
 		case tea.KeyLeft:
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
+				ID:    m.ID(),
 				Index: m.Index() - 1,
 			}))
 		case tea.KeyRight:
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{
-					ID: m.ID(),
-				},
+				ID:    m.ID(),
 				Index: m.Index() + 1,
 			}))
 		}
@@ -107,25 +103,19 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if input.IsMouseJustPressed(msg) {
 			if zone.Get(m.kLeft).InBounds(msg) {
 				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-					BaseMsg: model_ui.BaseMsg{
-						ID: m.ID(),
-					},
+					ID:    m.ID(),
 					Index: m.Index() - 1,
 				}))
 			} else if zone.Get(m.kRight).InBounds(msg) {
 				cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-					BaseMsg: model_ui.BaseMsg{
-						ID: m.ID(),
-					},
+					ID:    m.ID(),
 					Index: m.Index() + 1,
 				}))
 			} else {
 				for i, k := range m.order {
 					if zone.Get(k).InBounds(msg) {
 						cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-							BaseMsg: model_ui.BaseMsg{
-								ID: m.ID(),
-							},
+							ID:    m.ID(),
 							Index: i,
 						}))
 					}

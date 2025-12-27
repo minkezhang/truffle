@@ -21,7 +21,7 @@
 //	    if m.ID() == msg.ID() { ... }
 //	  // Used if this is a parent with child nodes handling FocusMsg (all the
 //	  // way up the chain)
-//	  model_ui.BlurMsg:
+//	  model_ui.EOFMsg:
 //	    ...
 //	  case tea.KeyMsg:
 //	    if !m.Focus() { cmds = append(cmds, nil) }  // Drop keyboard input
@@ -29,7 +29,7 @@
 //	    ...
 //	    if zone.Get(k).InBounds(msg) {  // Directly select a UI element
 //	      cmd = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-//	        BaseMsg: model_ui.BaseMsg{ ID: m.ID() },
+//	        ID: m.ID(),
 //	        Index: ...,
 //	      }))
 //	    }
@@ -40,7 +40,7 @@
 //
 // Note that only nodes which explicitly needs to handle user input will need to
 // handle FocusMsg messages -- if a child node handles user input, the node
-// itself will still need to check BlurMsg and propagate this up (substituting
+// itself will still need to check EOFMsg and propagate this up (substituting
 // the parent ID instead of the child) the tree.
 //
 // See component/node/full/source_list/source_list.go for an example of UI
@@ -61,18 +61,16 @@ import (
 
 func ToCommand(msg tea.Msg) tea.Cmd { return func() tea.Msg { return msg } }
 
-// BlurMsg is published by a specific node which instructs the parent node to
-// advance the internal tab index. The ID included in the message is the
+// EOFMsg is published by a specific node which instructs the parent node to
+// advance the parent's internal tab index. The ID included in the message is the
 // originating node.
 //
 // Nodes that need to manage a tab index must handle this message.
 //
-// Upon node deletion, the node must publish a BlurMsg with IsEnd = false. This
+// Upon node deletion, the node must publish a EOFMsg with IsEnd = false. This
 // will allow the parent node to appropriately handle this event.
-//
-// TOOD(minkezhang): Rename EOFMsg
-type BlurMsg struct {
-	BaseMsg
+type EOFMsg struct {
+	ID    string
 	IsEnd bool
 }
 
@@ -82,7 +80,7 @@ type BlurMsg struct {
 //
 // All nodes which handles user input in some way must handle this message.
 type FocusMsg struct {
-	BaseMsg
+	ID    string
 	Index int
 }
 
@@ -96,10 +94,6 @@ func (o O) WithNTabs(v int) O {
 		Column: o.Column,
 		NTabs:  v,
 	}
-}
-
-type BaseMsg struct { // TODO(minkezhang): Delete
-	ID string
 }
 
 type I interface {
@@ -145,12 +139,8 @@ func (m *Base) ID() string { return m.id }
 
 // Update renders
 func (m *Base) Update(msg tea.Msg) tea.Cmd {
-	var c tea.Cmd
 	switch msg := msg.(type) {
 	case FocusMsg:
-		if m.ID() == msg.ID {
-			c = ToCommand(NoticeMsg(fmt.Sprintf("FocusMsg for ID = %v", m.ID())))
-		}
 		m.SetFocus(m.ID() == msg.ID)
 		if m.Focus() {
 			if msg.Index >= m.NTabs() {
@@ -162,10 +152,7 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 			}
 		}
 		return nil
-	case BlurMsg:
-		if m.ID() == msg.ID {
-			c = ToCommand(ToNoticeMsg(fmt.Sprintf("BlurMsg for ID = %v", m.ID())))
-		}
+	case EOFMsg:
 		m.SetFocus(m.Focus() && m.ID() != msg.ID)
 	case tea.KeyMsg:
 		if !m.Focus() {
@@ -175,42 +162,34 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 		case tea.KeyShiftTab:
 			dst := m.Index() - 1
 			if dst < 0 {
-				return ToCommand(BlurMsg{
-					BaseMsg: BaseMsg{
-						ID: m.ID(),
-					},
+				return ToCommand(EOFMsg{
+					ID:    m.ID(),
 					IsEnd: false,
 				})
 			} else {
 				m.SetIndex(dst)
 				return ToCommand(FocusMsg{
-					BaseMsg: BaseMsg{
-						ID: m.ID(),
-					},
+					ID:    m.ID(),
 					Index: m.Index(),
 				})
 			}
 		case tea.KeyTab:
 			dst := m.Index() + 1
 			if dst >= m.NTabs() {
-				return ToCommand(BlurMsg{
-					BaseMsg: BaseMsg{
-						ID: m.ID(),
-					},
+				return ToCommand(EOFMsg{
+					ID:    m.ID(),
 					IsEnd: false,
 				})
 			} else {
 				m.SetIndex(dst)
 				return ToCommand(FocusMsg{
-					BaseMsg: BaseMsg{
-						ID: m.ID(),
-					},
+					ID:    m.ID(),
 					Index: m.Index(),
 				})
 			}
 		}
 	}
-	return c
+	return nil
 }
 
 func (m *Base) Column() grid.C { return m.column }

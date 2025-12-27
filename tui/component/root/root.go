@@ -122,7 +122,7 @@ func (m *M) Init() tea.Cmd {
 		tea.Sequence(
 			m.search.Init(),
 			model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+				ID: m.search.(model_ui.I).ID(),
 			}),
 		),
 		m.full.Init(),
@@ -145,33 +145,27 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Suspend
 		case tea.KeyCtrlL:
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
+				ID: m.search.(model_ui.I).ID(),
 			}))
 		}
 	case tea.WindowSizeMsg: // Clear buffer
 		return m, tea.ClearScreen
 	case search_ui.QueryMsg:
 		cmds = append(cmds, model_ui.ToCommand(m.query(msg)))
-	case model_ui.BlurMsg:
+	case model_ui.EOFMsg:
 		switch id := msg.ID; id {
 		case m.full.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
-			}),
-				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for full")),
-			)
+				ID: m.search.(model_ui.I).ID(),
+			}))
 		case m.search.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
-			}),
-				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for search")),
-			)
+				ID: m.full.(model_ui.I).ID(),
+			}))
 		case m.card.(model_ui.I).ID():
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.search.(model_ui.I).ID()},
-			}),
-				model_ui.ToCommand(model_ui.ToNoticeMsg("caught blur msg for card")),
-			)
+				ID: m.search.(model_ui.I).ID(),
+			}))
 		}
 	case node_card_ui.SelectMsg:
 		m.mode = ViewModeFull
@@ -185,7 +179,7 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(
 			cmds,
 			model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{ID: m.full.(model_ui.I).ID()},
+				ID: m.full.(model_ui.I).ID(),
 			}),
 			m.full.Init(),
 		)
@@ -198,10 +192,8 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Nodes: []*node.N(msg),
 		})
 		cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-			BaseMsg: model_ui.BaseMsg{ID: m.card.(model_ui.I).ID()},
-		}),
-			model_ui.ToCommand(model_ui.ToNoticeMsg("focusing search results")),
-		)
+			ID: m.card.(model_ui.I).ID(),
+		}))
 	}
 
 	var c tea.Cmd
@@ -263,11 +255,9 @@ func (m *M) body() string {
 func (m *M) View() string {
 	return zone.Scan(
 		overlay.Overlay(
-			"",
-			// m.notification.View(),
+			m.notification.View(),
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				m.notification.View(),
 				m.search.View(),
 				m.body(),
 				column.Style().Render(m.version),

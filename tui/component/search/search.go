@@ -1,8 +1,6 @@
 package search
 
 import (
-	"fmt" // DEBUG
-
 	"github.com/charmbracelet/bubbletea"
 
 	input_ui "github.com/minkezhang/truffle/tui/component/util/input"
@@ -33,37 +31,23 @@ func New(o O) *M {
 
 type QueryMsg string
 
-func (m *M) Init() tea.Cmd {
-	return tea.Sequence( // DEBUG
-		m.input.Init(),
-		model_ui.ToCommand(model_ui.ToNoticeMsg(fmt.Sprintf("Search Bar ID: %v", m.ID()))),
-	)
-}
+func (m *M) Init() tea.Cmd { return m.input.Init() }
 
 func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 
 	switch msg := msg.(type) {
-	case model_ui.BlurMsg:
+	case model_ui.EOFMsg:
 		if m.input.(*input_ui.M).ID() == msg.ID {
-			cmds = append(cmds,
-				model_ui.ToCommand(model_ui.BlurMsg{
-					BaseMsg: model_ui.BaseMsg{
-						m.ID(),
-					},
+			cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{
+					ID:    m.ID(),
 					IsEnd: msg.IsEnd,
-				}),
-				model_ui.ToCommand(model_ui.ToNoticeMsg(
-					fmt.Sprintf("search caught input blur and blurring self search: self = %v", m.ID()),
-				)),
-			)
+				}))
 		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
 			cmds = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-				BaseMsg: model_ui.BaseMsg{
-					m.input.(*input_ui.M).ID(),
-				},
+				ID:    m.input.(*input_ui.M).ID(),
 				Index: 0,
 			}))
 		}
