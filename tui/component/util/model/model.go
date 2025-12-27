@@ -16,22 +16,23 @@
 //	func (m M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 //	  cmds := []tea.Cmd{ m.Base.Update(msg) }  // Handle tabs
 //	  switch msg := msg.(type) {
+//
 //	  // Some element is being selected in this node
 //	  model_ui.FocusMsg:
 //	    if m.ID() == msg.ID() { ... }
+//
 //	  // Used if this is a parent with child nodes handling FocusMsg (all the
 //	  // way up the chain)
 //	  model_ui.EOFMsg:
 //	    ...
+//
 //	  case tea.KeyMsg:
 //	    if !m.Focus() { cmds = append(cmds, nil) }  // Drop keyboard input
+//
 //	  case tea.MouseMsg:
 //	    ...
 //	    if zone.Get(k).InBounds(msg) {  // Directly select a UI element
-//	      cmd = append(cmds, model_ui.ToCommand(model_ui.FocusMsg{
-//	        ID: m.ID(),
-//	        Index: ...,
-//	      }))
+//	      cmd = append(cmds, m.FocusCmd(m.lookup[k]))
 //	    }
 //	  }
 //	}
@@ -62,8 +63,8 @@ import (
 func ToCommand(msg tea.Msg) tea.Cmd { return func() tea.Msg { return msg } }
 
 // EOFMsg is published by a specific node which instructs the parent node to
-// advance the parent's internal tab index. The ID included in the message is the
-// originating node.
+// advance the parent's internal tab index. The ID included in the message is
+// the originating node.
 //
 // Nodes that need to manage a tab index must handle this message.
 //
@@ -137,6 +138,23 @@ func (m *Base) SetIndex(v int) int {
 // This is useful for passing messages to specific models.
 func (m *Base) ID() string { return m.id }
 
+// EOFCmd is a convenience function returning a command which will emit the EOFMsg.
+func (m *Base) EOFCmd(isEnd bool) tea.Cmd {
+	return ToCommand(EOFMsg{
+		ID:    m.ID(),
+		IsEnd: isEnd,
+	})
+}
+
+// FocusCmd is a convenience function returning a command which will emit the
+// FocusMsg.
+func (m *Base) FocusCmd(index int) tea.Cmd {
+	return ToCommand(FocusMsg{
+		ID:    m.ID(),
+		Index: index,
+	})
+}
+
 // Update renders
 func (m *Base) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -162,30 +180,18 @@ func (m *Base) Update(msg tea.Msg) tea.Cmd {
 		case tea.KeyShiftTab:
 			dst := m.Index() - 1
 			if dst < 0 {
-				return ToCommand(EOFMsg{
-					ID:    m.ID(),
-					IsEnd: false,
-				})
+				return m.EOF(false)
 			} else {
 				m.SetIndex(dst)
-				return ToCommand(FocusMsg{
-					ID:    m.ID(),
-					Index: m.Index(),
-				})
+				return m.Focus(m.Index())
 			}
 		case tea.KeyTab:
 			dst := m.Index() + 1
 			if dst >= m.NTabs() {
-				return ToCommand(EOFMsg{
-					ID:    m.ID(),
-					IsEnd: false,
-				})
+				return m.EOF(true)
 			} else {
 				m.SetIndex(dst)
-				return ToCommand(FocusMsg{
-					ID:    m.ID(),
-					Index: m.Index(),
-				})
+				return m.Focus(m.Index())
 			}
 		}
 	}

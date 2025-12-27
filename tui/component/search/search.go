@@ -40,9 +40,9 @@ func (m *M) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case model_ui.EOFMsg:
 		if m.input.(*input_ui.M).ID() == msg.ID {
 			cmds = append(cmds, model_ui.ToCommand(model_ui.EOFMsg{
-					ID:    m.ID(),
-					IsEnd: msg.IsEnd,
-				}))
+				ID:    m.ID(),
+				IsEnd: msg.IsEnd,
+			}))
 		}
 	case model_ui.FocusMsg:
 		if m.ID() == msg.ID {
