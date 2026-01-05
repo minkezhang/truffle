@@ -24,9 +24,20 @@ type Identifiable interface {
 }
 
 type Focusable interface {
+	// OnFocus may be called in the Update method by the directory. This
+	// function directly instructs the node to activate any sub-elements for
+	// input, e.g. focusing a specific input field.
 	OnFocus(i int) tea.Cmd
+
+	// OnBlur may be called in the Update method by the directory. This
+	// function directly instructs the node to deactivate all sub-elements.
 	OnBlur() tea.Cmd
+
+	// NElements returns the number of interactable (and therefore
+	// tab-focusable) elements in this node. NElements does not take into
+	// account the number of [Node] children.
 	NElements() int
+
 	FocusIndex() int
 	FocusState() FocusState
 }
