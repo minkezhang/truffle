@@ -1,6 +1,7 @@
 package directory
 
 import (
+	"os"
 	"testing"
 
 	"github.com/charmbracelet/bubbletea"
@@ -29,6 +30,11 @@ func (m *Mock) View() string                            { return "" }
 func (m *Mock) OnFocus(i int) tea.Cmd                   { return m.Node.OnFocus(i) } // May be overridden
 func (m *Mock) OnBlur() tea.Cmd                         { return m.Node.OnBlur() }   // May be overridden
 
+func TestMain(m *testing.M) {
+	zone.NewGlobal()
+	os.Exit(m.Run())
+}
+
 // Consider the following node tree --
 //
 //	  A
@@ -40,7 +46,6 @@ func (m *Mock) OnBlur() tea.Cmd                         { return m.Node.OnBlur()
 // order() returns a pre-order ordering of the nodes; we expect therefore a
 // result of [A, B, D, C]
 func TestOrder(t *testing.T) {
-	zone.NewGlobal()
 	na := &Mock{Node: focusable.New("test-a", "", 0)}
 	nb := &Mock{Node: focusable.New("test-b", na.ID(), 0)}
 	nc := &Mock{Node: focusable.New("test-c", na.ID(), 0)}
