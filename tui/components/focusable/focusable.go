@@ -34,7 +34,6 @@ func (n *Node) FocusIndex() int              { return n.index }
 func (n *Node) NElements() int               { return n.n_elements }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
-	n.focus_state = types.FocusStateActive
 	if i < 0 || i >= n.NElements() {
 		return func() tea.Msg {
 			return types.EOFMessage{
@@ -43,6 +42,7 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 			}
 		}
 	}
+	n.focus_state = types.FocusStateActive
 	n.index = i
 	return nil
 }
