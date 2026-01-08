@@ -1,6 +1,23 @@
 // Package clickable implements an action node which tracks mouse clicks and
 // ensures a signal is only sent if both the mouse down and mouse up events are
 // within the same bounding box.
+//
+// Example:
+//
+//   type N struct {  // tea.Cmd
+//     cl *clickable.Node
+//   }
+//
+//   func (n *N) Init() tea.Cmd { return tea.Batch(n.cl.Init(), ...) }
+//
+//   func (n *N) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+//     switch msg := msg.(type) {
+//     case clickable.Click:
+//       if msg.ID == n.cl.ID() { ... }
+//     }
+//   }
+//
+//   func (n *N) View() string { return zone.Mark(n.cl.ID(), ...) }
 package clickable
 
 import (
