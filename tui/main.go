@@ -49,7 +49,7 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return r, tea.Batch(cmds...)
 }
 
-func (r root) View() string { return zone.Scan(r.input.View()) }
+func (r root) View() string { return r.directory.View() + "\n" + zone.Scan(r.input.View()) }
 
 func main() {
 	// See https://github.com/lrstanley/bubblezone for more information.
@@ -59,7 +59,7 @@ func main() {
 		root{
 			directory: directory.New(),
 			input: textinput.New(textinput.O{
-				Prefix:      "test",
+				Prefix:      "test input",
 				ParentID:    "",
 				Width:       50,
 				Placeholder: "some text dim",

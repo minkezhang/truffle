@@ -1,7 +1,9 @@
 package directory
 
 import (
+	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle/tui/components/directory/types"
@@ -47,7 +49,6 @@ func (d *D) order() []string {
 }
 
 func (d *D) Init() tea.Cmd { return nil }
-func (d *D) View() string  { return "" }
 
 func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -105,4 +106,40 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		d.current_node_id = target_id
 	}
 	return d, tea.Batch(cmds...)
+}
+
+func (d *D) View() string {
+	var tree func(indent int, prefix string, nodes []string) []string
+	// From github.com/campoy/tools/tree.
+	tree = func(indent int, prefix string, nodes []string) []string {
+		result := []string{}
+		for i, n := range nodes {
+			directory := "│  "
+			file := "├─ "
+			if i == len(nodes) - 1 {
+				directory = "   "
+				file = "└─ "
+			}
+			if n == "" {
+				directory = " "
+				result = append(result, "(root)")
+			} else {
+				result = append(
+					result,
+					fmt.Sprintf(
+						"%v%v%v",
+						prefix,
+						file,
+						n,
+					),
+				)
+			}
+			result = append(
+				result,
+				tree(indent+1, prefix + directory, d.children[n])...,
+			)
+		}
+		return result
+	}
+	return strings.Join(tree(0, "", []string{""}), "\n")
 }

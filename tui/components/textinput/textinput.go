@@ -40,15 +40,10 @@ func New(o O) *Node {
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
-		func() tea.Msg {
-			return types.RegisterNodeMessage{
-				Node: n,
-			}
-		},
 		n.clickable.Init(),
 		func() tea.Msg {
 			return types.RegisterNodeMessage{
-				Node: n.clickable,
+				Node: n,
 			}
 		},
 	)
