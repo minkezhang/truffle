@@ -16,11 +16,11 @@ type Node struct {
 	focus_state types.FocusState
 }
 
-func New(prefix string, parent_id string, n_elements int) Node {
+func New(prefix string, parent_id string, n_elements int) *Node {
 	if prefix == "" {
 		prefix = "none"
 	}
-	return Node{
+	return &Node{
 		id:         fmt.Sprintf("%v:%v", prefix, zone.NewPrefix()),
 		parent_id:  parent_id,
 		n_elements: n_elements,

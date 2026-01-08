@@ -3,56 +3,75 @@ package textinput
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/components/clickable"
 	"github.com/minkezhang/truffle/tui/components/directory/types"
 	"github.com/minkezhang/truffle/tui/components/focusable"
 )
 
 type Node struct {
-	focusable.Node
+	*focusable.Node
 
-	input textinput.Model
+	input     textinput.Model
+	clickable *clickable.Node
 }
 
-func New(prefix string, parent_id string) *Node {
-	return &Node{
-		Node: focusable.New(prefix, parent_id, 1),
+type O struct {
+	Prefix      string
+	ParentID    string
+	Width       int
+	Placeholder string
+	Prompt      string
+}
+
+func New(o O) *Node {
+	t := textinput.New()
+	t.Width = t.Width
+	t.Prompt = t.Prompt
+	t.Placeholder = t.Placeholder
+
+	n := &Node{
+		Node:  focusable.New(o.Prefix, o.ParentID, 1),
+		input: t,
 	}
+	n.clickable = clickable.New(n.ID())
+	return n
 }
 
 func (n *Node) Init() tea.Cmd {
-	return func() tea.Msg {
-		return types.RegisterNodeMessage{
-			Node: n,
-		}
-	}
+	return tea.Sequence(
+		func() tea.Msg {
+			return types.RegisterNodeMessage{
+				Node: n,
+			}
+		},
+		n.clickable.Init(),
+		func() tea.Msg {
+			return types.RegisterNodeMessage{
+				Node: n.clickable,
+			}
+		},
+	)
 }
 
 type SubmitTextInput struct {
-	ID string
+	ID    string
 	Value string
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+	var c tea.Cmd
 
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			// Mouse input is being passed into search input as KeyMsg; it
-			// is unclear how or why this is happening.
-			//
-			// Such a KeyMsg is of the form
-			//
-			//   { Type: KeyRunes, Alt: true, Runes: []rune{'['} }
-			//
-			// or
-			//
-			//   { Type: KeyRunes, Alt: false, Runes: []rune{...} }
-			if (len(msg.Runes) <= 1 && !msg.Alt) || msg.Paste {
-				var c tea.Cmd
-				n.input, c = n.input.Update(msg)
-				cmds = append(cmds, c)
+		case clickable.Click:
+			if msg.ID == n.clickable.ID() {
+				n.input.SetValue("")
 			}
+		case tea.KeyMsg:
+			n.input, c = n.input.Update(msg)
+			cmds = append(cmds, c)
 
 			switch msg.Type {
 			case tea.KeyEnter:
@@ -62,27 +81,52 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds,
 					func() tea.Msg {
 						return SubmitTextInput{
-							ID: n.ID(),
-							Value:  v,
+							ID:    n.ID(),
+							Value: v,
 						}
 					},
 				)
 			}
 		}
+		n.input.Cursor, c = n.input.Cursor.Update(msg)
+		cmds = append(cmds, c)
+	} else {
+		switch msg := msg.(type) {
+		case clickable.Click:
+			if msg.ID == n.clickable.ID() {
+				cmds = append(cmds, func() tea.Msg {
+					return types.FocusMessage{
+						ID:    n.ID(),
+						Index: 0,
+					}
+				})
+			}
+			_, c := n.clickable.Update(msg)
+			cmds = append(cmds, c)
+		}
 	}
-	return n, nil
+	return n, tea.Batch(cmds...)
 }
 
-func (n *Node) View() string { return n.input.View() }
+func (n *Node) View() string {
+	return zone.Mark(n.clickable.ID(), n.input.View())
+}
 
 func (n *Node) OnFocus(i int) tea.Cmd {
 	cmds := []tea.Cmd{n.Node.OnFocus(i)}
 	if n.FocusState() == types.FocusStateActive {
-		cmds = append(cmds, n.input.Focus())
+		cmds = append(cmds,
+			n.input.Focus(),
+			n.input.Cursor.Focus(),
+		)
 	}
 	return tea.Sequence(cmds...)
 }
+
 func (n *Node) OnBlur() tea.Cmd {
 	n.input.Blur()
-	return n.Node.OnBlur()
+	n.input.Cursor.Blur()
+	return tea.Sequence(
+		n.Node.OnBlur(),
+	)
 }
