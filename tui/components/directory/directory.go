@@ -116,7 +116,7 @@ func (d *D) View() string {
 		for i, n := range nodes {
 			directory := "│  "
 			file := "├─ "
-			if i == len(nodes) - 1 {
+			if i == len(nodes)-1 {
 				directory = "   "
 				file = "└─ "
 			}
@@ -136,7 +136,7 @@ func (d *D) View() string {
 			}
 			result = append(
 				result,
-				tree(indent+1, prefix + directory, d.children[n])...,
+				tree(indent+1, prefix+directory, d.children[n])...,
 			)
 		}
 		return result

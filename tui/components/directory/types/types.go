@@ -16,6 +16,10 @@ type Node interface {
 
 	Focusable
 	Identifiable
+	Renderable
+}
+
+type Renderable interface {
 }
 
 type Identifiable interface {
