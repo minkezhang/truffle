@@ -1,4 +1,4 @@
-package column
+package render_test
 
 import (
 	"testing"
