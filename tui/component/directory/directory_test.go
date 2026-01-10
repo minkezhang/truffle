@@ -7,14 +7,14 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/google/go-cmp/cmp"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/components/directory/types"
-	"github.com/minkezhang/truffle/tui/components/focusable"
+	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/focusable"
 )
 
 var _ types.Node = &Mock{}
 
 type Mock struct {
-	focusable.Node
+	*focusable.Node
 }
 
 func (m *Mock) Init() tea.Cmd {

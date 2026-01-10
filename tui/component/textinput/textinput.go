@@ -4,9 +4,9 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/components/clickable"
-	"github.com/minkezhang/truffle/tui/components/directory/types"
-	"github.com/minkezhang/truffle/tui/components/focusable"
+	"github.com/minkezhang/truffle/tui/component/clickable"
+	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/focusable"
 )
 
 type Node struct {

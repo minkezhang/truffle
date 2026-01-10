@@ -6,9 +6,9 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/components/directory"
-	"github.com/minkezhang/truffle/tui/components/directory/types"
-	"github.com/minkezhang/truffle/tui/components/textinput"
+	"github.com/minkezhang/truffle/tui/component/directory"
+	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/textinput"
 )
 
 type root struct {

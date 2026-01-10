@@ -23,8 +23,8 @@ package clickable
 import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/components/directory/types"
-	"github.com/minkezhang/truffle/tui/components/focusable"
+	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/focusable"
 )
 
 type Click struct {
