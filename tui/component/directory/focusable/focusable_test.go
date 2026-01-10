@@ -1,4 +1,4 @@
-package directory
+package focusable
 
 import (
 	"os"
@@ -7,11 +7,10 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/google/go-cmp/cmp"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 )
-
-var _ types.Node = &Mock{}
 
 type Mock struct {
 	*focusable.Node
@@ -19,7 +18,7 @@ type Mock struct {
 
 func (m *Mock) Init() tea.Cmd {
 	return func() tea.Msg {
-		return types.RegisterNodeMessage{
+		return base.RegisterMessage{
 			Node: m,
 		}
 	}
@@ -51,24 +50,26 @@ func TestOrder(t *testing.T) {
 	nc := &Mock{Node: focusable.New("test-c", na.ID(), 0)}
 	nd := &Mock{Node: focusable.New("test-d", nb.ID(), 0)}
 	d := &D{
-		nodes: map[string]types.Node{
-			na.ID(): na,
-			nb.ID(): nb,
-			nc.ID(): nc,
-			nd.ID(): nd,
-		},
-		children: map[string][]string{
-			"":      []string{na.ID()},
-			na.ID(): []string{nb.ID(), nc.ID()},
-			nb.ID(): []string{nd.ID()},
-			nc.ID(): []string{},
-			nd.ID(): []string{},
-		},
-		parent: map[string]string{
-			na.ID(): "",
-			nb.ID(): nb.ParentID(),
-			nc.ID(): nc.ParentID(),
-			nd.ID(): nd.ParentID(),
+		directory: &base.D{
+			Nodes: map[string]base.Identifiable{
+				na.ID(): na,
+				nb.ID(): nb,
+				nc.ID(): nc,
+				nd.ID(): nd,
+			},
+			Children: map[string][]string{
+				"":      []string{na.ID()},
+				na.ID(): []string{nb.ID(), nc.ID()},
+				nb.ID(): []string{nd.ID()},
+				nc.ID(): []string{},
+				nd.ID(): []string{},
+			},
+			Parent: map[string]string{
+				na.ID(): "",
+				nb.ID(): nb.ParentID(),
+				nc.ID(): nc.ParentID(),
+				nd.ID(): nd.ParentID(),
+			},
 		},
 		dirty: true,
 	}
@@ -86,10 +87,10 @@ func TestUpdate(t *testing.T) {
 		nc := &Mock{Node: focusable.New("test-c", na.ID(), 0)}
 		nd := &Mock{Node: focusable.New("test-d", nb.ID(), 0)}
 		d := New()
-		d.Update(types.RegisterNodeMessage{Node: na})
-		d.Update(types.RegisterNodeMessage{Node: nb})
-		d.Update(types.RegisterNodeMessage{Node: nc})
-		d.Update(types.RegisterNodeMessage{Node: nd})
+		d.Update(base.RegisterMessage{Node: na})
+		d.Update(base.RegisterMessage{Node: nb})
+		d.Update(base.RegisterMessage{Node: nc})
+		d.Update(base.RegisterMessage{Node: nd})
 		got, want := d.order(), []string{na.ID(), nb.ID(), nd.ID(), nc.ID()}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("order() mismatch (-want +got):\n%v", diff)
@@ -99,7 +100,7 @@ func TestUpdate(t *testing.T) {
 		t.Run("Simple/KeyTab", func(t *testing.T) {
 			n := &Mock{Node: focusable.New("test", "", 2)}
 			d := New()
-			d.Update(types.RegisterNodeMessage{Node: n})
+			d.Update(base.RegisterMessage{Node: n})
 			d.Update(types.FocusMessage{ID: n.ID(), Index: 0}) // Manually simulate current focus
 			d.Update(tea.KeyMsg{Type: tea.KeyTab})
 			if got, want := n.FocusIndex(), 1; got != want {
@@ -109,7 +110,7 @@ func TestUpdate(t *testing.T) {
 		t.Run("Simple/KeyTab/EOF", func(t *testing.T) {
 			n := &Mock{Node: focusable.New("test", "", 2)}
 			d := New()
-			d.Update(types.RegisterNodeMessage{Node: n})
+			d.Update(base.RegisterMessage{Node: n})
 			d.Update(types.FocusMessage{ID: n.ID(), Index: 0}) // Manually simulate current focus
 			d.Update(tea.KeyMsg{Type: tea.KeyTab})
 			d.Update(tea.KeyMsg{Type: tea.KeyTab}) // EOF
@@ -126,8 +127,8 @@ func TestUpdate(t *testing.T) {
 			na := &Mock{Node: focusable.New("test-a", "", 1)}
 			nb := &Mock{Node: focusable.New("test-b", "", 1)}
 			d := New()
-			d.Update(types.RegisterNodeMessage{Node: na})
-			d.Update(types.RegisterNodeMessage{Node: nb})
+			d.Update(base.RegisterMessage{Node: na})
+			d.Update(base.RegisterMessage{Node: nb})
 			d.Update(types.FocusMessage{ID: na.ID(), Index: 0})
 			d.Update(types.EOFMessage{ID: na.ID(), IsHead: false})
 			if got, want := d.current_node_id, nb.ID(); got != want {
@@ -138,8 +139,8 @@ func TestUpdate(t *testing.T) {
 			na := &Mock{Node: focusable.New("test-a", "", 1)}
 			nb := &Mock{Node: focusable.New("test-b", "", 1)}
 			d := New()
-			d.Update(types.RegisterNodeMessage{Node: na})
-			d.Update(types.RegisterNodeMessage{Node: nb})
+			d.Update(base.RegisterMessage{Node: na})
+			d.Update(base.RegisterMessage{Node: nb})
 			d.Update(types.FocusMessage{ID: nb.ID(), Index: 0})
 			d.Update(types.EOFMessage{ID: nb.ID(), IsHead: false})
 			if got, want := d.current_node_id, na.ID(); got != want {

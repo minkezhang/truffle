@@ -5,7 +5,8 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/clickable"
-	"github.com/minkezhang/truffle/tui/component/focusable/directory/types"
+	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 )
 
@@ -42,7 +43,7 @@ func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.clickable.Init(),
 		func() tea.Msg {
-			return types.RegisterNodeMessage{
+			return base.RegisterMessage{
 				Node: n,
 			}
 		},

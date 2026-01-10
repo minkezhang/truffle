@@ -6,8 +6,9 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/component/focusable/directory"
-	"github.com/minkezhang/truffle/tui/component/focusable/directory/types"
+	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 )
 
@@ -22,7 +23,7 @@ func (r root) Init() tea.Cmd {
 		r.input.Init(),
 		func() tea.Msg {
 			return types.FocusMessage{
-				ID: r.input.(types.Node).ID(),
+				ID: r.input.(base.Identifiable).ID(),
 			}
 		},
 	)
@@ -57,7 +58,7 @@ func main() {
 
 	p := tea.NewProgram(
 		root{
-			directory: directory.New(),
+			directory: focusable.New(),
 			input: textinput.New(textinput.O{
 				Prefix:      "test input",
 				ParentID:    "",

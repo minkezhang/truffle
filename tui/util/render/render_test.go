@@ -50,7 +50,7 @@ func TestCheck(t *testing.T) {
 
 	for _, c := range configs {
 		t.Run(c.name, func(t *testing.T) {
-			err := check(c.s, c.max_width)
+			err := Validate(c.s, c.max_width)
 			if err != nil && c.success {
 				t.Errorf("check() returned a non-nil error: %v", err)
 			} else if err == nil && !c.success {

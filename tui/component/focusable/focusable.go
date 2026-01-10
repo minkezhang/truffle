@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/component/focusable/directory/types"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 )
 
 type Node struct {

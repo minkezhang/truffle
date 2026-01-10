@@ -23,7 +23,7 @@ package clickable
 import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle/tui/component/focusable/directory/types"
+	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 )
 
@@ -45,7 +45,7 @@ func New(parent_id string) *Node {
 
 func (n *Node) Init() tea.Cmd {
 	return func() tea.Msg {
-		return types.RegisterNodeMessage{
+		return base.RegisterMessage{
 			Node: n,
 		}
 	}
