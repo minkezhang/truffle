@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
-	"github.com/minkezhang/truffle/tui/component/directory/types"
+	"github.com/minkezhang/truffle/tui/component/focusable/directory/types"
 )
 
 type D struct {
