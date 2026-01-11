@@ -9,6 +9,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
 
 type Node struct {
@@ -109,7 +110,12 @@ func (n *Node) View() string {
 	return zone.Mark(
 		n.clickable.ID(),
 		lipgloss.NewStyle().Border(
-			lipgloss.NormalBorder(), false, false, true, false,
+			map[types.FocusState]lipgloss.Border{
+				types.FocusStateNone:   lipgloss.NormalBorder(),
+				types.FocusStateActive: lipgloss.DoubleBorder(),
+			}[n.FocusState()], false, false, true, false,
+		).BorderForeground(
+			color_profile.UIForeground[n.FocusState()],
 		).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()),
 	)
 }

@@ -5,18 +5,22 @@ import (
 	"os"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
+	"github.com/minkezhang/truffle/tui/component/log"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 )
 
 type root struct {
 	directory tea.Model
 	input     tea.Model
-	errors    *errors.Node
+	errors    tea.Model
+	log       tea.Model
 }
 
 func (r root) Init() tea.Cmd {
@@ -24,6 +28,7 @@ func (r root) Init() tea.Cmd {
 		r.directory.Init(),
 		r.input.Init(),
 		r.errors.Init(),
+		r.log.Init(),
 		func() tea.Msg {
 			return types.FocusMessage{
 				ID: r.input.(base.Identifiable).ID(),
@@ -43,6 +48,8 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlZ:
 			return r, tea.Suspend
 		}
+	case tea.WindowSizeMsg:
+		return r, tea.ClearScreen
 	}
 	var cmds []tea.Cmd
 	var c tea.Cmd
@@ -52,18 +59,30 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, c)
 	_, c = r.errors.Update(msg)
 	cmds = append(cmds, c)
+	_, c = r.log.Update(msg)
+	cmds = append(cmds, c)
 	return r, tea.Batch(cmds...)
 }
 
 func (r root) View() string {
 	return zone.Scan(
-		r.directory.View() + "\n" + r.input.View(),
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			r.directory.View(),
+			r.log.View(),
+			r.input.View(),
+		),
 	)
 }
+
+const max_width = 100
 
 func main() {
 	// See https://github.com/lrstanley/bubblezone for more information.
 	zone.NewGlobal()
+
+	c := column.New(max_width)
+	c.SetBorder(lipgloss.NormalBorder())
 
 	p := tea.NewProgram(
 		root{
@@ -71,12 +90,13 @@ func main() {
 			input: textinput.New(textinput.O{
 				Prefix:      "test input",
 				ParentID:    "",
-				Width:       100,
+				Width:       max_width,
 				Placeholder: "this is some text placeholder",
 				Prompt:      "> ",
 				Value:       "Frieren",
 			}),
 			errors: &errors.Node{},
+			log:    log.New("", "", c),
 		},
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),
