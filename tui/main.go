@@ -50,7 +50,11 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return r, tea.Batch(cmds...)
 }
 
-func (r root) View() string { return r.directory.View() + "\n" + zone.Scan(r.input.View()) }
+func (r root) View() string {
+	return zone.Scan(
+		r.directory.View() + "\n" + r.input.View(),
+	)
+}
 
 func main() {
 	// See https://github.com/lrstanley/bubblezone for more information.

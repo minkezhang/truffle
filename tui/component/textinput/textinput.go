@@ -66,10 +66,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
-		case clickable.Click:
-			if msg.ID == n.clickable.ID() {
-				n.input.SetValue("")
-			}
 		case tea.KeyMsg:
 			n.input, c = n.input.Update(msg)
 			cmds = append(cmds, c)
@@ -102,15 +98,20 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				})
 			}
-			_, c := n.clickable.Update(msg)
-			cmds = append(cmds, c)
 		}
+		_, c = n.clickable.Update(msg)
+		cmds = append(cmds, c)
 	}
 	return n, tea.Batch(cmds...)
 }
 
 func (n *Node) View() string {
-	return zone.Mark(n.clickable.ID(), lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()))
+	return zone.Mark(
+		n.clickable.ID(),
+		lipgloss.NewStyle().Border(
+			lipgloss.NormalBorder(), false, false, true, false,
+		).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()),
+	)
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {

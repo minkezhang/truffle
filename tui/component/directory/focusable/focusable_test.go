@@ -120,7 +120,7 @@ func TestUpdate(t *testing.T) {
 		})
 	})
 	t.Run("FocusMessage", func(t *testing.T) {
-
+		// TODO(minkezhang)
 	})
 	t.Run("EOFMessage", func(t *testing.T) {
 		t.Run("Simple/Next", func(t *testing.T) {
