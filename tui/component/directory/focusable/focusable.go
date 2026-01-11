@@ -68,7 +68,6 @@ func (d *D) Init() tea.Cmd { return nil }
 
 func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	var c tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -82,7 +81,7 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case base.RegisterMessage:
 		if _, ok := msg.Node.(Node); ok {
-			_, c = d.directory.Update(msg)
+			_, c := d.directory.Update(msg)
 			cmds = append(cmds, c)
 
 			d.dirty = true

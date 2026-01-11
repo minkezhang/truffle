@@ -1,4 +1,4 @@
-package render_test
+package render
 
 import (
 	"testing"
