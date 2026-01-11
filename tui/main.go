@@ -16,7 +16,7 @@ import (
 type root struct {
 	directory tea.Model
 	input     tea.Model
-	errors *errors.Node
+	errors    *errors.Node
 }
 
 func (r root) Init() tea.Cmd {

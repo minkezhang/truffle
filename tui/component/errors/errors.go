@@ -19,15 +19,52 @@ func Error(e error) {
 	}
 }
 
+func Warn(e error) {
+	if _program != nil {
+		_program.Send(ToWarnMessage(e))
+	}
+}
+
+func Info(v string) {
+	if _program != nil {
+		_program.Send(ToInfoMessage(v))
+	}
+}
+
+func Debug(v string) {
+	if _program != nil {
+		_program.Send(ToDebugMessage(v))
+	}
+}
+
 func ToErrorMessage(e error) ErrorMessage {
 	slog.Error(e.Error())
 	return ErrorMessage{e: e}
+}
+
+func ToWarnMessage(e error) WarnMessage {
+	slog.Warn(e.Error())
+	return WarnMessage{e: e}
+}
+
+func ToInfoMessage(v string) InfoMessage {
+	slog.Info(v)
+	return InfoMessage(v)
+}
+
+func ToDebugMessage(v string) DebugMessage {
+	slog.Debug(v)
+	return DebugMessage(v)
 }
 
 // ErrorMsg may be returned by tea.Cmd in the case of an error.
 type ErrorMessage struct {
 	e error
 }
+
+type WarnMessage ErrorMessage
+type InfoMessage string
+type DebugMessage InfoMessage
 
 type Node struct {
 	errors []error
