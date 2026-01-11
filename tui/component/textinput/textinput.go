@@ -3,6 +3,7 @@ package textinput
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
@@ -13,6 +14,7 @@ import (
 type Node struct {
 	*focusable.Node
 
+	max_width int
 	input     textinput.Model
 	clickable *clickable.Node
 }
@@ -23,17 +25,20 @@ type O struct {
 	Width       int
 	Placeholder string
 	Prompt      string
+	Value       string
 }
 
 func New(o O) *Node {
 	t := textinput.New()
-	t.Width = t.Width
-	t.Prompt = t.Prompt
-	t.Placeholder = t.Placeholder
+	t.Width = o.Width - len(o.Prompt) - 1 // cursor
+	t.Prompt = o.Prompt
+	t.Placeholder = o.Placeholder
+	t.SetValue(o.Value)
 
 	n := &Node{
-		Node:  focusable.New(o.Prefix, o.ParentID, 1),
-		input: t,
+		Node:      focusable.New(o.Prefix, o.ParentID, 1),
+		input:     t,
+		max_width: o.Width,
 	}
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -105,7 +110,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
-	return zone.Mark(n.clickable.ID(), n.input.View())
+	return zone.Mark(n.clickable.ID(), lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()))
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {

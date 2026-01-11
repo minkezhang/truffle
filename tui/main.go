@@ -62,9 +62,10 @@ func main() {
 			input: textinput.New(textinput.O{
 				Prefix:      "test input",
 				ParentID:    "",
-				Width:       50,
-				Placeholder: "some text dim",
+				Width:       100,
+				Placeholder: "this is some text placeholder",
 				Prompt:      "> ",
+				Value:       "Frieren",
 			}),
 		},
 		tea.WithAltScreen(),
