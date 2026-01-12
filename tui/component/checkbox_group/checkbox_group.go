@@ -67,6 +67,16 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
+func (n *Node) Selected() []string {
+	var vs []string
+	for _, b := range n.values {
+		if (*checkbox.Node)(b).IsSelected() {
+			vs = append(vs, (*checkbox.Node)(b).Value())
+		}
+	}
+	return vs
+}
+
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -98,5 +108,5 @@ func (n *Node) View() string {
 	for _, b := range n.values {
 		parts = append(parts, b.View())
 	}
-	return strings.Join(parts, " ")
+	return strings.Join(parts, " ") // TODO(minkezhang): Render within bounds.
 }

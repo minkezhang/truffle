@@ -53,6 +53,9 @@ func New(o O) *Node {
 	return n
 }
 
+func (n *Node) Value() string    { return n.value }
+func (n *Node) IsSelected() bool { return n.is_selected }
+
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		tea.Batch(
