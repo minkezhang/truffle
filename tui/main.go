@@ -38,28 +38,30 @@ func (r root) Init() tea.Cmd {
 }
 
 func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	var c tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			fallthrough
 		case tea.KeyCtrlD:
-			return r, tea.Quit
+			cmds = append(cmds, tea.Quit)
 		case tea.KeyCtrlZ:
-			return r, tea.Suspend
+			cmds = append(cmds, tea.Suspend)
 		}
 	case tea.WindowSizeMsg:
-		return r, tea.ClearScreen
+		cmds = append(cmds, tea.ClearScreen)
 	}
-	var cmds []tea.Cmd
-	var c tea.Cmd
+
 	_, c = r.directory.Update(msg)
 	cmds = append(cmds, c)
 	_, c = r.input.Update(msg)
 	cmds = append(cmds, c)
 	_, c = r.errors.Update(msg)
 	cmds = append(cmds, c)
-	r.log, c = r.log.Update(msg)
+	_, c = r.log.Update(msg)
 	cmds = append(cmds, c)
 	return r, tea.Batch(cmds...)
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/util/render"
 )
 
@@ -106,7 +107,7 @@ func (c *C) SetMargin(top, right, bottom, left int) error {
 }
 
 func (c *C) Style() lipgloss.Style {
-	return lipgloss.NewStyle().Padding(c.padding[:]...).Margin(c.margin[:]...).Border(c.border, c.display_border[:]...)
+	return lipgloss.NewStyle().Padding(c.padding[:]...).Margin(c.margin[:]...).Border(c.border, c.display_border[:]...).Width(c.Content()).MaxWidth(c.Content())
 }
 
 func (c *C) Validate(s string) error {
@@ -118,4 +119,12 @@ func (c *C) Validate(s string) error {
 		}
 	}
 	return err
+}
+
+func (c *C) RenderOrDie(s string) string {
+	if err := c.Validate(s); err != nil {
+		errors.Error(err)
+		return ""
+	}
+	return s
 }

@@ -77,7 +77,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.Type {
 			case tea.KeyEnter:
 				v := n.input.Value()
-				n.input.SetValue("") // Only if n.accept_enter
+				n.input.SetValue("") // TODO(minkezhang): Only if n.accept_enter
 				cmds = append(
 					cmds,
 					func() tea.Msg {
@@ -132,6 +132,9 @@ func (n *Node) View() string {
 func (n *Node) OnFocus(i int) tea.Cmd {
 	cmds := []tea.Cmd{n.Node.OnFocus(i)}
 	if n.FocusState() == types.FocusStateActive {
+		n.input.PromptStyle = n.input.PromptStyle.Foreground(
+			color_profile.UIForeground[types.FocusStateActive],
+		)
 		cmds = append(cmds,
 			n.input.Focus(),
 			n.input.Cursor.Focus(),
@@ -143,6 +146,9 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 func (n *Node) OnBlur() tea.Cmd {
 	n.input.Blur()
 	n.input.Cursor.Blur()
+	n.input.PromptStyle = n.input.PromptStyle.Foreground(
+		color_profile.UIForeground[types.FocusStateNone],
+	)
 	return tea.Sequence(
 		n.Node.OnBlur(),
 	)

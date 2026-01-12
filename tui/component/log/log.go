@@ -17,6 +17,10 @@ import (
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
 
+const (
+	bufsize = 100
+)
+
 type Node struct {
 	*focusable.Node
 
@@ -28,49 +32,19 @@ type Node struct {
 
 func New(parent_id string, c *column.C) *Node {
 	n := &Node{
-		Node:     focusable.New("viewport", parent_id, 1),
-		viewport: viewport.New(c.Content(), 10),
+		Node:     focusable.New("log", parent_id, 1),
+		viewport: viewport.New(c.Content(), 15),
 		column:   c,
-		lines: []string{
-			"A",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"D",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"C",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"B",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-		},
+		lines:    []string{},
 	}
 	n.clickable = clickable.New(n.ID())
 	n.viewport.MouseWheelEnabled = true
-	n.viewport.SetContent(strings.Join(n.lines, "\n"))
 	n.viewport.SetHorizontalStep(5)
 	return n
 }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
-		tea.Batch(
-			func() tea.Msg {
-				return errors.ToLogMessage(errors.LevelDebug, "debug")
-			},
-			func() tea.Msg {
-				return errors.ToLogMessage(errors.LevelInfo, "info")
-			},
-			func() tea.Msg {
-				return errors.ToLogMessage(errors.LevelWarn, "warn")
-			},
-			func() tea.Msg {
-				return errors.ToLogMessage(errors.LevelError, "e\nr\nr\no\nr")
-			},
-		),
 		n.clickable.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
@@ -102,6 +76,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 		n.lines = append(lines, n.lines...)
+		if len(n.lines) > bufsize {
+			n.lines = n.lines[:bufsize]
+		}
 		n.viewport.SetContent(strings.Join(n.lines, "\n"))
 	}
 
@@ -127,16 +104,18 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
-	return zone.Mark(
-		n.clickable.ID(),
-		n.column.Style().BorderForeground(
-			color_profile.UIForeground[n.FocusState()],
-		).Render(
-			lipgloss.JoinVertical(
-				lipgloss.Right,
-				n.viewport.View(),
-				lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Margin(1, 0, 0, 0).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(color_profile.SupplementaryUI).Render(
-					fmt.Sprintf("%3.f%%", n.viewport.ScrollPercent()*100),
+	return n.column.RenderOrDie(
+		zone.Mark(
+			n.clickable.ID(),
+			n.column.Style().BorderForeground(
+				color_profile.UIForeground[n.FocusState()],
+			).Render(
+				lipgloss.JoinVertical(
+					lipgloss.Right,
+					n.viewport.View(),
+					lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Margin(1, 0, 0, 0).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(color_profile.SupplementaryUI).Render(
+						fmt.Sprintf("%3.f%%", n.viewport.ScrollPercent()*100),
+					),
 				),
 			),
 		),
