@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/component/checkbox"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable"
@@ -23,6 +24,8 @@ type root struct {
 	errors    tea.Model
 	log       tea.Model
 	textarea  tea.Model
+	checkbox  tea.Model
+	radio     tea.Model
 }
 
 func (r root) Init() tea.Cmd {
@@ -32,6 +35,8 @@ func (r root) Init() tea.Cmd {
 		r.errors.Init(),
 		r.log.Init(),
 		r.textarea.Init(),
+		r.checkbox.Init(),
+		r.radio.Init(),
 		func() tea.Msg {
 			return types.FocusMessage{
 				ID: r.textinput.(base.Identifiable).ID(),
@@ -64,6 +69,8 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.errors,
 		r.log,
 		r.textarea,
+		r.checkbox,
+		r.radio,
 	} {
 		_, c = n.Update(msg)
 		cmds = append(cmds, c)
@@ -79,6 +86,8 @@ func (r root) View() string {
 			r.log.View(),
 			r.textinput.View(),
 			r.textarea.View(),
+			r.checkbox.View(),
+			r.radio.View(),
 		),
 	)
 }
@@ -112,6 +121,22 @@ func main() {
 				Height:      10,
 				Placeholder: "this is some textarea placeholder",
 				Value:       "This is a synopsis",
+			}),
+			checkbox: checkbox.New(checkbox.O{
+				Prefix:     "api mal",
+				ParentID:   "",
+				Label:      "MAL",
+				Value:      "mal",
+				IsSelected: false,
+				IsRadio:    false,
+			}),
+			radio: checkbox.New(checkbox.O{
+				Prefix:     "type book",
+				ParentID:   "",
+				Label:      "book",
+				Value:      "book",
+				IsSelected: false,
+				IsRadio:    true,
 			}),
 		},
 		tea.WithAltScreen(),
