@@ -113,7 +113,7 @@ func (n *Node) View() string {
 				lipgloss.JoinVertical(
 					lipgloss.Right,
 					n.viewport.View(),
-					lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Margin(1, 0, 0, 0).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(color_profile.SupplementaryUI).Render(
+					lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Render(
 						fmt.Sprintf("%3.f%%", n.viewport.ScrollPercent()*100),
 					),
 				),

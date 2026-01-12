@@ -1,16 +1,15 @@
-package textinput
+package textarea
 
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
@@ -19,7 +18,7 @@ type Node struct {
 	*focusable.Node
 
 	max_width int
-	input     textinput.Model
+	input     textarea.Model
 	clickable *clickable.Node
 }
 
@@ -27,17 +26,20 @@ type O struct {
 	Prefix      string
 	ParentID    string
 	Width       int
+	Height      int
 	Placeholder string
-	Prompt      string
 	Value       string
 }
 
 func New(o O) *Node {
-	t := textinput.New()
-	t.Width = o.Width - len(o.Prompt) - 1 // cursor
-	t.Prompt = o.Prompt
+	t := textarea.New()
+	t.SetWidth(o.Width)
+	t.SetHeight(o.Height)
 	t.Placeholder = o.Placeholder
 	t.SetValue(o.Value)
+	t.ShowLineNumbers = false
+	t.FocusedStyle.Prompt = t.BlurredStyle.Prompt.Foreground(color_profile.UIForeground[types.FocusStateActive])
+	t.BlurredStyle.Prompt = t.BlurredStyle.Prompt.Foreground(color_profile.UIForeground[types.FocusStateNone])
 
 	n := &Node{
 		Node:      focusable.New(o.Prefix, o.ParentID, 1),
@@ -49,19 +51,22 @@ func New(o O) *Node {
 }
 
 func (n *Node) Init() tea.Cmd {
-	return tea.Sequence(
-		n.clickable.Init(),
-		func() tea.Msg {
-			return base.RegisterMessage{
-				Node: n,
-			}
-		},
+	return tea.Batch(
+		tea.Sequence(
+			n.clickable.Init(),
+			func() tea.Msg {
+				return base.RegisterMessage{
+					Node: n,
+				}
+			},
+		),
+		// Workaround -- it appears BlurredStyle.Prompt is not applied
+		// until textarea.Blur() is explicitly called.
+		tea.Sequence(
+			n.OnFocus(0),
+			n.OnBlur(),
+		),
 	)
-}
-
-type SubmitTextInput struct {
-	ID    string
-	Value string
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -70,30 +75,17 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
+		case tea.MouseMsg:
+			if msg.Button == tea.MouseButtonWheelUp {
+				n.input, c = n.input.Update(tea.KeyMsg{Type: tea.KeyUp})
+				cmds = append(cmds, c)
+			} else if msg.Button == tea.MouseButtonWheelDown {
+				n.input, c = n.input.Update(tea.KeyMsg{Type: tea.KeyDown})
+				cmds = append(cmds, c)
+			}
 		case tea.KeyMsg:
 			n.input, c = n.input.Update(msg)
 			cmds = append(cmds, c)
-
-			switch msg.Type {
-			case tea.KeyEnter:
-				v := n.input.Value()
-				n.input.SetValue("") // TODO(minkezhang): Only if n.accept_enter
-				cmds = append(
-					cmds,
-					func() tea.Msg {
-						return SubmitTextInput{
-							ID:    n.ID(),
-							Value: v,
-						}
-					},
-					func() tea.Msg {
-						return errors.ToLogMessage(
-							errors.LevelDebug,
-							fmt.Sprintf("%v: submitting value \"%v\"", n.ID(), v),
-						)
-					},
-				)
-			}
 		}
 		n.input.Cursor, c = n.input.Cursor.Update(msg)
 		cmds = append(cmds, c)
@@ -112,6 +104,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, c = n.clickable.Update(msg)
 		cmds = append(cmds, c)
 	}
+
 	return n, tea.Batch(cmds...)
 }
 
@@ -119,19 +112,24 @@ func (n *Node) View() string {
 	return zone.Mark(
 		n.clickable.ID(),
 		lipgloss.NewStyle().Border(
-			lipgloss.NormalBorder(), false, false, true, false,
+			lipgloss.NormalBorder(), true, false, true, false,
 		).BorderForeground(
 			color_profile.UIForeground[n.FocusState()],
-		).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()),
+		).Width(n.max_width).MaxWidth(n.max_width).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Right,
+				n.input.View(),
+				lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Render(
+					fmt.Sprintf("line %d / %d", n.input.Line()+1, n.input.LineCount()),
+				),
+			),
+		),
 	)
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
 	cmds := []tea.Cmd{n.Node.OnFocus(i)}
 	if n.FocusState() == types.FocusStateActive {
-		n.input.PromptStyle = n.input.PromptStyle.Foreground(
-			color_profile.UIForeground[types.FocusStateActive],
-		)
 		cmds = append(cmds,
 			n.input.Focus(),
 			n.input.Cursor.Focus(),
@@ -143,9 +141,6 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 func (n *Node) OnBlur() tea.Cmd {
 	n.input.Blur()
 	n.input.Cursor.Blur()
-	n.input.PromptStyle = n.input.PromptStyle.Foreground(
-		color_profile.UIForeground[types.FocusStateNone],
-	)
 	return tea.Sequence(
 		n.Node.OnBlur(),
 	)
