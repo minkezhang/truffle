@@ -12,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
@@ -23,10 +24,9 @@ type Node struct {
 	clickable *clickable.Node
 	column    *column.C
 	lines     []string
-	fn        string
 }
 
-func New(parent_id string, fn string, c *column.C) *Node {
+func New(parent_id string, c *column.C) *Node {
 	n := &Node{
 		Node:     focusable.New("viewport", parent_id, 1),
 		viewport: viewport.New(c.Content(), 10),
@@ -57,6 +57,20 @@ func New(parent_id string, fn string, c *column.C) *Node {
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
+		tea.Batch(
+			func() tea.Msg {
+				return errors.ToLogMessage(errors.LevelDebug, "debug")
+			},
+			func() tea.Msg {
+				return errors.ToLogMessage(errors.LevelInfo, "info")
+			},
+			func() tea.Msg {
+				return errors.ToLogMessage(errors.LevelWarn, "warn")
+			},
+			func() tea.Msg {
+				return errors.ToLogMessage(errors.LevelError, "e\nr\nr\no\nr")
+			},
+		),
 		n.clickable.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
@@ -69,6 +83,28 @@ func (n *Node) Init() tea.Cmd {
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
+
+	switch msg := msg.(type) {
+	case errors.LogMessage:
+		parts := strings.Split(msg.V, "\n")
+		header := fmt.Sprintf("%v(%v):", strings.ToUpper(msg.L.String()), msg.T.Format("15:04:05"))
+		lines := []string{}
+		for i, p := range parts {
+			var l string
+			if i == 0 {
+				l = fmt.Sprintf("%v %v", header, p)
+			} else {
+				l = fmt.Sprintf("%v %v", strings.Repeat(" ", len(header)), p)
+			}
+			lines = append(
+				lines,
+				lipgloss.NewStyle().Foreground(color_profile.LogForeground[msg.L]).Render(l),
+			)
+		}
+		n.lines = append(lines, n.lines...)
+		n.viewport.SetContent(strings.Join(n.lines, "\n"))
+	}
+
 	if n.FocusState() == types.FocusStateActive {
 		n.viewport, c = n.viewport.Update(msg)
 		cmds = append(cmds, c)
@@ -99,7 +135,7 @@ func (n *Node) View() string {
 			lipgloss.JoinVertical(
 				lipgloss.Right,
 				n.viewport.View(),
-				lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Render(
+				lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Margin(1, 0, 0, 0).Border(lipgloss.NormalBorder(), false, true, false, false).BorderForeground(color_profile.SupplementaryUI).Render(
 					fmt.Sprintf("%3.f%%", n.viewport.ScrollPercent()*100),
 				),
 			),

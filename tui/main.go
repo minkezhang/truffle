@@ -59,7 +59,7 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, c)
 	_, c = r.errors.Update(msg)
 	cmds = append(cmds, c)
-	_, c = r.log.Update(msg)
+	r.log, c = r.log.Update(msg)
 	cmds = append(cmds, c)
 	return r, tea.Batch(cmds...)
 }
@@ -82,7 +82,7 @@ func main() {
 	zone.NewGlobal()
 
 	c := column.New(max_width)
-	c.SetBorder(lipgloss.NormalBorder())
+	c.SetBorder(lipgloss.NormalBorder(), true, false, true, false)
 
 	p := tea.NewProgram(
 		root{
@@ -96,7 +96,7 @@ func main() {
 				Value:       "Frieren",
 			}),
 			errors: &errors.Node{},
-			log:    log.New("", "", c),
+			log:    log.New("", c),
 		},
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),

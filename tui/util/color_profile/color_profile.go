@@ -3,6 +3,7 @@ package color_profile
 import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 )
 
 var (
@@ -12,5 +13,13 @@ var (
 	}
 
 	SupplementaryText = lipgloss.Color("8")
+	SupplementaryUI   = lipgloss.Color("8")
 	UserViewText      = lipgloss.Color("5")
+
+	LogForeground = map[errors.Level]lipgloss.Color{
+		errors.LevelDebug: lipgloss.Color("8"),
+		errors.LevelInfo:  lipgloss.Color("7"),
+		errors.LevelWarn:  lipgloss.Color("3"),
+		errors.LevelError: lipgloss.Color("1"),
+	}
 )

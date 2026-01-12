@@ -1,6 +1,8 @@
 package textinput
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -8,6 +10,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
@@ -74,7 +77,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.Type {
 			case tea.KeyEnter:
 				v := n.input.Value()
-				n.input.SetValue("")
+				n.input.SetValue("") // Only if n.accept_enter
 				cmds = append(
 					cmds,
 					func() tea.Msg {
@@ -82,6 +85,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							ID:    n.ID(),
 							Value: v,
 						}
+					},
+					func() tea.Msg {
+						return errors.ToLogMessage(
+							errors.LevelDebug,
+							fmt.Sprintf("%v: submitting value \"%v\"", n.ID(), v),
+						)
 					},
 				)
 			}

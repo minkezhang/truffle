@@ -26,11 +26,12 @@ func New(content int) *C {
 }
 
 type C struct {
-	id      string
-	content int
-	padding [4]int
-	margin  [4]int
-	border  lipgloss.Border
+	id             string
+	content        int
+	padding        [4]int
+	margin         [4]int
+	border         lipgloss.Border
+	display_border [4]bool
 }
 
 func (c *C) ID() string   { return c.id }
@@ -71,13 +72,26 @@ func (c *C) SetPadding(top, right, bottom, left int) error {
 	return nil
 }
 
-func (c *C) SetBorder(b lipgloss.Border) error {
-	content := c.content + c.border.GetLeftSize() + c.border.GetRightSize() - b.GetLeftSize() - b.GetRightSize()
+func (c *C) SetBorder(b lipgloss.Border, _top, _right, _bottom, _left bool) error {
+	content := c.content
+	if c.display_border[left] {
+		content += c.border.GetLeftSize()
+	}
+	if c.display_border[right] {
+		content += c.border.GetRightSize()
+	}
+	if _left {
+		content -= b.GetLeftSize()
+	}
+	if _right {
+		content -= b.GetRightSize()
+	}
 	if content < 0 {
 		return fmt.Errorf("invalid border (top = %d, right = %d, bottom = %d, left = %d): resizing column results in a negative content block size %d < 0", b.GetTopSize(), b.GetRightSize(), b.GetBottomSize(), b.GetLeftSize(), content)
 	}
 	c.content = content
 	c.border = b
+	c.display_border = [4]bool{_top, _right, _bottom, _left}
 	return nil
 }
 
@@ -92,14 +106,10 @@ func (c *C) SetMargin(top, right, bottom, left int) error {
 }
 
 func (c *C) Style() lipgloss.Style {
-	return lipgloss.NewStyle().Padding(
-		c.padding[top], c.padding[right], c.padding[bottom], c.padding[left],
-	).Margin(
-		c.margin[top], c.margin[right], c.margin[bottom], c.padding[left],
-	).Border(c.border)
+	return lipgloss.NewStyle().Padding(c.padding[:]...).Margin(c.margin[:]...).Border(c.border, c.display_border[:]...)
 }
 
-func (c *C) Valudate(s string) error {
+func (c *C) Validate(s string) error {
 	err := render.Validate(s, c.Content())
 	if err != nil {
 		_, file, line, ok := runtime.Caller(2)
