@@ -85,7 +85,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return SelectCheckboxInput{
 						ID:         n.ID(),
 						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio,  // can't manually deselect radio
+						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
 						Value:      n.value,
 					}
 				})
@@ -96,7 +96,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return SelectCheckboxInput{
 						ID:         n.ID(),
 						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio,  // can't manually deselect radio
+						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
 						Value:      n.value,
 					}
 				})
@@ -118,7 +118,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return SelectCheckboxInput{
 						ID:         n.ID(),
 						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio,  // can't manually deselect radio
+						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
 						Value:      n.value,
 					}
 				})

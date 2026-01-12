@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/checkbox"
+	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable"
@@ -19,24 +20,30 @@ import (
 )
 
 type root struct {
-	directory tea.Model
-	textinput tea.Model
-	errors    tea.Model
-	log       tea.Model
-	textarea  tea.Model
-	checkbox  tea.Model
-	radio     tea.Model
+	directory      tea.Model
+	textinput      tea.Model
+	errors         tea.Model
+	log            tea.Model
+	textarea       tea.Model
+	checkbox       tea.Model
+	radio          tea.Model
+	checkbox_group tea.Model
+	radio_group    tea.Model
 }
 
 func (r root) Init() tea.Cmd {
 	return tea.Sequence(
-		r.directory.Init(),
-		r.textinput.Init(),
-		r.errors.Init(),
-		r.log.Init(),
-		r.textarea.Init(),
-		r.checkbox.Init(),
-		r.radio.Init(),
+		tea.Sequence( // preserve tab order
+			r.directory.Init(),
+			r.textinput.Init(),
+			r.errors.Init(),
+			r.log.Init(),
+			r.textarea.Init(),
+			r.checkbox.Init(),
+			r.radio.Init(),
+			r.checkbox_group.Init(),
+			r.radio_group.Init(),
+		),
 		func() tea.Msg {
 			return types.FocusMessage{
 				ID: r.textinput.(base.Identifiable).ID(),
@@ -71,6 +78,8 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.textarea,
 		r.checkbox,
 		r.radio,
+		r.checkbox_group,
+		r.radio_group,
 	} {
 		_, c = n.Update(msg)
 		cmds = append(cmds, c)
@@ -83,11 +92,13 @@ func (r root) View() string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			r.directory.View(),
-			r.log.View(),
 			r.textinput.View(),
+			r.log.View(),
 			r.textarea.View(),
 			r.checkbox.View(),
 			r.radio.View(),
+			r.checkbox_group.View(),
+			r.radio_group.View(),
 		),
 	)
 }
@@ -137,6 +148,50 @@ func main() {
 				Value:      "book",
 				IsSelected: false,
 				IsRadio:    true,
+			}),
+			checkbox_group: checkbox_group.New(checkbox_group.O{
+				Prefix:   "inputgroup-api",
+				ParentID: "",
+				IsRadio:  false,
+				Values: []checkbox_group.V{
+					{
+						L:          "MAL",
+						V:          "mal",
+						IsSelected: true,
+					},
+					{
+						L:          "Truffle",
+						V:          "truffle",
+						IsSelected: true,
+					},
+					{
+						L:          "OMDB",
+						V:          "omdb",
+						IsSelected: false,
+					},
+				},
+			}),
+			radio_group: checkbox_group.New(checkbox_group.O{
+				Prefix:   "inputgroup-type",
+				ParentID: "",
+				IsRadio:  true,
+				Values: []checkbox_group.V{
+					{
+						L:          "Book",
+						V:          "book",
+						IsSelected: true,
+					},
+					{
+						L:          "Anime",
+						V:          "anime",
+						IsSelected: true,
+					},
+					{
+						L:          "Movie",
+						V:          "movie",
+						IsSelected: false,
+					},
+				},
 			}),
 		},
 		tea.WithAltScreen(),
