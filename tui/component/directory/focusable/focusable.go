@@ -29,6 +29,10 @@ type Node interface {
 	// tab-focusable) elements in this node. NElements does not take into
 	// account the number of [Node] children.
 	NElements() int
+
+	// IsInvisible indicates the element is not currently rendered, i.e. is
+	// hidden behind a collapsed zippy. This is different from an element
+	// being out of frame (e.g. in a viewport).
 	IsInvisible() bool
 	SetIsInvisible(v bool) tea.Cmd
 
@@ -107,6 +111,8 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		target_index := slices.IndexFunc(d.order(), func(v string) bool { return v == d.current_node_id })
 		var target_id string
 
+		// Skip any "invisible" nodes which are hidden away beneath
+		// zippy containers.
 		if msg.IsHead {
 			for target_index := target_index - 1; ; target_index -= 1 {
 				if target_index < 0 {
