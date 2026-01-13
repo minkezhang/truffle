@@ -13,7 +13,9 @@ var (
 	}
 
 	ForegroundNegligible = lipgloss.Color("8")
-	ForegroundCritical = lipgloss.Color("1")
+	ForegroundNormal     = lipgloss.Color("7")
+	ForegroundImportant  = lipgloss.Color("6")
+	ForegroundCritical   = lipgloss.Color("1")
 
 	SupplementaryText = lipgloss.Color("8")
 	SupplementaryUI   = lipgloss.Color("8")

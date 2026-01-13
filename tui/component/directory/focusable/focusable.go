@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
 
@@ -157,17 +156,23 @@ func (d *D) View() string {
 	tree = func(indent int, prefix string, nodes []string) []string {
 		result := []string{}
 		for i, n := range nodes {
-			name := n
-			if _, ok := d.directory.Nodes[n]; ok && d.directory.Nodes[n].(Node).FocusState() == types.FocusStateActive {
-				name = lipgloss.NewStyle().Foreground(color_profile.ForegroundCritical).Render(n)
-			} else if strings.HasPrefix(n, "clickable:") {
-				name = lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(n)
+			color := color_profile.ForegroundNormal
+
+			node, ok := d.directory.Nodes[n]
+			if ok {
+				if node.(Node).FocusState() == types.FocusStateActive {
+					color = color_profile.ForegroundCritical
+				} else if !node.(Node).IsInvisible() {
+					color = color_profile.ForegroundImportant
+				} else if node.(Node).IsInvisible() && d.directory.Children[n] == nil {
+					color = color_profile.ForegroundNegligible
+				}
 			}
-			directory := "│  "
-			file := "├─ "
+			directory := "│   "
+			file := "├── "
 			if i == len(nodes)-1 {
-				directory = "   "
-				file = "└─ "
+				directory = "    "
+				file = "└── "
 			}
 			if n == "" {
 				directory = " "
@@ -177,9 +182,9 @@ func (d *D) View() string {
 					result,
 					fmt.Sprintf(
 						"%v%v%v",
-						prefix,
-						file,
-						name,
+						lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(prefix),
+						lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(file),
+						lipgloss.NewStyle().Foreground(color).Render(n),
 					),
 				)
 			}
