@@ -1,7 +1,6 @@
 package base
 
 import (
-
 	"github.com/charmbracelet/bubbletea"
 )
 

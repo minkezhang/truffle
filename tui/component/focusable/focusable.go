@@ -9,11 +9,12 @@ import (
 )
 
 type Node struct {
-	id          string
-	parent_id   string
-	n_elements  int
-	index       int
-	focus_state types.FocusState
+	id           string
+	parent_id    string
+	n_elements   int
+	index        int
+	focus_state  types.FocusState
+	is_invisible bool
 }
 
 func New(prefix string, parent_id string, n_elements int) *Node {
@@ -32,6 +33,12 @@ func (n *Node) ParentID() string             { return n.parent_id }
 func (n *Node) FocusState() types.FocusState { return n.focus_state }
 func (n *Node) FocusIndex() int              { return n.index }
 func (n *Node) NElements() int               { return n.n_elements }
+func (n *Node) IsInvisible() bool            { return n.is_invisible || n.NElements() == 0 }
+
+func (n *Node) SetIsInvisible(v bool) tea.Cmd {
+	n.is_invisible = v
+	return nil
+}
 
 func (n *Node) OnFocus(i int) tea.Cmd {
 	if i < 0 || i >= n.NElements() {

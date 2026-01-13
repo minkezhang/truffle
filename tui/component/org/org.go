@@ -61,6 +61,11 @@ func (n *Node) Init() tea.Cmd {
 			}
 		},
 	)
+	for _, c := range n.children {
+		if c, ok := c.(directory.Node); ok {
+			cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+		}
+	}
 	return tea.Sequence(cmds...)
 }
 
@@ -77,6 +82,11 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if n.FocusState() == types.FocusStateActive {
 			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
 				n.is_expanded = !n.is_expanded
+				for _, c := range n.children {
+					if c, ok := c.(directory.Node); ok {
+						cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+					}
+				}
 			}
 		}
 	case clickable.Click:
@@ -87,6 +97,11 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					ID: n.ID(),
 				}
 			})
+			for _, c := range n.children {
+				if c, ok := c.(directory.Node); ok {
+					cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+				}
+			}
 		}
 	}
 

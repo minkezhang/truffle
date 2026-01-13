@@ -2,15 +2,15 @@ package focusable
 
 import (
 	"fmt"
-	"strings"
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
-	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 )
 
 type Node interface {
@@ -29,6 +29,8 @@ type Node interface {
 	// tab-focusable) elements in this node. NElements does not take into
 	// account the number of [Node] children.
 	NElements() int
+	IsInvisible() bool
+	SetIsInvisible(v bool) tea.Cmd
 
 	FocusIndex() int
 	FocusState() types.FocusState
@@ -99,24 +101,34 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if n, ok := d.directory.Nodes[msg.ID]; ok {
 			cmds = append(cmds, n.(Node).OnFocus(msg.Index))
-		} else {
-			// TODO(minkezhang): Raise error.
 		}
 		d.current_node_id = msg.ID
 	case types.EOFMessage:
 		target_index := slices.IndexFunc(d.order(), func(v string) bool { return v == d.current_node_id })
+		var target_id string
+
 		if msg.IsHead {
-			target_index = target_index - 1
-			if target_index < 0 {
-				target_index = len(d.order()) - 1
+			for target_index := target_index - 1; ; target_index -= 1 {
+				if target_index < 0 {
+					target_index = len(d.order()) - 1
+				}
+				target_id = d.order()[target_index]
+				if !d.directory.Nodes[target_id].(Node).IsInvisible() {
+					break
+				}
 			}
 		} else {
-			target_index = target_index + 1
-			if target_index >= len(d.order()) {
-				target_index = 0
+			for target_index := target_index + 1; ; target_index += 1 {
+				if target_index >= len(d.order()) {
+					target_index = 0
+				}
+				target_id = d.order()[target_index]
+				if !d.directory.Nodes[target_id].(Node).IsInvisible() {
+					break
+				}
 			}
 		}
-		target_id := d.order()[target_index]
+
 		focus_index := 0
 		if msg.IsHead {
 			focus_index = d.directory.Nodes[target_id].(Node).NElements() - 1
