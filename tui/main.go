@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
@@ -11,33 +12,30 @@ import (
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
-	"github.com/minkezhang/truffle/tui/component/directory/focusable"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
-	"github.com/minkezhang/truffle/tui/component/log"
+	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/textarea"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 )
 
 type root struct {
-	directory      tea.Model
+	org            tea.Model
 	textinput      tea.Model
-	errors         tea.Model
-	log            tea.Model
 	textarea       tea.Model
 	checkbox       tea.Model
 	radio          tea.Model
 	checkbox_group tea.Model
 	radio_group    tea.Model
+
+	viewport viewport.Model
 }
 
 func (r root) Init() tea.Cmd {
 	return tea.Sequence(
 		tea.Sequence( // preserve tab order
-			r.directory.Init(),
+			r.org.Init(),
 			r.textinput.Init(),
-			r.errors.Init(),
-			r.log.Init(),
 			r.textarea.Init(),
 			r.checkbox.Init(),
 			r.radio.Init(),
@@ -71,10 +69,8 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	for _, n := range []tea.Model{
-		r.directory,
+		r.org,
 		r.textinput,
-		r.errors,
-		r.log,
 		r.textarea,
 		r.checkbox,
 		r.radio,
@@ -84,22 +80,25 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, c = n.Update(msg)
 		cmds = append(cmds, c)
 	}
+	r.viewport, c = r.viewport.Update(msg)
+	cmds = append(cmds, c)
+	r.viewport.SetContent(r.view())
 	return r, tea.Batch(cmds...)
 }
 
-func (r root) View() string {
-	return zone.Scan(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			r.directory.View(),
-			r.textinput.View(),
-			r.log.View(),
-			r.textarea.View(),
-			r.checkbox.View(),
-			r.radio.View(),
-			r.checkbox_group.View(),
-			r.radio_group.View(),
-		),
+func (r root) View() string { return zone.Scan(r.viewport.View()) }
+func (r root) view() string {
+	// return zone.Scan(
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		r.org.View(),
+		r.textinput.View(),
+		r.textarea.View(),
+		r.checkbox.View(),
+		r.radio.View(),
+		r.checkbox_group.View(),
+		r.radio_group.View(),
+	//	),
 	)
 }
 
@@ -110,11 +109,10 @@ func main() {
 	zone.NewGlobal()
 
 	c := column.New(max_width)
-	c.SetBorder(lipgloss.NormalBorder(), true, false, true, false)
 
 	p := tea.NewProgram(
 		root{
-			directory: focusable.New(),
+			org: org.New(c),
 			textinput: textinput.New(textinput.O{
 				Prefix:      "test textinput",
 				ParentID:    "",
@@ -123,8 +121,6 @@ func main() {
 				Prompt:      "> ",
 				Value:       "Frieren",
 			}),
-			errors: &errors.Node{},
-			log:    log.New("", c),
 			textarea: textarea.New(textarea.O{
 				Prefix:      "test textarea",
 				ParentID:    "",
@@ -193,6 +189,7 @@ func main() {
 					},
 				},
 			}),
+			viewport: viewport.New(c.Content(), 40),
 		},
 		tea.WithAltScreen(),
 		tea.WithMouseAllMotion(),

@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/util/render"
 )
@@ -21,13 +20,11 @@ const (
 
 func New(content int) *C {
 	return &C{
-		id:      zone.NewPrefix(),
 		content: content,
 	}
 }
 
 type C struct {
-	id             string
 	content        int
 	padding        [4]int
 	margin         [4]int
@@ -35,7 +32,6 @@ type C struct {
 	display_border [4]bool
 }
 
-func (c *C) ID() string   { return c.id }
 func (c *C) Content() int { return c.content }
 
 func (c *C) Padding() (int, int, int, int) {
@@ -51,7 +47,41 @@ func (c *C) Border() (int, int, int, int) {
 }
 
 func (c *C) Width() int {
-	return c.padding[left] + c.padding[right] + c.margin[left] + c.margin[right] + c.border.GetLeftSize() + c.border.GetRightSize()
+	return c.Content() + c.padding[left] + c.padding[right] + c.margin[left] + c.margin[right] + c.border.GetLeftSize() + c.border.GetRightSize()
+}
+
+func (c *C) clone() *C {
+	return &C{
+		content:        c.content,
+		padding:        [4]int(c.padding[:]),
+		margin:         [4]int(c.margin[:]),
+		border:         c.border,
+		display_border: [4]bool(c.display_border[:]),
+	}
+}
+
+func (c *C) WithWidth(w int) *C {
+	d := c.clone()
+	if err := d.SetWidth(w); err != nil {
+		return nil
+	}
+	return d
+}
+
+func (c *C) WithPadding(top, right, bottom, left int) *C {
+	d := c.clone()
+	if err := d.SetPadding(top, right, bottom, left); err != nil {
+		return nil
+	}
+	return d
+}
+
+func (c *C) WithBorder(b lipgloss.Border, _top, _right, _bottom, _left bool) *C {
+	d := c.clone()
+	if err := d.SetBorder(b, _top, _right, _bottom, _left); err != nil {
+		return nil
+	}
+	return d
 }
 
 func (c *C) SetWidth(w int) error {
@@ -107,11 +137,11 @@ func (c *C) SetMargin(top, right, bottom, left int) error {
 }
 
 func (c *C) Style() lipgloss.Style {
-	return lipgloss.NewStyle().Padding(c.padding[:]...).Margin(c.margin[:]...).Border(c.border, c.display_border[:]...).Width(c.Content()).MaxWidth(c.Content())
+	return lipgloss.NewStyle().Padding(c.padding[:]...).Margin(c.margin[:]...).Border(c.border, c.display_border[:]...).Width(c.Content())
 }
 
 func (c *C) Validate(s string) error {
-	err := render.Validate(s, c.Content())
+	err := render.Validate(s, c.Width())
 	if err != nil {
 		_, file, line, ok := runtime.Caller(2)
 		if ok {
@@ -123,6 +153,7 @@ func (c *C) Validate(s string) error {
 
 func (c *C) RenderOrDie(s string) string {
 	if err := c.Validate(s); err != nil {
+		panic(err)
 		errors.Error(err)
 		return ""
 	}
