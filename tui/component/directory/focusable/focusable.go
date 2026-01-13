@@ -1,10 +1,15 @@
 package focusable
 
 import (
+	"fmt"
+	"strings"
 	"slices"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/errors"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 )
 
@@ -71,13 +76,15 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch t := msg.Type; t {
-		case tea.KeyShiftTab:
-			dst := d.directory.Nodes[d.current_node_id].(Node).FocusIndex() - 1
-			cmds = append(cmds, d.directory.Nodes[d.current_node_id].(Node).OnFocus(dst))
-		case tea.KeyTab:
-			dst := d.directory.Nodes[d.current_node_id].(Node).FocusIndex() + 1
-			cmds = append(cmds, d.directory.Nodes[d.current_node_id].(Node).OnFocus(dst))
+		if _, ok := d.directory.Nodes[d.current_node_id]; ok {
+			switch t := msg.Type; t {
+			case tea.KeyShiftTab:
+				dst := d.directory.Nodes[d.current_node_id].(Node).FocusIndex() - 1
+				cmds = append(cmds, d.directory.Nodes[d.current_node_id].(Node).OnFocus(dst))
+			case tea.KeyTab:
+				dst := d.directory.Nodes[d.current_node_id].(Node).FocusIndex() + 1
+				cmds = append(cmds, d.directory.Nodes[d.current_node_id].(Node).OnFocus(dst))
+			}
 		}
 	case base.RegisterMessage:
 		if _, ok := msg.Node.(Node); ok {
@@ -126,4 +133,44 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return d, tea.Batch(cmds...)
 }
 
-func (d *D) View() string { return d.directory.View() }
+func (d *D) View() string {
+	var tree func(indent int, prefix string, nodes []string) []string
+	// From github.com/campoy/tools/tree.
+	tree = func(indent int, prefix string, nodes []string) []string {
+		result := []string{}
+		for i, n := range nodes {
+			name := n
+			if _, ok := d.directory.Nodes[n]; ok && d.directory.Nodes[n].(Node).FocusState() == types.FocusStateActive {
+				name = lipgloss.NewStyle().Foreground(color_profile.LogForeground[errors.LevelError]).Render(n)
+			} else if strings.HasPrefix(n, "clickable:") {
+				name = lipgloss.NewStyle().Foreground(color_profile.LogForeground[errors.LevelDebug]).Render(n)
+			}
+			directory := "│  "
+			file := "├─ "
+			if i == len(nodes)-1 {
+				directory = "   "
+				file = "└─ "
+			}
+			if n == "" {
+				directory = " "
+				result = append(result, "(root)")
+			} else {
+				result = append(
+					result,
+					fmt.Sprintf(
+						"%v%v%v",
+						prefix,
+						file,
+						name,
+					),
+				)
+			}
+			result = append(
+				result,
+				tree(indent+1, prefix+directory, d.directory.Children[n])...,
+			)
+		}
+		return result
+	}
+	return strings.Join(tree(0, "", []string{""}), "\n")
+}

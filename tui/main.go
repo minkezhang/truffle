@@ -91,13 +91,13 @@ func (r root) view() string {
 	// return zone.Scan(
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		r.org.View(),
 		r.textinput.View(),
 		r.textarea.View(),
 		r.checkbox.View(),
 		r.radio.View(),
 		r.checkbox_group.View(),
 		r.radio_group.View(),
+		r.org.View(),
 	//	),
 	)
 }

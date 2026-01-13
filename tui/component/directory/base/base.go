@@ -1,8 +1,6 @@
 package base
 
 import (
-	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 )
@@ -55,38 +53,4 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return d, nil
 }
 
-func (d *D) View() string {
-	var tree func(indent int, prefix string, nodes []string) []string
-	// From github.com/campoy/tools/tree.
-	tree = func(indent int, prefix string, nodes []string) []string {
-		result := []string{}
-		for i, n := range nodes {
-			directory := "│  "
-			file := "├─ "
-			if i == len(nodes)-1 {
-				directory = "   "
-				file = "└─ "
-			}
-			if n == "" {
-				directory = " "
-				result = append(result, "(root)")
-			} else {
-				result = append(
-					result,
-					fmt.Sprintf(
-						"%v%v%v",
-						prefix,
-						file,
-						n,
-					),
-				)
-			}
-			result = append(
-				result,
-				tree(indent+1, prefix+directory, d.Children[n])...,
-			)
-		}
-		return result
-	}
-	return strings.Join(tree(0, "", []string{""}), "\n")
-}
+func (d *D) View() string { return "" }
