@@ -128,6 +128,7 @@ func main() {
 				Height:      10,
 				Placeholder: "this is some textarea placeholder",
 				Value:       "This is a synopsis",
+				Label:       "Synopsis",
 			}),
 			checkbox: checkbox.New(checkbox.O{
 				Prefix:     "api mal",
@@ -149,20 +150,20 @@ func main() {
 				Prefix:   "inputgroup-api",
 				ParentID: "",
 				IsRadio:  false,
-				Values: []checkbox_group.V{
+				Values: []checkbox_group.Value{
 					{
-						L:          "MAL",
-						V:          "mal",
+						Label:      "MAL",
+						Value:      "mal",
 						IsSelected: true,
 					},
 					{
-						L:          "Truffle",
-						V:          "truffle",
+						Label:      "Truffle",
+						Value:      "truffle",
 						IsSelected: true,
 					},
 					{
-						L:          "OMDB",
-						V:          "omdb",
+						Label:      "OMDB",
+						Value:      "omdb",
 						IsSelected: false,
 					},
 				},
@@ -171,20 +172,20 @@ func main() {
 				Prefix:   "inputgroup-type",
 				ParentID: "",
 				IsRadio:  true,
-				Values: []checkbox_group.V{
+				Values: []checkbox_group.Value{
 					{
-						L:          "Book",
-						V:          "book",
+						Label:      "Book",
+						Value:      "book",
 						IsSelected: true,
 					},
 					{
-						L:          "Anime",
-						V:          "anime",
+						Label:      "Anime",
+						Value:      "anime",
 						IsSelected: true,
 					},
 					{
-						L:          "Movie",
-						V:          "movie",
+						Label:      "Movie",
+						Value:      "movie",
 						IsSelected: false,
 					},
 				},

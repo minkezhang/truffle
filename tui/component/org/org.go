@@ -41,7 +41,7 @@ func New(c *column.C) *Node {
 		n.children,
 		// logger
 		log.New(n.ID(), column.New(c.Content()).WithBorder(
-			lipgloss.NormalBorder(), true, false, true, false),
+			lipgloss.NormalBorder(), false, false, true, false),
 		),
 	)
 	n.clickable = clickable.New(n.ID())

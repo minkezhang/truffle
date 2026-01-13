@@ -37,6 +37,15 @@ func (n *Node) IsInvisible() bool            { return n.is_invisible || n.NEleme
 
 func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 	n.is_invisible = v
+	// Signal EOF if setting to invisible.
+	if v && n.FocusState() == types.FocusStateActive {
+		return func() tea.Msg {
+			return types.EOFMessage{
+				ID:     n.ID(),
+				IsHead: false,
+			}
+		}
+	}
 	return nil
 }
 

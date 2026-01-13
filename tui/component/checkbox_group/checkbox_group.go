@@ -17,9 +17,9 @@ type Node struct {
 	values   []*checkbox.Node
 }
 
-type V struct {
-	L          string
-	V          string
+type Value struct {
+	Label      string
+	Value      string
 	IsSelected bool
 }
 
@@ -27,7 +27,7 @@ type O struct {
 	Prefix   string
 	ParentID string
 	IsRadio  bool
-	Values   []V
+	Values   []Value
 }
 
 func New(o O) *Node {
@@ -38,10 +38,10 @@ func New(o O) *Node {
 	}
 	for _, v := range o.Values {
 		b := checkbox.New(checkbox.O{
-			Prefix:     fmt.Sprintf("%s-%s", o.Prefix, v.V),
+			Prefix:     fmt.Sprintf("%s-%s", o.Prefix, v.Value),
 			ParentID:   n.ID(),
-			Label:      v.L,
-			Value:      v.V,
+			Label:      v.Label,
+			Value:      v.Value,
 			IsSelected: v.IsSelected,
 			IsRadio:    o.IsRadio,
 		})

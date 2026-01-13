@@ -112,6 +112,13 @@ func (n *Node) View() string {
 			).Render(
 				lipgloss.JoinVertical(
 					lipgloss.Right,
+					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).MarginBottom(1).Render(
+						lipgloss.JoinHorizontal(
+							lipgloss.Top,
+							"log ",
+							strings.Repeat("─", n.column.Content()-4),
+						),
+					),
 					n.viewport.View(),
 					lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Render(
 						fmt.Sprintf("%3.f%%", n.viewport.ScrollPercent()*100),

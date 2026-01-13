@@ -2,6 +2,7 @@ package textarea
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbletea"
@@ -17,6 +18,7 @@ import (
 type Node struct {
 	*focusable.Node
 
+	label     string
 	max_width int
 	input     textarea.Model
 	clickable *clickable.Node
@@ -28,6 +30,7 @@ type O struct {
 	Width       int
 	Height      int
 	Placeholder string
+	Label       string
 	Value       string
 }
 
@@ -43,6 +46,7 @@ func New(o O) *Node {
 
 	n := &Node{
 		Node:      focusable.New(o.Prefix, o.ParentID, 1),
+		label:     o.Label,
 		input:     t,
 		max_width: o.Width,
 	}
@@ -60,7 +64,7 @@ func (n *Node) Init() tea.Cmd {
 				}
 			},
 		),
-		// Workaround -- it appears BlurredStyle.Prompt is not applied
+		// Workaround -- it appears BlurredStyle.Label is not applied
 		// until textarea.Blur() is explicitly called.
 		tea.Sequence(
 			n.OnFocus(0),
@@ -112,12 +116,19 @@ func (n *Node) View() string {
 	return zone.Mark(
 		n.clickable.ID(),
 		lipgloss.NewStyle().Border(
-			lipgloss.NormalBorder(), true, false, true, false,
+			lipgloss.NormalBorder(), false, false, true, false,
 		).BorderForeground(
 			color_profile.UIForeground[n.FocusState()],
 		).Width(n.max_width).MaxWidth(n.max_width).Render(
 			lipgloss.JoinVertical(
 				lipgloss.Right,
+				fmt.Sprintf(
+					"%v %v",
+					n.label,
+					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).MarginBottom(1).Render(
+						strings.Repeat("─", n.max_width-len(n.label)-1),
+					),
+				),
 				n.input.View(),
 				lipgloss.NewStyle().Foreground(color_profile.SupplementaryText).Render(
 					fmt.Sprintf("line %d / %d", n.input.Line()+1, n.input.LineCount()),

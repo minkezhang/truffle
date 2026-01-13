@@ -140,11 +140,12 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			focus_index = 0
 		}
-		cmds = append(
-			cmds,
-			d.directory.Nodes[d.current_node_id].(Node).OnBlur(),
-			d.directory.Nodes[target_id].(Node).OnFocus(focus_index),
-		)
+		if _, ok := d.directory.Nodes[d.current_node_id]; ok {
+			cmds = append(cmds, d.directory.Nodes[d.current_node_id].(Node).OnBlur())
+		}
+		if _, ok := d.directory.Nodes[target_id]; ok {
+			cmds = append(cmds, d.directory.Nodes[target_id].(Node).OnFocus(focus_index))
+		}
 		d.current_node_id = target_id
 	}
 	return d, tea.Batch(cmds...)
