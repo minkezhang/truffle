@@ -153,8 +153,8 @@ func (n *Node) View() string {
 						}[n.is_radio],
 						map[bool]string{
 							true: map[bool]string{
-								true:  "o",
-								false: "x",
+								true:  "●",
+								false: "■",
 							}[n.is_radio],
 							false: " ",
 						}[n.is_selected],
