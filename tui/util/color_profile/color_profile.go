@@ -12,6 +12,9 @@ var (
 		types.FocusStateActive: lipgloss.Color("7"),
 	}
 
+	ForegroundNegligible = lipgloss.Color("8")
+	ForegroundCritical = lipgloss.Color("1")
+
 	SupplementaryText = lipgloss.Color("8")
 	SupplementaryUI   = lipgloss.Color("8")
 	UserViewText      = lipgloss.Color("5")

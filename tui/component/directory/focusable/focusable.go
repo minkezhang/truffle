@@ -159,9 +159,9 @@ func (d *D) View() string {
 		for i, n := range nodes {
 			name := n
 			if _, ok := d.directory.Nodes[n]; ok && d.directory.Nodes[n].(Node).FocusState() == types.FocusStateActive {
-				name = lipgloss.NewStyle().Foreground(color_profile.LogForeground[errors.LevelError]).Render(n)
+				name = lipgloss.NewStyle().Foreground(color_profile.ForegroundCritical).Render(n)
 			} else if strings.HasPrefix(n, "clickable:") {
-				name = lipgloss.NewStyle().Foreground(color_profile.LogForeground[errors.LevelDebug]).Render(n)
+				name = lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(n)
 			}
 			directory := "│  "
 			file := "├─ "
