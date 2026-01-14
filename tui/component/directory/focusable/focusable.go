@@ -92,11 +92,20 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case base.RegisterMessage:
-		if _, ok := msg.Node.(Node); ok {
+		if n, ok := msg.Node.(Node); ok {
 			_, c := d.directory.Update(msg)
 			cmds = append(cmds, c)
 
 			d.dirty = true
+
+			if d.current_node_id == "" && !n.IsInvisible() {
+				cmds = append(cmds, func() tea.Msg {
+					return types.FocusMessage{
+						ID:    n.ID(),
+						Index: 0,
+					}
+				})
+			}
 		}
 	case types.FocusMessage:
 		if n, ok := d.directory.Nodes[d.current_node_id]; ok {
