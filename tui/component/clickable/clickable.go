@@ -29,6 +29,9 @@ import (
 
 type Click struct {
 	ID string
+
+	X int
+	Y int
 }
 
 type Node struct {
@@ -64,7 +67,11 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if zone.Get(n.ID()).InBounds(msg) {
 					if n.is_down {
 						cmds = append(cmds, func() tea.Msg {
-							return Click{ID: n.ID()}
+							return Click{
+								ID: n.ID(),
+								X:  msg.X,
+								Y:  msg.Y,
+							}
 						})
 					}
 				}

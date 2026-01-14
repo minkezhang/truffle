@@ -1,8 +1,6 @@
 package viewport
 
 import (
-	"strings"
-
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -22,7 +20,6 @@ type Node struct {
 	node     tea.Model
 
 	clickable_up   *clickable.Node
-	clickable_bar  *clickable.Node
 	clickable_down *clickable.Node
 }
 
@@ -37,12 +34,11 @@ func New(o O) *Node {
 	n := &Node{
 		Node:     focusable.New(o.Prefix, o.ParentID, 1),
 		column:   o.Column,
-		viewport: viewport.New(o.Column.Content()-1, 0),
+		viewport: viewport.New(o.Column.Content()-2, 0),
 		node:     o.Node,
 	}
 	n.viewport.MouseWheelEnabled = true
 	n.clickable_up = clickable.New(n.ID())
-	n.clickable_bar = clickable.New(n.ID())
 	n.clickable_down = clickable.New(n.ID())
 	return n
 }
@@ -51,7 +47,6 @@ func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.node.Init(),
 		n.clickable_up.Init(),
-		n.clickable_bar.Init(),
 		n.clickable_down.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
@@ -59,11 +54,6 @@ func (n *Node) Init() tea.Cmd {
 			}
 		},
 	)
-}
-
-// scroll_position returns the starting position of the scrollbar of height h.
-func (n *Node) scroll_position(h int) int {
-	return int(float64(n.viewport.Height-2-h) * n.viewport.ScrollPercent())
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -77,8 +67,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.ID == n.clickable_up.ID() {
 			n.viewport, c = n.viewport.Update(tea.KeyMsg{Type: tea.KeyUp})
 			cmds = append(cmds, c)
-		}
-		if msg.ID == n.clickable_bar.ID() {
 		}
 		if msg.ID == n.clickable_down.ID() {
 			n.viewport, c = n.viewport.Update(tea.KeyMsg{Type: tea.KeyDown})
@@ -94,7 +82,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case clickable.Click:
 			if map[string]bool{
 				n.clickable_up.ID():   true,
-				n.clickable_bar.ID():  true,
 				n.clickable_down.ID(): true,
 			}[msg.ID] {
 				cmds = append(cmds, func() tea.Msg {
@@ -105,7 +92,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 		case tea.KeyMsg:
-			if msg.Type == tea.KeyEsc {
+			if msg.Type == tea.KeyEsc && n.viewport.Height < n.viewport.TotalLineCount() {
 				cmds = append(cmds, func() tea.Msg {
 					return types.FocusMessage{
 						ID:    n.ID(),
@@ -123,22 +110,33 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	for _, n := range []tea.Model{
 		n.clickable_up,
-		n.clickable_bar,
 		n.clickable_down,
 	} {
 		_, c := n.Update(msg)
 		cmds = append(cmds, c)
 	}
 
-	return n, tea.Batch(cmds...)
+	return n, tea.Sequence(cmds...)
+}
+
+// scroll_position returns the starting position of the scrollbar of height h.
+func (n *Node) scroll_position(h int) int {
+	return int(float64(n.viewport.Height-2-h) * n.viewport.ScrollPercent())
 }
 
 func (n *Node) scroll_height() int {
 	h := 1
-	if n.viewport.Height > 0 {
-		h = 10 * n.viewport.TotalLineCount() / n.viewport.Height
+	if n.viewport.TotalLineCount() > 0 {
+		h = int(float64(n.viewport.Height-2) * float64(n.viewport.Height) / float64(n.viewport.TotalLineCount()))
+		if h == 0 {
+			h = 1
+		}
 	}
 	return h
+}
+
+func (n *Node) IsInvisible() bool {
+	return n.Node.IsInvisible() || n.viewport.Height >= n.viewport.TotalLineCount()
 }
 
 func (n *Node) View() string {
@@ -148,28 +146,38 @@ func (n *Node) View() string {
 	bar := []string{}
 	for i := 0; i < n.viewport.Height-2; i++ {
 		bar = append(bar, map[bool]string{
-			false: "░",
-			true:  "█",
+			false: lipgloss.NewStyle().Foreground(
+				color_profile.ForegroundNegligible,
+			).Render("░"),
+			true: lipgloss.NewStyle().Foreground(
+				color_profile.UIForeground[n.FocusState()],
+			).Render("█"),
 		}[i >= scroll_position && i < scroll_position+scroll_height])
 	}
 
 	scrollbar := []string{
 		zone.Mark(n.clickable_up.ID(), "↑"),
-		zone.Mark(n.clickable_bar.ID(), strings.Join(bar, "\n")),
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			bar...,
+		),
 		zone.Mark(n.clickable_down.ID(), "↓"),
 	}
-	if n.viewport.TotalLineCount() <= n.viewport.Height {
+	if n.IsInvisible() {
 		scrollbar = []string{}
 	}
 	return n.column.RenderOrDie(
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			n.column.WithWidth(n.column.Width()-1).Style().Render(
+			n.column.WithWidth(n.column.Width()-2).Style().Render(
 				n.viewport.View(),
 			),
-			lipgloss.NewStyle().Foreground(
-				color_profile.UIForeground[n.FocusState()],
-			).Render(lipgloss.JoinVertical(lipgloss.Left, scrollbar...)),
+			lipgloss.NewStyle().Margin(0, 0, 0, 1).Render(
+				lipgloss.JoinVertical(
+					lipgloss.Left,
+					scrollbar...,
+				),
+			),
 		),
 	)
 }
