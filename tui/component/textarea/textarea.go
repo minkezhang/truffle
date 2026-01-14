@@ -123,10 +123,14 @@ func (n *Node) View() string {
 		).Width(n.max_width).MaxWidth(n.max_width).Render(
 			lipgloss.JoinVertical(
 				lipgloss.Right,
-				fmt.Sprintf(
-					"%v %v",
-					n.key.Label,
-					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).MarginBottom(1).Render(
+				lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).Render(
+					fmt.Sprintf(
+						"%v%v%v",
+						n.key.Label,
+						map[bool]string{
+							true:  "─",
+							false: " ",
+						}[n.key.Label == ""],
 						strings.Repeat("─", n.max_width-len(n.key.Label)-1),
 					),
 				),

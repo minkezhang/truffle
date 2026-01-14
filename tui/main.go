@@ -30,7 +30,7 @@ func make_page(c *column.C) page {
 				Prompt:      "> ",
 				Value: form.Value[string]{
 					Key: form.Key{
-						Label: "",
+						Label: "Search",
 						Key:   "form-key",
 					},
 					Value: "Frieren",

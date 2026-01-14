@@ -2,6 +2,7 @@ package textinput
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
@@ -124,11 +125,21 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (n *Node) View() string {
 	return zone.Mark(
 		n.clickable.ID(),
-		lipgloss.NewStyle().Border(
-			lipgloss.NormalBorder(), false, false, true, false,
-		).BorderForeground(
-			color_profile.UIForeground[n.FocusState()],
-		).MaxWidth(n.max_width).Width(n.max_width).Render(n.input.View()),
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			lipgloss.NewStyle().Width(n.max_width).MaxWidth(n.max_width).Render(n.input.View()),
+			lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).Render(
+				fmt.Sprintf(
+					"%v%v%v",
+					n.key.Label,
+					map[bool]string{
+						true:  "─",
+						false: " ",
+					}[n.key.Label == ""],
+					strings.Repeat("─", n.max_width-len(n.key.Label)-1),
+				),
+			),
+		),
 	)
 }
 
