@@ -15,6 +15,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/textarea"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/component/viewport"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
 
 func make_page(c *column.C) page {
@@ -27,7 +28,13 @@ func make_page(c *column.C) page {
 				Width:       c.Content(),
 				Placeholder: "this is some text placeholder",
 				Prompt:      "> ",
-				Value:       "Frieren",
+				Value: form.Value[string]{
+					Key: form.Key{
+						Label: "",
+						Key:   "form-key",
+					},
+					Value: "Frieren",
+				},
 			}),
 			textarea.New(textarea.O{
 				Prefix:      "test textarea",
@@ -35,66 +42,103 @@ func make_page(c *column.C) page {
 				Width:       c.Content(),
 				Height:      10,
 				Placeholder: "this is some textarea placeholder",
-				Value:       "This is a synopsis",
-				Label:       "Synopsis",
+				Value: form.Value[string]{
+					Key: form.Key{
+						Label: "Synopsis",
+						Key:   "source-synopsis",
+					},
+					Value: "This is a synopsis",
+				},
 			}),
 			checkbox.New(checkbox.O{
-				Prefix:     "api mal",
-				ParentID:   "",
-				Label:      "MAL",
-				Value:      "mal",
-				IsSelected: false,
-				IsRadio:    false,
+				Prefix:   "api mal",
+				ParentID: "",
+				Value: form.Value[bool]{
+					Key: form.Key{
+						Label: "MAL",
+						Key:   "mal",
+					},
+					Value: false,
+				},
+				IsRadio: false,
 			}),
 			checkbox.New(checkbox.O{
-				Prefix:     "type book",
-				ParentID:   "",
-				Label:      "book",
-				Value:      "book",
-				IsSelected: false,
-				IsRadio:    true,
+				Prefix:   "type book",
+				ParentID: "",
+				Value: form.Value[bool]{
+					Key: form.Key{
+						Label: "bool",
+						Key:   "mal",
+					},
+					Value: false,
+				},
+				IsRadio: true,
 			}),
 			checkbox_group.New(checkbox_group.O{
 				Prefix:   "inputgroup-api",
 				ParentID: "",
 				IsRadio:  false,
-				Values: []checkbox_group.Value{
-					{
-						Label:      "MAL",
-						Value:      "mal",
-						IsSelected: true,
+				Value: form.Value[[]form.Value[bool]]{
+					Key: form.Key{
+						Label: "APIs",
+						Key:   "apis",
 					},
-					{
-						Label:      "Truffle",
-						Value:      "truffle",
-						IsSelected: true,
-					},
-					{
-						Label:      "OMDB",
-						Value:      "omdb",
-						IsSelected: false,
+					Value: []form.Value[bool]{
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "MAL",
+								Key:   "mal",
+							},
+							Value: true,
+						},
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "Truffle",
+								Key:   "truffle",
+							},
+							Value: true,
+						},
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "OMDB",
+								Key:   "omdb",
+							},
+							Value: false,
+						},
 					},
 				},
 			}),
 			checkbox_group.New(checkbox_group.O{
-				Prefix:   "inputgroup-type",
+				Prefix:   "inputgroup-source-type",
 				ParentID: "",
 				IsRadio:  true,
-				Values: []checkbox_group.Value{
-					{
-						Label:      "Book",
-						Value:      "book",
-						IsSelected: true,
+				Value: form.Value[[]form.Value[bool]]{
+					Key: form.Key{
+						Label: "Source Type",
+						Key:   "source-type",
 					},
-					{
-						Label:      "Anime",
-						Value:      "anime",
-						IsSelected: true,
-					},
-					{
-						Label:      "Movie",
-						Value:      "movie",
-						IsSelected: false,
+					Value: []form.Value[bool]{
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "BOOK",
+								Key:   "book",
+							},
+							Value: true,
+						},
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "ANIME",
+								Key:   "anime",
+							},
+							Value: true,
+						},
+						form.Value[bool]{
+							Key: form.Key{
+								Label: "MOVIE",
+								Key:   "movie",
+							},
+							Value: false,
+						},
 					},
 				},
 			}),

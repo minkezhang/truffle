@@ -13,15 +13,16 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
 
 type Node struct {
 	*focusable.Node
 
-	label     string
 	max_width int
 	input     textarea.Model
 	clickable *clickable.Node
+	key       form.Key
 }
 
 type O struct {
@@ -31,7 +32,7 @@ type O struct {
 	Height      int
 	Placeholder string
 	Label       string
-	Value       string
+	Value       form.Value[string]
 }
 
 func New(o O) *Node {
@@ -39,16 +40,16 @@ func New(o O) *Node {
 	t.SetWidth(o.Width)
 	t.SetHeight(o.Height)
 	t.Placeholder = o.Placeholder
-	t.SetValue(o.Value)
+	t.SetValue(o.Value.Value)
 	t.ShowLineNumbers = false
 	t.FocusedStyle.Prompt = t.BlurredStyle.Prompt.Foreground(color_profile.UIForeground[types.FocusStateActive])
 	t.BlurredStyle.Prompt = t.BlurredStyle.Prompt.Foreground(color_profile.UIForeground[types.FocusStateNone])
 
 	n := &Node{
 		Node:      focusable.New(o.Prefix, o.ParentID, 1),
-		label:     o.Label,
 		input:     t,
 		max_width: o.Width,
+		key:       o.Value.Key,
 	}
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -124,9 +125,9 @@ func (n *Node) View() string {
 				lipgloss.Right,
 				fmt.Sprintf(
 					"%v %v",
-					n.label,
+					n.key.Label,
 					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).MarginBottom(1).Render(
-						strings.Repeat("─", n.max_width-len(n.label)-1),
+						strings.Repeat("─", n.max_width-len(n.key.Label)-1),
 					),
 				),
 				n.input.View(),

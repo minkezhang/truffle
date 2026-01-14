@@ -9,52 +9,46 @@ import (
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
 
 type Node struct {
 	*focusable.Node
 
 	is_radio      bool
-	label         string
-	value         string
-	is_selected   bool
 	clickable     *clickable.Node
 	clickable_box *clickable.Node
+	value         form.Value[bool]
 }
 
 type O struct {
-	Prefix     string
-	ParentID   string
-	Label      string
-	Value      string
-	IsSelected bool
-	IsRadio    bool
+	Prefix   string
+	ParentID string
+	Value    form.Value[bool]
+	IsRadio  bool
 }
 
-type SelectCheckboxInput struct {
-	ID         string
-	ParentID   string
-	Value      string
-	IsSelected bool
+type SelectCheckboxInputMessage struct {
+	ID       string
+	ParentID string
+	Value    form.Value[bool]
 }
 
 func New(o O) *Node {
 	n := &Node{
-		Node:        focusable.New(o.Prefix, o.ParentID, 1),
-		label:       o.Label,
-		value:       o.Value,
-		is_selected: o.IsSelected,
-		is_radio:    o.IsRadio,
+		Node:     focusable.New(o.Prefix, o.ParentID, 1),
+		value:    o.Value,
+		is_radio: o.IsRadio,
 	}
 	n.clickable = clickable.New(n.ID())
 	n.clickable_box = clickable.New(n.ID())
 	return n
 }
 
-func (n *Node) Value() string    { return n.value }
-func (n *Node) IsSelected() bool { return n.is_selected }
+func (n *Node) Value() form.Value[bool] { return n.value }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
@@ -70,39 +64,46 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
+func (n *Node) toggle() tea.Cmd {
+	return tea.Batch(
+		func() tea.Msg {
+			return SelectCheckboxInputMessage{
+				ID:       n.ID(),
+				ParentID: n.ParentID(),
+				Value: form.Value[bool]{
+					Key:   n.value.Key,
+					Value: !n.value.Value || n.is_radio, // can't manually deselect radio button
+				},
+			}
+		},
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: selecting value %v = %v", n.ID(), n.value.Key.Key, !n.value.Value || n.is_radio),
+			)
+		},
+	)
+}
+
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
 
 	switch msg := msg.(type) {
-	case SelectCheckboxInput:
+	case SelectCheckboxInputMessage:
 		if msg.ID == n.ID() {
-			n.is_selected = msg.IsSelected
+			n.value = msg.Value
 		}
 	}
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
-				cmds = append(cmds, func() tea.Msg {
-					return SelectCheckboxInput{
-						ID:         n.ID(),
-						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
-						Value:      n.value,
-					}
-				})
+				cmds = append(cmds, n.toggle())
 			}
 		case clickable.Click:
 			if msg.ID == n.clickable_box.ID() {
-				cmds = append(cmds, func() tea.Msg {
-					return SelectCheckboxInput{
-						ID:         n.ID(),
-						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
-						Value:      n.value,
-					}
-				})
+				cmds = append(cmds, n.toggle())
 			}
 		}
 	} else {
@@ -117,14 +118,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 			if msg.ID == n.clickable_box.ID() {
-				cmds = append(cmds, func() tea.Msg {
-					return SelectCheckboxInput{
-						ID:         n.ID(),
-						ParentID:   n.ParentID(),
-						IsSelected: !n.is_selected || n.is_radio, // can't manually deselect radio
-						Value:      n.value,
-					}
-				})
+				cmds = append(cmds, n.toggle())
 			}
 		}
 		_, c = n.clickable.Update(msg)
@@ -157,14 +151,14 @@ func (n *Node) View() string {
 								false: "■",
 							}[n.is_radio],
 							false: " ",
-						}[n.is_selected],
+						}[n.value.Value],
 						map[bool]string{
 							true:  ")",
 							false: "]",
 						}[n.is_radio],
 					),
 				),
-				n.label,
+				n.value.Key.Label,
 			),
 		),
 	)

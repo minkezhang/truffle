@@ -13,6 +13,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
 
 type Node struct {
@@ -21,6 +22,7 @@ type Node struct {
 	max_width int
 	input     textinput.Model
 	clickable *clickable.Node
+	key       form.Key
 }
 
 type O struct {
@@ -29,7 +31,7 @@ type O struct {
 	Width       int
 	Placeholder string
 	Prompt      string
-	Value       string
+	Value       form.Value[string]
 }
 
 func New(o O) *Node {
@@ -37,12 +39,13 @@ func New(o O) *Node {
 	t.Width = o.Width - len(o.Prompt) - 1 // cursor
 	t.Prompt = o.Prompt
 	t.Placeholder = o.Placeholder
-	t.SetValue(o.Value)
+	t.SetValue(o.Value.Value)
 
 	n := &Node{
 		Node:      focusable.New(o.Prefix, o.ParentID, 1),
 		input:     t,
 		max_width: o.Width,
+		key:       o.Value.Key,
 	}
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -61,7 +64,7 @@ func (n *Node) Init() tea.Cmd {
 
 type SubmitTextInput struct {
 	ID    string
-	Value string
+	Value form.Value[string]
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -82,14 +85,17 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds,
 					func() tea.Msg {
 						return SubmitTextInput{
-							ID:    n.ID(),
-							Value: v,
+							ID: n.ID(),
+							Value: form.Value[string]{
+								Key:   n.key,
+								Value: v,
+							},
 						}
 					},
 					func() tea.Msg {
 						return errors.ToLogMessage(
 							errors.LevelDebug,
-							fmt.Sprintf("%v: submitting value \"%v\"", n.ID(), v),
+							fmt.Sprintf("%v: submitting value %v = \"%v\"", n.ID(), n.key.Key, v),
 						)
 					},
 				)

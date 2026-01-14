@@ -8,6 +8,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/checkbox"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
 
 type Node struct {
@@ -15,19 +16,14 @@ type Node struct {
 
 	is_radio bool
 	values   []*checkbox.Node
-}
-
-type Value struct {
-	Label      string
-	Value      string
-	IsSelected bool
+	key      form.Key
 }
 
 type O struct {
 	Prefix   string
 	ParentID string
 	IsRadio  bool
-	Values   []Value
+	Value    form.Value[[]form.Value[bool]]
 }
 
 func New(o O) *Node {
@@ -35,15 +31,14 @@ func New(o O) *Node {
 		Node:     focusable.New(o.Prefix, o.ParentID, 0),
 		is_radio: o.IsRadio,
 		values:   []*checkbox.Node{},
+		key:      o.Value.Key,
 	}
-	for _, v := range o.Values {
+	for _, v := range o.Value.Value {
 		b := checkbox.New(checkbox.O{
-			Prefix:     fmt.Sprintf("%s-%s", o.Prefix, v.Value),
-			ParentID:   n.ID(),
-			Label:      v.Label,
-			Value:      v.Value,
-			IsSelected: v.IsSelected,
-			IsRadio:    o.IsRadio,
+			Prefix:   fmt.Sprintf("%s-%s", o.Prefix, v.Key.Key),
+			ParentID: n.ID(),
+			Value:    v,
+			IsRadio:  o.IsRadio,
 		})
 		n.values = append(n.values, b)
 	}
@@ -67,29 +62,33 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) Selected() []string {
-	var vs []string
-	for _, b := range n.values {
-		if (*checkbox.Node)(b).IsSelected() {
-			vs = append(vs, (*checkbox.Node)(b).Value())
-		}
+func (n *Node) Value() form.Value[[]form.Value[bool]] {
+	var values []form.Value[bool]
+	for _, v := range n.values {
+		values = append(values, v.Value())
 	}
-	return vs
+	return form.Value[[]form.Value[bool]]{
+		Key:   n.key,
+		Value: values,
+	}
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	case checkbox.SelectCheckboxInput:
+	case checkbox.SelectCheckboxInputMessage:
 		// Radio buttons are exclusively selected.
-		if msg.ParentID == n.ID() && n.is_radio && msg.IsSelected {
+		if msg.ParentID == n.ID() && n.is_radio && msg.Value.Value {
 			for _, b := range n.values {
 				if b.ID() != msg.ID {
 					cmds = append(cmds, func() tea.Msg {
-						return checkbox.SelectCheckboxInput{
-							ID:         b.ID(),
-							ParentID:   n.ID(),
-							IsSelected: false,
+						return checkbox.SelectCheckboxInputMessage{
+							ID:       b.ID(),
+							ParentID: n.ID(),
+							Value: form.Value[bool]{
+								Key:   b.Value().Key,
+								Value: false,
+							},
 						}
 					})
 				}
