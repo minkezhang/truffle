@@ -1,6 +1,8 @@
 package viewport
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -131,26 +133,33 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
-func (n *Node) View() string {
-	bar := []string{zone.Mark(n.clickable_up.ID(), "↑")}
+func (n *Node) scroll_height() int {
 	h := 1
 	if n.viewport.Height > 0 {
 		h = 10 * n.viewport.TotalLineCount() / n.viewport.Height
 	}
+	return h
+}
 
-	scroll_position := n.scroll_position(h)
+func (n *Node) View() string {
+	scroll_height := n.scroll_height()
+	scroll_position := n.scroll_position(scroll_height)
+
+	bar := []string{}
 	for i := 0; i < n.viewport.Height-2; i++ {
 		bar = append(bar, map[bool]string{
 			false: "░",
 			true:  "█",
-		}[i == scroll_position || (i > scroll_position && i < scroll_position+h)])
+		}[i >= scroll_position && i < scroll_position+scroll_height])
 	}
-	bar = append(bar, zone.Mark(n.clickable_down.ID(), "↓"))
-	scrollbar := lipgloss.JoinVertical(
-		lipgloss.Left, bar...,
-	)
+
+	scrollbar := []string{
+		zone.Mark(n.clickable_up.ID(), "↑"),
+		zone.Mark(n.clickable_bar.ID(), strings.Join(bar, "\n")),
+		zone.Mark(n.clickable_down.ID(), "↓"),
+	}
 	if n.viewport.TotalLineCount() <= n.viewport.Height {
-		scrollbar = ""
+		scrollbar = []string{}
 	}
 	return n.column.RenderOrDie(
 		lipgloss.JoinHorizontal(
@@ -160,7 +169,7 @@ func (n *Node) View() string {
 			),
 			lipgloss.NewStyle().Foreground(
 				color_profile.UIForeground[n.FocusState()],
-			).Render(scrollbar),
+			).Render(lipgloss.JoinVertical(lipgloss.Left, scrollbar...)),
 		),
 	)
 }
