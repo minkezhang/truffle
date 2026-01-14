@@ -67,8 +67,8 @@ func make_page(c *column.C) page {
 				ParentID: "",
 				Value: form.Value[bool]{
 					Key: form.Key{
-						Label: "bool",
-						Key:   "mal",
+						Label: "Book",
+						Key:   "book",
 					},
 					Value: false,
 				},
