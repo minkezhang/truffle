@@ -5,9 +5,12 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/checkbox"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
 )
 
@@ -102,10 +105,25 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
+func (n *Node) FocusState() types.FocusState {
+	for _, b := range n.values {
+		if b.FocusState() == types.FocusStateActive {
+			return types.FocusStateActive
+		}
+	}
+	return types.FocusStateNone
+}
+
 func (n *Node) View() string {
 	var parts []string
 	for _, b := range n.values {
 		parts = append(parts, b.View())
 	}
-	return strings.Join(parts, " ") // TODO(minkezhang): Render within bounds.
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.NewStyle().Foreground(
+			color_profile.UIForeground[n.FocusState()],
+		).Render(n.key.Label),
+		strings.Join(parts, " "), // TODO(minkezhang): Render within bounds.
+	)
 }
