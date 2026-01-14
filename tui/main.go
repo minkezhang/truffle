@@ -90,11 +90,11 @@ func main() {
 
 	pg := page{
 		children: []tea.Model{
-			org.New(c),
+			org.New(c.WithWidth(c.Width() - 1)),
 			textinput.New(textinput.O{
 				Prefix:      "test textinput",
 				ParentID:    "",
-				Width:       max_width,
+				Width:       c.Content() - 1,
 				Placeholder: "this is some text placeholder",
 				Prompt:      "> ",
 				Value:       "Frieren",
@@ -102,7 +102,7 @@ func main() {
 			textarea.New(textarea.O{
 				Prefix:      "test textarea",
 				ParentID:    "",
-				Width:       max_width,
+				Width:       c.Content() - 1,
 				Height:      10,
 				Placeholder: "this is some textarea placeholder",
 				Value:       "This is a synopsis",
