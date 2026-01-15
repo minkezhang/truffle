@@ -103,6 +103,14 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	if n.viewport.PastBottom() {
+		if n.viewport.Height >= n.viewport.TotalLineCount() {
+			n.viewport.GotoTop()
+		} else {
+			n.viewport.GotoBottom()
+		}
+	}
+
 	n.node, c = n.node.Update(msg)
 	cmds = append(cmds, c)
 
