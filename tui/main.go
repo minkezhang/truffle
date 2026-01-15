@@ -12,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/org"
+	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/textarea"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/component/viewport"
@@ -141,6 +142,9 @@ func make_page(c *column.C) page {
 						},
 					},
 				},
+			}),
+			search.New(search.O{
+				Column: c,
 			}),
 		},
 	}
