@@ -2,7 +2,6 @@ package checkbox_group
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -124,6 +123,9 @@ func (n *Node) View() string {
 		lipgloss.NewStyle().Foreground(
 			color_profile.UIForeground[n.FocusState()],
 		).Render(n.key.Label),
-		strings.Join(parts, " "), // TODO(minkezhang): Render within bounds.
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			parts..., // TODO(minkezhang): Render within bounds.
+		),
 	)
 }
