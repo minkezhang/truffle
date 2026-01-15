@@ -198,6 +198,12 @@ func (n *Node) submit() tea.Cmd {
 		SourceTypes: n.source_types.Value(),
 		Options:     n.options.Value(),
 	}
+
+	// Ignore blank queries.
+	if m.Query.Value == "" {
+		return nil
+	}
+
 	return tea.Sequence(
 		n.input.SetValue(""),
 		func() tea.Msg {
