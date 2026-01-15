@@ -113,6 +113,14 @@ func (n *Node) FocusState() types.FocusState {
 	return types.FocusStateNone
 }
 
+func (n *Node) SetIsInvisible(v bool) tea.Cmd {
+	var cmds []tea.Cmd
+	for _, b := range n.values {
+		cmds = append(cmds, b.SetIsInvisible(v))
+	}
+	return tea.Sequence(cmds...)
+}
+
 func (n *Node) View() string {
 	var parts []string
 	for _, b := range n.values {

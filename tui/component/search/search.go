@@ -3,12 +3,19 @@ package search
 import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
+	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/textinput"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
+
+	directory "github.com/minkezhang/truffle/tui/component/directory/focusable"
 )
 
 type Node struct {
@@ -19,7 +26,10 @@ type Node struct {
 
 	apis         *checkbox_group.Node
 	source_types *checkbox_group.Node
-	options *checkbox_group.Node
+	options      *checkbox_group.Node
+	submit       *button.Node
+	is_expanded  bool
+	clickable    *clickable.Node
 }
 
 type O struct {
@@ -29,13 +39,13 @@ type O struct {
 
 func New(o O) *Node {
 	n := &Node{
-		Node:   focusable.New("search", o.ParentID, 0),
+		Node:   focusable.New("search", o.ParentID, 1),
 		column: o.Column,
 	}
 	n.input = textinput.New(textinput.O{
 		Prefix:      "search-textinput",
 		ParentID:    n.ID(),
-		Width:       o.Column.Content(),
+		Width:       o.Column.Content() - 4,
 		Placeholder: "Frieren, mal:manga/52991",
 		Prompt:      "⚲ ",
 		Value: form.Value[string]{
@@ -114,40 +124,59 @@ func New(o O) *Node {
 		},
 	})
 	n.options = checkbox_group.New(checkbox_group.O{
-		Prefix: "search-options",
+		Prefix:   "search-options",
 		ParentID: n.ID(),
-		IsRadio: false,
+		IsRadio:  false,
 		Value: form.Value[[]form.Value[bool]]{
 			Key: form.Key{
 				Label: "Options",
-				Key: "search-options",
+				Key:   "search-options",
 			},
 			Value: []form.Value[bool]{
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "NSFW",
-						Key: "options_nsfw",
+						Key:   "options_nsfw",
 					},
 					Value: false,
 				},
 			},
 		},
 	})
+	n.submit = button.New(button.O{
+		ParentID: n.ID(),
+		Key: form.Key{
+			Label: "Search",
+			Key:   "search-submit",
+		},
+	})
+	n.clickable = clickable.New(n.ID())
 	return n
 }
 
 func (n *Node) Init() tea.Cmd {
-	return tea.Sequence(
+	cmds := []tea.Cmd{
 		n.input.Init(),
+		n.clickable.Init(),
 		n.apis.Init(),
 		n.source_types.Init(),
 		n.options.Init(),
+		n.submit.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
 			}
 		},
-	)
+	}
+	for _, c := range []directory.Node{
+		n.apis,
+		n.source_types,
+		n.options,
+		n.submit,
+	} {
+		cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+	}
+	return tea.Sequence(cmds...)
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -159,19 +188,72 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.apis,
 		n.source_types,
 		n.options,
+		n.submit,
+		n.clickable,
 	} {
 		_, c = m.Update(msg)
 		cmds = append(cmds, c)
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if n.FocusState() == types.FocusStateActive {
+			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
+				n.is_expanded = !n.is_expanded
+				for _, c := range []directory.Node{
+					n.apis,
+					n.source_types,
+					n.options,
+					n.submit,
+				} {
+					cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+				}
+			}
+		}
+	case clickable.Click:
+		if msg.ID == n.clickable.ID() {
+			n.is_expanded = !n.is_expanded
+			cmds = append(cmds, func() tea.Msg {
+				return types.FocusMessage{
+					ID: n.ID(),
+				}
+			})
+			for _, c := range []directory.Node{
+				n.apis,
+				n.source_types,
+				n.options,
+				n.submit,
+			} {
+				cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
+			}
+		}
 	}
 
 	return n, tea.Batch(cmds...)
 }
 
 func (n *Node) View() string {
-	return n.column.RenderOrDie(
-		lipgloss.JoinVertical(
-			lipgloss.Left,
-			n.column.Style().Render(n.input.View()),
+	parts := []string{
+		lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			n.input.View(),
+			lipgloss.NewStyle().PaddingLeft(1).Foreground(
+				color_profile.UIForeground[n.FocusState()],
+			).Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+				color_profile.UIForeground[n.input.FocusState()],
+			).Render(
+				zone.Mark(
+					n.clickable.ID(),
+					map[bool]string{
+						false: "(+)",
+						true:  "(-)",
+					}[n.is_expanded],
+				),
+			),
+		),
+	}
+	if n.is_expanded {
+		parts = append(parts,
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				n.apis.View(),
@@ -182,6 +264,8 @@ func (n *Node) View() string {
 					n.options.View(),
 				),
 			),
-		),
-	)
+			n.submit.View(),
+		)
+	}
+	return n.column.RenderOrDie(lipgloss.JoinVertical(lipgloss.Left, parts...))
 }

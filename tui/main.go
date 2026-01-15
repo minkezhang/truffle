@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/checkbox"
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/column"
@@ -141,6 +142,13 @@ func make_page(c *column.C) page {
 							Value: false,
 						},
 					},
+				},
+			}),
+			button.New(button.O{
+				ParentID: "",
+				Key: form.Key{
+					Label: "Test",
+					Key:   "test",
 				},
 			}),
 			search.New(search.O{
