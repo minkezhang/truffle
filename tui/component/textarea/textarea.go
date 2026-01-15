@@ -125,13 +125,17 @@ func (n *Node) View() string {
 				lipgloss.Right,
 				lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).Render(
 					fmt.Sprintf(
-						"%v%v%v",
+						"%v%v%v%v",
+						map[bool]string{
+							true:  "──",
+							false: "─ ",
+						}[n.key.Label == ""],
 						n.key.Label,
 						map[bool]string{
 							true:  "─",
 							false: " ",
 						}[n.key.Label == ""],
-						strings.Repeat("─", n.max_width-len(n.key.Label)-1),
+						strings.Repeat("─", n.max_width-len(n.key.Label)-3),
 					),
 				),
 				n.input.View(),

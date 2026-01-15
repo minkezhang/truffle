@@ -224,7 +224,7 @@ func main() {
 			Node:     make_page(c.WithWidth(c.Width() - 2)),
 		}),
 	}
-	p := tea.NewProgram(rt, tea.WithAltScreen(), tea.WithMouseAllMotion())
+	p := tea.NewProgram(rt, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	errors.SetProgram(p)
 
 	if _, err := p.Run(); err != nil {

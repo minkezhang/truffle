@@ -115,8 +115,8 @@ func (n *Node) View() string {
 					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).Render(
 						lipgloss.JoinHorizontal(
 							lipgloss.Top,
-							"log ",
-							strings.Repeat("─", n.column.Content()-4),
+							"─ Log ",
+							strings.Repeat("─", n.column.Content()-6),
 						),
 					),
 					n.viewport.View(),
