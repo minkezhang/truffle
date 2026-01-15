@@ -1,6 +1,8 @@
 package search
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
@@ -10,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
@@ -24,12 +27,12 @@ type Node struct {
 	column *column.C
 	input  *textinput.Node
 
-	apis         *checkbox_group.Node
-	source_types *checkbox_group.Node
-	options      *checkbox_group.Node
-	submit       *button.Node
-	is_expanded  bool
-	clickable    *clickable.Node
+	apis          *checkbox_group.Node
+	source_types  *checkbox_group.Node
+	options       *checkbox_group.Node
+	submit_button *button.Node
+	is_expanded   bool
+	clickable     *clickable.Node
 }
 
 type O struct {
@@ -143,7 +146,7 @@ func New(o O) *Node {
 			},
 		},
 	})
-	n.submit = button.New(button.O{
+	n.submit_button = button.New(button.O{
 		ParentID: n.ID(),
 		Key: form.Key{
 			Label: "Search",
@@ -161,7 +164,7 @@ func (n *Node) Init() tea.Cmd {
 		n.apis.Init(),
 		n.source_types.Init(),
 		n.options.Init(),
-		n.submit.Init(),
+		n.submit_button.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -172,11 +175,41 @@ func (n *Node) Init() tea.Cmd {
 		n.apis,
 		n.source_types,
 		n.options,
-		n.submit,
+		n.submit_button,
 	} {
 		cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
 	}
 	return tea.Sequence(cmds...)
+}
+
+type SubmitSearchMessage struct {
+	ID          string
+	Query       form.Value[string]
+	APIs        form.Value[[]form.Value[bool]]
+	SourceTypes form.Value[[]form.Value[bool]]
+	Options     form.Value[[]form.Value[bool]]
+}
+
+func (n *Node) submit() tea.Cmd {
+	m := SubmitSearchMessage{
+		ID:          n.ID(),
+		Query:       n.input.Value(),
+		APIs:        n.apis.Value(),
+		SourceTypes: n.source_types.Value(),
+		Options:     n.options.Value(),
+	}
+	return tea.Sequence(
+		n.input.SetValue(""),
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: submitting search query %v", n.ID(), m),
+			)
+		},
+		func() tea.Msg {
+			return m
+		},
+	)
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -188,7 +221,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.apis,
 		n.source_types,
 		n.options,
-		n.submit,
+		n.submit_button,
 		n.clickable,
 	} {
 		_, c = m.Update(msg)
@@ -196,7 +229,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case button.SubmitMessage:
+		if msg.ID == n.submit_button.ID() {
+			cmds = append(cmds, n.submit())
+		}
 	case tea.KeyMsg:
+		if n.input.FocusState() == types.FocusStateActive {
+			if msg.Type == tea.KeyEnter {
+				cmds = append(cmds, n.submit())
+			}
+		}
 		if n.FocusState() == types.FocusStateActive {
 			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
 				n.is_expanded = !n.is_expanded
@@ -204,7 +246,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					n.apis,
 					n.source_types,
 					n.options,
-					n.submit,
+					n.submit_button,
 				} {
 					cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
 				}
@@ -222,7 +264,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				n.apis,
 				n.source_types,
 				n.options,
-				n.submit,
+				n.submit_button,
 			} {
 				cmds = append(cmds, c.SetIsInvisible(!n.is_expanded))
 			}
@@ -264,7 +306,7 @@ func (n *Node) View() string {
 					n.options.View(),
 				),
 			),
-			n.submit.View(),
+			n.submit_button.View(),
 		)
 	}
 	return n.column.RenderOrDie(lipgloss.JoinVertical(lipgloss.Left, parts...))

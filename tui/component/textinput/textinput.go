@@ -11,7 +11,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
@@ -63,9 +62,16 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-type SubmitTextInput struct {
-	ID    string
-	Value form.Value[string]
+func (n *Node) Value() form.Value[string] {
+	return form.Value[string]{
+		Key:   n.key,
+		Value: n.input.Value(),
+	}
+}
+
+func (n *Node) SetValue(v string) tea.Cmd {
+	n.input.SetValue("")
+	return nil
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -77,30 +83,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			n.input, c = n.input.Update(msg)
 			cmds = append(cmds, c)
-
-			switch msg.Type {
-			case tea.KeyEnter:
-				v := n.input.Value()
-				n.input.SetValue("") // TODO(minkezhang): Only if n.accept_enter
-				cmds = append(
-					cmds,
-					func() tea.Msg {
-						return SubmitTextInput{
-							ID: n.ID(),
-							Value: form.Value[string]{
-								Key:   n.key,
-								Value: v,
-							},
-						}
-					},
-					func() tea.Msg {
-						return errors.ToLogMessage(
-							errors.LevelDebug,
-							fmt.Sprintf("%v: submitting value %v = \"%v\"", n.ID(), n.key.Key, v),
-						)
-					},
-				)
-			}
 		}
 		n.input.Cursor, c = n.input.Cursor.Update(msg)
 		cmds = append(cmds, c)
