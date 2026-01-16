@@ -52,13 +52,21 @@ func New(o O) *Node {
 }
 
 func (n *Node) Init() tea.Cmd {
-	return tea.Sequence(
-		n.clickable.Init(),
-		func() tea.Msg {
-			return base.RegisterMessage{
-				Node: n,
-			}
-		},
+	return tea.Batch(
+		tea.Sequence(
+			n.clickable.Init(),
+			func() tea.Msg {
+				return base.RegisterMessage{
+					Node: n,
+				}
+			},
+		),
+		// Workaround -- it appears PromptStyle is not applied until
+		// textinput.Blur() is explicitly called.
+		tea.Sequence(
+			n.OnFocus(0),
+			n.OnBlur(),
+		),
 	)
 }
 
