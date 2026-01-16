@@ -12,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/errors"
+	"github.com/minkezhang/truffle/tui/component/node/list_item"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
@@ -157,6 +158,26 @@ func make_page(c *column.C) page {
 			}),
 			table.New(table.O{
 				Prefix: "table-view",
+			}),
+			list_item.New(list_item.O{
+				Parent: "",
+				Column: c,
+			}),
+			list_item.New(list_item.O{
+				Parent: "",
+				Column: c,
+			}),
+			list_item.New(list_item.O{
+				Parent: "",
+				Column: c,
+			}),
+			list_item.New(list_item.O{
+				Parent: "",
+				Column: c,
+			}),
+			list_item.New(list_item.O{
+				Parent: "",
+				Column: c,
 			}),
 		},
 	}

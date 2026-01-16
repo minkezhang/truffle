@@ -1,13 +1,13 @@
 package table
 
 import (
-	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
@@ -21,7 +21,7 @@ type Node struct {
 }
 
 type O struct {
-	Prefix string
+	Prefix   string
 	ParentID string
 }
 
@@ -52,32 +52,32 @@ func New(o O) *Node {
 		),
 	}
 	n.table.SetRows([]table.Row{
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"Frieren", "Anime", "MAL", "★★★☆☆" },
-		{"AAAAAA Frieren", "Anime", "MAL", "★★★☆☆" },
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"AAAAAA Frieren", "Anime", "MAL", "★★★☆☆"},
 	})
 	n.clickable = clickable.New(n.ID())
 	return n

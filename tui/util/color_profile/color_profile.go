@@ -17,6 +17,8 @@ var (
 	ForegroundImportant  = lipgloss.Color("6")
 	ForegroundCritical   = lipgloss.Color("1")
 
+	BackgroundNegligible = lipgloss.Color("8")
+
 	SupplementaryText = lipgloss.Color("8")
 	SupplementaryUI   = lipgloss.Color("8")
 	UserViewText      = lipgloss.Color("5")
