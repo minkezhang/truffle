@@ -159,6 +159,10 @@ func make_page(c *column.C) page {
 			table.New(table.O{
 				Prefix: "table-view",
 				Column: c,
+				Key: form.Key{
+					Label: "Search Results",
+					Key:   "results",
+				},
 			}),
 			list_item.New(list_item.O{
 				Parent: "",
