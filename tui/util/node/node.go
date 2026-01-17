@@ -22,7 +22,7 @@ func (t table) API(v epb.SourceAPI) string {
 	if s, ok := custom[v]; ok {
 		return s
 	}
-	return cases.Title(language.English).String(
+	return strings.ToUpper(
 		strings.ReplaceAll(
 			strings.TrimPrefix(v.String(), "SOURCE_API_"), "_", " ",
 		),
