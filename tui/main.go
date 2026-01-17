@@ -164,9 +164,10 @@ func make_page(c *column.C) page {
 				Prefix: "table-view",
 				Column: c,
 				Key: form.Key{
-					Label: "Search Results",
-					Key:   "results",
+					Label: "Results",
+					Key:   "search-results",
 				},
+				CacheDirectory: "./.build/",
 				Data: []node.N{
 					node.Make(
 						&dpb.Node{
@@ -194,7 +195,8 @@ func make_page(c *column.C) page {
 											Localization: "en",
 										},
 									},
-									Score: 81,
+									Score:      81,
+									PreviewUrl: "https://cdn.myanimelist.net/images/anime/7/75199l.jpg",
 								},
 							),
 						},
@@ -225,7 +227,8 @@ func make_page(c *column.C) page {
 											Localization: "en",
 										},
 									},
-									Score: 92,
+									Score:      92,
+									PreviewUrl: "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg",
 								},
 							),
 						},

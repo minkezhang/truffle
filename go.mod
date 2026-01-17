@@ -6,9 +6,12 @@ require (
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/charmbracelet/x/mosaic v0.0.0-20260116010723-b770f9f0bfed
+	github.com/disintegration/imaging v1.6.2
 	github.com/google/go-cmp v0.7.0
 	github.com/lrstanley/bubblezone v1.0.0
 	github.com/minkezhang/truffle-api v0.0.0-20260103000617-a1229c32fca7
+	golang.org/x/image v0.35.0
 )
 
 require (
