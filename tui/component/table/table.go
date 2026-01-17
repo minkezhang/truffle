@@ -340,13 +340,27 @@ func (n *Node) to_row(data node.N) (table.Row, tea.Cmd) {
 func (n *Node) SetValues(data []node.N) tea.Cmd {
 	var cmds []tea.Cmd
 	var rows []table.Row
-	for _, d := range data {
-		r, c := n.to_row(d)
-		rows = append(rows, r)
-		cmds = append(cmds, c)
-	}
-	n.table.SetRows(rows)
-	n.selected_index = -1
+
+	cmds = append(
+		cmds,
+		tea.Sequence(
+			n.image.SetURL(""),
+			func() tea.Msg {
+
+				for _, d := range data {
+					r, c := n.to_row(d)
+					rows = append(rows, r)
+					cmds = append(cmds, c)
+					n.data = append([]node.N{}, data...)
+				}
+				n.table.SetRows(rows)
+				n.table.SetCursor(0)
+				n.table.GotoTop()
+				n.selected_index = -1
+				return nil
+			},
+		),
+	)
 	return tea.Batch(cmds...)
 }
 

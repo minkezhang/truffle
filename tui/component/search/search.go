@@ -18,6 +18,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
 
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	directory "github.com/minkezhang/truffle/tui/component/directory/focusable"
 )
 
@@ -71,14 +72,14 @@ func New(o O) *Node {
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "Truffle",
-						Key:   "truffle",
+						Key:   epb.SourceAPI_SOURCE_API_TRUFFLE.String(),
 					},
 					Value: true,
 				},
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "MAL",
-						Key:   "mal",
+						Key:   epb.SourceAPI_SOURCE_API_MAL.String(),
 					},
 					Value: true,
 				},
@@ -98,28 +99,28 @@ func New(o O) *Node {
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "Anime",
-						Key:   "series_anime",
+						Key:   epb.SourceType_SOURCE_TYPE_SERIES_ANIME.String(),
 					},
 					Value: true,
 				},
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "Anime Movie",
-						Key:   "movie_anime",
+						Key:   epb.SourceType_SOURCE_TYPE_MOVIE_ANIME.String(),
 					},
 					Value: true,
 				},
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "Manga",
-						Key:   "book_manga",
+						Key:   epb.SourceType_SOURCE_TYPE_BOOK_MANGA.String(),
 					},
 					Value: true,
 				},
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "Light Novel",
-						Key:   "book_light_novel",
+						Key:   epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL.String(),
 					},
 					Value: true,
 				},
@@ -139,7 +140,7 @@ func New(o O) *Node {
 				form.Value[bool]{
 					Key: form.Key{
 						Label: "NSFW",
-						Key:   "options_nsfw",
+						Key:   "options-nsfw",
 					},
 					Value: false,
 				},

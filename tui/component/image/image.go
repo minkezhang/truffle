@@ -52,10 +52,16 @@ func (n *Node) SetURL(v string) tea.Cmd {
 	return func() tea.Msg {
 		n.url = v
 		if n.url == "" {
-			return nil
+			return update_cache_message{
+				id:      n.ID(),
+				payload: "",
+			}
 		}
 		if s, err := data(n.url, n.directory, n.width); err != nil {
-			return errors.ToErrorMessage(err)
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				err.Error(),
+			)
 		} else {
 			return update_cache_message{
 				id:      n.ID(),
