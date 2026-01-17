@@ -19,6 +19,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/image"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
+	"github.com/minkezhang/truffle/tui/util/node"
 )
 
 const (
@@ -327,13 +328,12 @@ func (n *Node) to_row(data node.N) (table.Row, tea.Cmd) {
 		}
 	}
 
-	score := (source.Score() + 10) / 20
 	return []string{
 		source.Title().Title(),
-		source.Header().Type().String(),
-		source.Header().API().String(),
-		source.Status().String(),
-		strings.Repeat("★", score) + strings.Repeat("☆", 5-score),
+		util_node.Table.Type(source.Header().Type()),
+		util_node.Table.API(source.Header().API()),
+		util_node.Table.Status(source.Status()),
+		util_node.Table.Score(source.Score()),
 	}, nil
 }
 
