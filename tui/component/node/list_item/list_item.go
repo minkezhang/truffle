@@ -18,6 +18,43 @@ import (
 	"github.com/minkezhang/truffle/tui/util/form"
 )
 
+func GenerateColumns(c *column.C) []Column {
+	columns := []Column{
+		{
+			Header:  "Title",
+			Content: c.Content() - 45 - 10 /* padding */ - 1, /* border-left */
+			View:    func(data node.N) string { return "Frieren" },
+		},
+		{
+			Header:  "Source",
+			Content: 15,
+			View:    func(data node.N) string { return "Light Novel" },
+		},
+		{
+			Header:  "API",
+			Content: 15,
+			View:    func(data node.N) string { return "Truffle" },
+		},
+		{
+			Header:  "Status",
+			Content: 10,
+			View:    func(data node.N) string { return "Queued" },
+		},
+		{
+			Header:  "Score",
+			Content: 5,
+			View:    func(data node.N) string { return "★★★☆☆" },
+		},
+	}
+	return columns
+}
+
+type Column struct {
+	Header  string
+	Content int
+	View    func(data node.N) string
+}
+
 type Node struct {
 	*focusable.Node
 	column *column.C
@@ -36,7 +73,7 @@ func New(o O) *Node {
 	n := &Node{
 		Node:   focusable.New("node-list-item", o.Parent, 1),
 		value:  o.Value,
-		column: o.Column.WithWidth(150).WithBorder(lipgloss.NormalBorder(), true, false, true, false),
+		column: o.Column,
 	}
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -117,46 +154,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
-func truncate(s string, w int) string {
-	return ansi.Truncate(s, w, "…")
-}
-
-var (
-	columns = []struct {
-		header  string
-		width   int
-		view    func(data node.N) string
-		special bool
-	}{
-		{
-			header: "title",
-			width:  50,
-			view:   func(data node.N) string { return "Frieren" },
-		},
-		{
-			header:  "source-type",
-			width:   11,
-			view:    func(data node.N) string { return "Light Novel" },
-			special: true,
-		},
-		{
-			header: "api",
-			width:  12,
-			view:   func(data node.N) string { return "Truffle" },
-		},
-		{
-			header: "status",
-			width:  9,
-			view:   func(data node.N) string { return "Queued" },
-		},
-		{
-			header: "score",
-			width:  5,
-			view:   func(data node.N) string { return "★★★☆☆" },
-		},
-	}
-)
-
 func (n *Node) View() string {
 	style := lipgloss.NewStyle().Width(
 		n.column.Content(),
@@ -173,21 +170,18 @@ func (n *Node) View() string {
 	)
 
 	var parts []string
-	for _, c := range columns {
-		d := column.New(c.width + 2)
+	for _, c := range GenerateColumns(n.column) {
 		parts = append(
 			parts,
-			d.RenderOrDie(
+			n.column.RenderOrDie(
 				lipgloss.NewStyle().Padding(0, 1).Background(
 					map[types.FocusState]lipgloss.TerminalColor{
 						types.FocusStateActive: color_profile.BackgroundNegligible,
 						types.FocusStateNone:   style.GetBackground(),
 					}[n.FocusState()],
-				).Bold(
-					n.FocusState() == types.FocusStateActive,
 				).Render(
-					d.Style().Width(c.width).MaxWidth(c.width).Inline(true).Render(
-						ansi.Truncate(c.view(n.Value().Value), c.width, "…"),
+					n.column.Style().Width(c.Content).MaxWidth(c.Content).Inline(true).Render(
+						ansi.Truncate(c.View(n.Value().Value), c.Content, "…"),
 					),
 				),
 			),
