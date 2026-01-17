@@ -12,6 +12,7 @@ var (
 		types.FocusStateActive: lipgloss.Color("7"),
 	}
 
+	ForegroundInverted   = lipgloss.Color("0")
 	ForegroundNegligible = lipgloss.Color("8")
 	ForegroundNormal     = lipgloss.Color("7")
 	ForegroundImportant  = lipgloss.Color("6")

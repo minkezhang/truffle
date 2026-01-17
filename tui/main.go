@@ -7,12 +7,13 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle-api/data/node"
+	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/checkbox"
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/errors"
-	"github.com/minkezhang/truffle/tui/component/node/list_item"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
@@ -20,6 +21,9 @@ import (
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/component/viewport"
 	"github.com/minkezhang/truffle/tui/util/form"
+
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 func make_page(c *column.C) page {
@@ -153,9 +157,6 @@ func make_page(c *column.C) page {
 					Key:   "test",
 				},
 			}),
-			search.New(search.O{
-				Column: c,
-			}),
 			table.New(table.O{
 				Prefix: "table-view",
 				Column: c,
@@ -163,25 +164,72 @@ func make_page(c *column.C) page {
 					Label: "Search Results",
 					Key:   "results",
 				},
+				Data: []node.N{
+					node.Make(
+						&dpb.Node{
+							Header: &dpb.NodeHeader{
+								Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+								Id:   "",
+							},
+						},
+					).WithSources(
+						[]source.S{
+							source.Make(
+								&dpb.Source{
+									Header: &dpb.SourceHeader{
+										Api:  epb.SourceAPI_SOURCE_API_MAL,
+										Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+										Id:   "523",
+									},
+									Titles: []*dpb.Title{
+										&dpb.Title{
+											Title:        "Meitantei Conan",
+											Localization: "",
+										},
+										&dpb.Title{
+											Title:        "Case Closed",
+											Localization: "en",
+										},
+									},
+									Score: 81,
+								},
+							),
+						},
+					),
+					node.Make(
+						&dpb.Node{
+							Header: &dpb.NodeHeader{
+								Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+								Id:   "",
+							},
+						},
+					).WithSources(
+						[]source.S{
+							source.Make(
+								&dpb.Source{
+									Header: &dpb.SourceHeader{
+										Api:  epb.SourceAPI_SOURCE_API_MAL,
+										Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+										Id:   "52991",
+									},
+									Titles: []*dpb.Title{
+										&dpb.Title{
+											Title:        "Sousou no Frieren",
+											Localization: "ja",
+										},
+										&dpb.Title{
+											Title:        "Frieren: Beyond Journey's End",
+											Localization: "en",
+										},
+									},
+									Score: 92,
+								},
+							),
+						},
+					),
+				},
 			}),
-			list_item.New(list_item.O{
-				Parent: "",
-				Column: c,
-			}),
-			list_item.New(list_item.O{
-				Parent: "",
-				Column: c,
-			}),
-			list_item.New(list_item.O{
-				Parent: "",
-				Column: c,
-			}),
-			list_item.New(list_item.O{
-				Parent: "",
-				Column: c,
-			}),
-			list_item.New(list_item.O{
-				Parent: "",
+			search.New(search.O{
 				Column: c,
 			}),
 		},
