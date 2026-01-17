@@ -310,7 +310,7 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (r root) View() string { return zone.Scan(r.viewport.View()) }
 
-const max_width = 150
+const max_width = 175
 
 func main() {
 	// See https://github.com/lrstanley/bubblezone for more information.
