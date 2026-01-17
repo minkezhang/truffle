@@ -157,6 +157,9 @@ func make_page(c *column.C) page {
 					Key:   "test",
 				},
 			}),
+			search.New(search.O{
+				Column: c,
+			}),
 			table.New(table.O{
 				Prefix: "table-view",
 				Column: c,
@@ -228,9 +231,6 @@ func make_page(c *column.C) page {
 						},
 					),
 				},
-			}),
-			search.New(search.O{
-				Column: c,
 			}),
 		},
 	}
