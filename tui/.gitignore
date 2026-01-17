@@ -1,2 +1,6 @@
+# Golang workspace files
+go.work
+go.work.sum
+
 .build/
 *.log

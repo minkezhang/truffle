@@ -1,4 +1,4 @@
-module github.com/minkezhang/truffle
+module github.com/minkezhang/truffle/tui
 
 go 1.25.4
 
@@ -12,6 +12,7 @@ require (
 	github.com/lrstanley/bubblezone v1.0.0
 	github.com/minkezhang/truffle-api v0.0.0-20260117131815-a31751a157b0
 	golang.org/x/image v0.35.0
+	golang.org/x/text v0.33.0
 )
 
 require (
@@ -37,6 +38,5 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
