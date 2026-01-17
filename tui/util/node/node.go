@@ -3,6 +3,7 @@ package util_node
 import (
 	"strings"
 
+	"github.com/minkezhang/truffle-api/data/source"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -14,6 +15,8 @@ var (
 )
 
 type table struct{}
+
+func (t table) Title(v source.T) string { return v.Title() }
 
 func (t table) API(v epb.SourceAPI) string {
 	custom := map[epb.SourceAPI]string{

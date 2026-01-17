@@ -329,7 +329,7 @@ func (n *Node) to_row(data node.N) (table.Row, tea.Cmd) {
 	}
 
 	return []string{
-		source.Title().Title(),
+		util_node.Table.Title(source.Title()),
 		util_node.Table.Type(source.Header().Type()),
 		util_node.Table.API(source.Header().API()),
 		util_node.Table.Status(source.Status()),
