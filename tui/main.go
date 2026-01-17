@@ -161,7 +161,7 @@ func make_page(c *column.C) page {
 			}),
 			list_item.New(list_item.O{
 				Parent: "",
-				Column: c,
+				Column: c.WithWidth(55),
 			}),
 			list_item.New(list_item.O{
 				Parent: "",
@@ -215,10 +215,16 @@ func (p page) View() string {
 }
 
 type root struct {
+	errors   tea.Model
 	viewport tea.Model
 }
 
-func (r root) Init() tea.Cmd { return r.viewport.Init() }
+func (r root) Init() tea.Cmd {
+	return tea.Sequence(
+		r.errors.Init(),
+		r.viewport.Init(),
+	)
+}
 
 func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -238,8 +244,13 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, tea.ClearScreen)
 	}
 
-	r.viewport, c = r.viewport.Update(msg)
-	cmds = append(cmds, c)
+	for _, n := range []tea.Model{
+		r.errors,
+		r.viewport,
+	} {
+		_, c = n.Update(msg)
+		cmds = append(cmds, c)
+	}
 
 	return r, tea.Batch(cmds...)
 }
@@ -254,6 +265,7 @@ func main() {
 
 	c := column.New(max_width)
 	rt := root{
+		errors: &errors.Node{},
 		viewport: viewport.New(viewport.O{
 			Prefix:   "viewport",
 			ParentID: "",
@@ -266,6 +278,11 @@ func main() {
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Run() returned unexpected error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := rt.errors.(*errors.Node).Error(); err != nil {
+		fmt.Printf("Error() returned unexpected error: %v\n", err)
 		os.Exit(1)
 	}
 }

@@ -81,6 +81,17 @@ func New(o O) *Node {
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
+		func() tea.Msg {
+			columns := GenerateColumns(n.column)
+			for _, c := range columns {
+				if c.Content <= 0 {
+					return errors.ToErrorMessage(
+						fmt.Errorf("list item row width too small: %d <= %d", n.column.Content(), 55),
+					)
+				}
+			}
+			return nil
+		},
 		n.clickable.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{

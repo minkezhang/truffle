@@ -3,7 +3,9 @@ package errors
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"runtime"
 	"strings"
 	"time"
 
@@ -70,6 +72,10 @@ func Debug(v string) {
 
 func ToErrorMessage(e error) ErrorMessage {
 	slog.Error(e.Error())
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		e = fmt.Errorf("%s:%d: %v", file, line, e)
+	}
 	return ErrorMessage{e: e}
 }
 

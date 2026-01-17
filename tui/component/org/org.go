@@ -11,7 +11,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/log"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
@@ -34,7 +33,6 @@ func New(c *column.C) *Node {
 		column: c,
 		children: []tea.Model{
 			directory.New(), // directory
-			&errors.Node{},  // error handler
 		},
 	}
 	n.children = append(
