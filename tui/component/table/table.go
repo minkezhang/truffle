@@ -1,6 +1,9 @@
 package table
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -161,7 +164,27 @@ func (n *Node) View() string {
 		lipgloss.NewStyle().Border(lipgloss.NormalBorder(), true, false, true, false).BorderForeground(
 			color_profile.UIForeground[n.FocusState()],
 		).Render(
-			n.table.View(),
+			lipgloss.JoinVertical(
+				lipgloss.Right,
+				lipgloss.JoinHorizontal(
+					lipgloss.Top,
+					lipgloss.JoinVertical(
+						lipgloss.Left,
+						lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+							color_profile.UIForeground[n.FocusState()],
+						).Render(" "),
+						lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).BorderForeground(
+							color_profile.UIForeground[n.FocusState()],
+						).Render(strings.Repeat("\n", n.table.Height() - 1)),
+					),
+					n.table.View(),
+				),
+				lipgloss.NewStyle().Foreground(
+					color_profile.BackgroundNegligible,
+				).Render(
+					fmt.Sprintf("%d / %d", n.table.Cursor()+1, len(n.table.Rows())),
+				),
+			),
 		),
 	)
 }
