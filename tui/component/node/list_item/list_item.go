@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/data/node"
 	"github.com/minkezhang/truffle/tui/component/clickable"
@@ -35,7 +36,7 @@ func New(o O) *Node {
 	n := &Node{
 		Node:   focusable.New("node-list-item", o.Parent, 1),
 		value:  o.Value,
-		column: o.Column,
+		column: o.Column.WithWidth(150).WithBorder(lipgloss.NormalBorder(), true, false, true, false),
 	}
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -116,11 +117,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
+func truncate(s string, w int) string {
+	return ansi.Truncate(s, w, "…")
+}
+
 var (
 	columns = []struct {
-		header string
-		width  int
-		view   func(data node.N) string
+		header  string
+		width   int
+		view    func(data node.N) string
+		special bool
 	}{
 		{
 			header: "title",
@@ -128,24 +134,25 @@ var (
 			view:   func(data node.N) string { return "Frieren" },
 		},
 		{
-			header: "source-type",
-			width:  15,
-			view:   func(data node.N) string { return "Light Novel" },
+			header:  "source-type",
+			width:   11,
+			view:    func(data node.N) string { return "Light Novel" },
+			special: true,
 		},
 		{
 			header: "api",
-			width:  15,
-			view:   func(data node.N) string { return "Frieren" },
-		},
-		{
-			header: "score",
-			width:  10,
-			view:   func(data node.N) string { return "★★★☆☆" },
+			width:  12,
+			view:   func(data node.N) string { return "Truffle" },
 		},
 		{
 			header: "status",
-			width:  10,
-			view:   func(data node.N) string { return "In Queue" },
+			width:  9,
+			view:   func(data node.N) string { return "Queued" },
+		},
+		{
+			header: "score",
+			width:  5,
+			view:   func(data node.N) string { return "★★★☆☆" },
 		},
 	}
 )
@@ -167,14 +174,23 @@ func (n *Node) View() string {
 
 	var parts []string
 	for _, c := range columns {
+		d := column.New(c.width + 2)
 		parts = append(
 			parts,
-			lipgloss.NewStyle().Width(c.width).MaxWidth(c.width).PaddingLeft(1).Background(
-				map[types.FocusState]lipgloss.TerminalColor{
-					types.FocusStateActive: color_profile.BackgroundNegligible,
-					types.FocusStateNone:   style.GetBackground(),
-				}[n.FocusState()],
-			).Render(c.view(n.Value().Value)),
+			d.RenderOrDie(
+				lipgloss.NewStyle().Padding(0, 1).Background(
+					map[types.FocusState]lipgloss.TerminalColor{
+						types.FocusStateActive: color_profile.BackgroundNegligible,
+						types.FocusStateNone:   style.GetBackground(),
+					}[n.FocusState()],
+				).Bold(
+					n.FocusState() == types.FocusStateActive,
+				).Render(
+					d.Style().Width(c.width).MaxWidth(c.width).Inline(true).Render(
+						ansi.Truncate(c.view(n.Value().Value), c.width, "…"),
+					),
+				),
+			),
 		)
 	}
 

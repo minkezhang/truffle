@@ -93,13 +93,13 @@ func (c *C) SetWidth(w int) error {
 	return nil
 }
 
-func (c *C) SetPadding(top, right, bottom, left int) error {
-	content := c.content + c.padding[left] + c.padding[right] - left - right
+func (c *C) SetPadding(_top, _right, _bottom, _left int) error {
+	content := c.content + c.padding[left] + c.padding[right] - _left - _right
 	if content < 0 {
-		return fmt.Errorf("invalid padding (top = %d, right = %d, bottom = %d, left = %d): resizing column results in a negative content block size %d < 0", top, right, bottom, left, content)
+		return fmt.Errorf("invalid padding (top = %d, right = %d, bottom = %d, left = %d): resizing column results in a negative content block size %d < 0", _top, _right, _bottom, _left, content)
 	}
 	c.content = content
-	c.padding = [4]int{top, right, bottom, left}
+	c.padding = [4]int{_top, _right, _bottom, _left}
 	return nil
 }
 
@@ -126,13 +126,13 @@ func (c *C) SetBorder(b lipgloss.Border, _top, _right, _bottom, _left bool) erro
 	return nil
 }
 
-func (c *C) SetMargin(top, right, bottom, left int) error {
-	content := c.content + c.margin[left] + c.margin[right] - left - right
+func (c *C) SetMargin(_top, _right, _bottom, _left int) error {
+	content := c.content + c.margin[left] + c.margin[right] - _left - _right
 	if content < 0 {
-		return fmt.Errorf("invalid margin (top = %d, right = %d, bottom = %d, left = %d): resizing column results in a negative content block size %d < 0", top, right, bottom, left, content)
+		return fmt.Errorf("invalid margin (top = %d, right = %d, bottom = %d, left = %d): resizing column results in a negative content block size %d < 0", _top, _right, _bottom, _left, content)
 	}
 	c.content = content
-	c.margin = [4]int{top, right, bottom, left}
+	c.margin = [4]int{_top, _right, _bottom, _left}
 	return nil
 }
 

@@ -36,7 +36,7 @@ func New(o O) *Node {
 				},
 				table.Column{
 					Title: "Type",
-					Width: 20,
+					Width: 11,
 				},
 				table.Column{
 					Title: "Source",
@@ -52,7 +52,7 @@ func New(o O) *Node {
 		),
 	}
 	n.table.SetRows([]table.Row{
-		{"Frieren", "Anime", "MAL", "★★★☆☆"},
+		{"Frieren", "Light Novel", "MAL", "★★★☆☆"},
 		{"Frieren", "Anime", "MAL", "★★★☆☆"},
 		{"Frieren", "Anime", "MAL", "★★★☆☆"},
 		{"Frieren", "Anime", "MAL", "★★★☆☆"},
