@@ -91,7 +91,7 @@ func New(o O) *Node {
 		IsRadio:  false,
 		Value: form.Value[[]form.Value[bool]]{
 			Key: form.Key{
-				Label: "Sources",
+				Label: "Media",
 				Key:   "search-source-types",
 			},
 			Value: []form.Value[bool]{

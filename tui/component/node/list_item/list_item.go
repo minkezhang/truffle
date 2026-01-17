@@ -26,7 +26,7 @@ func GenerateColumns(c *column.C) []Column {
 			View:    func(data node.N) string { return "Frieren" },
 		},
 		{
-			Header:  "Source",
+			Header:  "Media",
 			Content: 15,
 			View:    func(data node.N) string { return "Light Novel" },
 		},
