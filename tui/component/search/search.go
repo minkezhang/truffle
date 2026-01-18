@@ -122,7 +122,7 @@ func New(o O) *Node {
 						Label: "Light Novel",
 						Key:   epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL.String(),
 					},
-					Value: true,
+					Value: false,
 				},
 			},
 		},

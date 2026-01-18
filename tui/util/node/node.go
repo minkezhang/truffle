@@ -3,16 +3,25 @@ package util_node
 import (
 	"strings"
 
+	"github.com/minkezhang/truffle-api/data/node"
 	"github.com/minkezhang/truffle-api/data/source"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 var (
 	Table = table{}
 )
+
+type N interface {
+	Header() node.H
+	Sources() []source.S
+	PB() *dpb.Node
+	Virtual() (source.S, error)
+}
 
 type table struct{}
 

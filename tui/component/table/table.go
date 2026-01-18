@@ -70,7 +70,7 @@ type Node struct {
 	selected_index int
 	clickable      *clickable.Node
 	key            form.Key
-	data           []node.N
+	data           []util_node.N
 }
 
 type O struct {
@@ -78,7 +78,7 @@ type O struct {
 	ParentID       string
 	Column         *column.C
 	Key            form.Key
-	Data           []node.N
+	Data           []util_node.N
 	CacheDirectory string
 }
 
@@ -153,19 +153,19 @@ func (n *Node) Init() tea.Cmd {
 
 type HighlightMessage struct {
 	ID    string
-	Value form.Value[node.N]
+	Value form.Value[util_node.N]
 }
 
 type SelectMessage HighlightMessage
 
-func (n *Node) Value() form.Value[node.N] {
+func (n *Node) Value() form.Value[util_node.N] {
 	if n.selected_index == -1 {
-		return form.Value[node.N]{
+		return form.Value[util_node.N]{
 			Key:   n.key,
 			Value: node.N{},
 		}
 	}
-	return form.Value[node.N]{
+	return form.Value[util_node.N]{
 		Key:   n.key,
 		Value: n.data[n.selected_index],
 	}
@@ -318,7 +318,7 @@ func (n *Node) View() string {
 	)
 }
 
-func (n *Node) to_row(data node.N) (table.Row, tea.Cmd) {
+func (n *Node) to_row(data util_node.N) (table.Row, tea.Cmd) {
 	source, err := data.Virtual()
 	if err != nil {
 		return nil, func() tea.Msg {
@@ -337,7 +337,7 @@ func (n *Node) to_row(data node.N) (table.Row, tea.Cmd) {
 	}, nil
 }
 
-func (n *Node) SetValues(data []node.N) tea.Cmd {
+func (n *Node) SetValues(data []util_node.N) tea.Cmd {
 	var cmds []tea.Cmd
 	var rows []table.Row
 
@@ -351,7 +351,7 @@ func (n *Node) SetValues(data []node.N) tea.Cmd {
 					r, c := n.to_row(d)
 					rows = append(rows, r)
 					cmds = append(cmds, c)
-					n.data = append([]node.N{}, data...)
+					n.data = append([]util_node.N{}, data...)
 				}
 				n.table.SetRows(rows)
 				n.table.SetCursor(0)

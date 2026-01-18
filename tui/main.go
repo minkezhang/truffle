@@ -22,6 +22,8 @@ import (
 	"github.com/minkezhang/truffle/tui/component/table"
 	"github.com/minkezhang/truffle/tui/component/viewport"
 	"github.com/minkezhang/truffle/tui/util/form"
+	"github.com/minkezhang/truffle/tui/util/node"
+	"github.com/minkezhang/truffle/tui/util/node/virtual"
 
 	cpb "github.com/minkezhang/truffle-api/proto/go/config"
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
@@ -62,7 +64,7 @@ func make_page(c *column.C) page {
 					Key:   "search-results",
 				},
 				CacheDirectory: cache,
-				Data: []node.N{
+				Data: []util_node.N{
 					node.Make(
 						&dpb.Node{
 							Header: &dpb.NodeHeader{
@@ -185,18 +187,12 @@ func do_search(msg search.SubmitSearchMessage) tea.Cmd {
 			)
 		}
 
-		var nodes []node.N
+		var nodes []util_node.N
 		for _, r := range results {
 			if types[r.Header().Type()] {
 				nodes = append(
 					nodes,
-					node.Make(
-						&dpb.Node{
-							Header: &dpb.NodeHeader{
-								Type: r.Header().Type(),
-							},
-						},
-					).WithSources([]source.S{r}),
+					virtual.Make(r.PB()),
 				)
 			}
 		}
@@ -208,7 +204,7 @@ func do_search(msg search.SubmitSearchMessage) tea.Cmd {
 }
 
 type search_result_message struct {
-	results []node.N
+	results []util_node.N
 }
 
 func (p page) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
