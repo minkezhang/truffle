@@ -11,7 +11,6 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
-	"github.com/minkezhang/truffle-api/client/option"
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/errors"
@@ -20,12 +19,11 @@ import (
 	"github.com/minkezhang/truffle/tui/component/table"
 	"github.com/minkezhang/truffle/tui/component/viewport"
 	"github.com/minkezhang/truffle/tui/util/form"
-	"github.com/minkezhang/truffle/tui/util/node"
-	"github.com/minkezhang/truffle/tui/util/search"
 
 	cpb "github.com/minkezhang/truffle-api/proto/go/config"
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
+	component_db "github.com/minkezhang/truffle/tui/component/db"
 )
 
 const (
@@ -110,62 +108,13 @@ func (p page) Init() tea.Cmd {
 	return tea.Sequence(cmds...)
 }
 
-func do_search(msg search.SubmitSearchMessage) tea.Cmd {
-	return func() tea.Msg {
-		var types []epb.SourceType
-		for _, t := range msg.SourceTypes.Value {
-			if t.Value {
-				if v, ok := epb.SourceType_value[t.Key.Key]; ok {
-					types = append(types, epb.SourceType(v))
-				}
-			}
-		}
-
-		_opts := []option.O{option.Remote(true)}
-		for _, o := range msg.Options.Value {
-			if o.Value {
-				_opts = append(_opts, map[string]option.O{
-					"options-nsfw": option.NSFW(true),
-				}[o.Key.Key])
-			}
-		}
-
-		opts := map[epb.SourceAPI][]option.O{}
-		for _, api := range msg.APIs.Value {
-			if api.Value {
-				if v, ok := epb.SourceAPI_value[api.Key.Key]; ok {
-					opts[epb.SourceAPI(v)] = append([]option.O{}, _opts...)
-				}
-			}
-		}
-
-		results, err := util_search.Search(context.Background(), _db, msg.Query.Value, opts, types)
-		if err != nil {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				err.Error(),
-			)
-		}
-
-		return search_result_message{
-			results: results,
-		}
-	}
-}
-
-type search_result_message struct {
-	results []util_node.N
-}
-
 func (p page) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
 
 	switch msg := msg.(type) {
-	case search.SubmitSearchMessage:
-		cmds = append(cmds, do_search(msg))
-	case search_result_message:
-		cmds = append(cmds, p.children[2].(*table.Node).SetValues(msg.results))
+	case component_db.SearchResultMessage:
+		cmds = append(cmds, p.children[2].(*table.Node).SetValues(msg.Results))
 	}
 
 	for i := range p.children {
@@ -192,12 +141,14 @@ func (p page) View() string {
 type root struct {
 	errors   tea.Model
 	viewport tea.Model
+	db       tea.Model
 }
 
 func (r root) Init() tea.Cmd {
 	return tea.Sequence(
 		r.errors.Init(),
 		r.viewport.Init(),
+		r.db.Init(),
 	)
 }
 
@@ -222,6 +173,7 @@ func (r root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	for _, n := range []tea.Model{
 		r.errors,
 		r.viewport,
+		r.db,
 	} {
 		_, c = n.Update(msg)
 		cmds = append(cmds, c)
@@ -254,6 +206,9 @@ func main() {
 			ParentID: "",
 			Column:   c,
 			Node:     make_page(c.WithWidth(c.Width() - 2)),
+		}),
+		db: component_db.New(context.Background(), component_db.O{
+			DB: _db,
 		}),
 	}
 	p := tea.NewProgram(
