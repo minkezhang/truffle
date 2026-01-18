@@ -24,7 +24,6 @@ import (
 	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/node/virtual"
 
-	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
@@ -457,18 +456,20 @@ func (n *Node) to_row(data util_node.N) (table.Row, tea.Cmd) {
 	}, nil
 }
 
-func (n *Node) PutSource(s source.S) tea.Cmd {
+func (n *Node) PutSource(m node.N, source_index int) tea.Cmd {
 	return tea.Sequence(
 		func() tea.Msg {
 			old_node_index := -1 // Remove from old node if it exists in the table
 			old_source_index := -1
 			new_node_index := -1 // Add to an existing node if it exists in the table
 
-			for i, m := range n.data {
-				if s.NodeID() != "" && s.NodeID() == m.Header().ID() {
+			s := m.Sources()[source_index]
+
+			for i, o := range n.data {
+				if m.Header().ID() != "" && m.Header() == o.Header() {
 					new_node_index = i
 				}
-				for j, t := range m.Sources() {
+				for j, t := range o.Sources() {
 					if s.Header() == t.Header() {
 						old_node_index = i
 						old_source_index = j
@@ -479,14 +480,7 @@ func (n *Node) PutSource(s source.S) tea.Cmd {
 			if old_node_index >= 0 {
 				// Replace old node if it is virtual or being deleted.
 				if len(n.data[old_node_index].Sources()) == 1 {
-					n.data[old_node_index] = node.Make(
-						&dpb.Node{
-							Header: &dpb.NodeHeader{
-								Id:   s.NodeID(),
-								Type: s.Header().Type(),
-							},
-						},
-					).WithSources([]source.S{s})
+					n.data[old_node_index] = m
 					return nil
 				}
 
@@ -499,23 +493,14 @@ func (n *Node) PutSource(s source.S) tea.Cmd {
 					),
 				)
 				if new_node_index >= 0 {
-					n.data[new_node_index] = n.data[new_node_index].(node.N).WithSources(append(n.data[new_node_index].Sources(), s))
+					n.data[new_node_index] = m
 				} else {
 					// If no matching node was found, create a new
 					// one in the view.
 					n.data = append(
 						n.data[:new_node_index],
 						append(
-							[]util_node.N{
-								node.Make(
-									&dpb.Node{
-										Header: &dpb.NodeHeader{
-											Id:   s.NodeID(),
-											Type: s.Header().Type(),
-										},
-									},
-								).WithSources([]source.S{s}),
-							},
+							[]util_node.N{m},
 							n.data[new_node_index:]...,
 						)...,
 					)

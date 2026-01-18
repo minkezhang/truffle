@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/client/option"
-	"github.com/minkezhang/truffle-api/data/source"
+	"github.com/minkezhang/truffle-api/data/node"
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
@@ -15,6 +15,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/search"
 
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
@@ -63,7 +64,8 @@ type SearchResultMessage struct {
 }
 
 type AddLinkResultMessage struct {
-	Result source.S
+	Node        node.N
+	SourceIndex int
 }
 
 func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.Cmd {
@@ -84,8 +86,33 @@ func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.
 			)
 		}
 
+		n, err := _db.GetNode(
+			ctx,
+			node.Make(&dpb.Node{
+				Header: &dpb.NodeHeader{
+					Id:   s.NodeID(),
+					Type: s.Header().Type(),
+				},
+			}).Header(),
+			option.Remote(false),
+		)
+		if err != nil {
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				err.Error(),
+			)
+		}
+
+		source_index := 0
+		for i, s := range n.Sources() {
+			if s.Header() == h {
+				source_index = i
+			}
+		}
+
 		return AddLinkResultMessage{
-			Result: s,
+			Node:        n,
+			SourceIndex: source_index,
 		}
 	}
 }

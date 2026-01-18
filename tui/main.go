@@ -116,7 +116,7 @@ func (p page) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case component_db.SearchResultMessage:
 		cmds = append(cmds, p.children[2].(*table.Node).SetValues(msg.Results))
 	case component_db.AddLinkResultMessage:
-		cmds = append(cmds, p.children[2].(*table.Node).PutSource(msg.Result))
+		cmds = append(cmds, p.children[2].(*table.Node).PutSource(msg.Node, msg.SourceIndex))
 	}
 
 	for i := range p.children {
