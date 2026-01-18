@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/data/node"
+	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
@@ -71,6 +72,7 @@ type Node struct {
 	clickable      *clickable.Node
 	key            form.Key
 	data           []util_node.N
+	select_button  *button.Node
 }
 
 type O struct {
@@ -111,7 +113,7 @@ func New(o O) *Node {
 				},
 			}),
 			table.WithFocused(false),
-			table.WithHeight(14),
+			table.WithHeight(11),
 			table.WithKeyMap(
 				table.KeyMap{
 					LineUp:       table.DefaultKeyMap().LineUp,
@@ -135,6 +137,13 @@ func New(o O) *Node {
 		Width:          image_width,
 		CacheDirectory: o.CacheDirectory,
 	})
+	n.select_button = button.New(button.O{
+		ParentID: n.ID(),
+		Key: form.Key{
+			Label: "Select",
+			Key:   "table-select",
+		},
+	})
 	return n
 }
 
@@ -143,6 +152,7 @@ func (n *Node) Init() tea.Cmd {
 		n.clickable.Init(),
 		n.image.Init(),
 		n.SetValues(n.data),
+		n.select_button.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -171,6 +181,39 @@ func (n *Node) Value() form.Value[util_node.N] {
 	}
 }
 
+func (n *Node) do_select() tea.Cmd {
+	m := SelectMessage{
+		ID:    n.ID(),
+		Value: n.Value(),
+	}
+	return tea.Sequence(
+		func() tea.Msg { return m },
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: submitted message %v", n.ID(), m),
+			)
+		},
+	)
+
+}
+
+func (n *Node) do_highlight() tea.Cmd {
+	m := HighlightMessage{
+		ID:    n.ID(),
+		Value: n.Value(),
+	}
+	return tea.Sequence(
+		func() tea.Msg { return m },
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: highlighted message %v", n.ID(), m),
+			)
+		},
+	)
+}
+
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
@@ -178,6 +221,8 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	_, c = n.image.Update(msg)
 	cmds = append(cmds, c)
 	_, c = n.clickable.Update(msg)
+	cmds = append(cmds, c)
+	_, c = n.select_button.Update(msg)
 	cmds = append(cmds, c)
 
 	if n.FocusState() == types.FocusStateActive {
@@ -192,19 +237,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
 				if n.selected_index >= 0 {
-					m := SelectMessage{
-						ID:    n.ID(),
-						Value: n.Value(),
-					}
-					cmds = append(cmds, tea.Sequence(
-						func() tea.Msg { return m },
-						func() tea.Msg {
-							return errors.ToLogMessage(
-								errors.LevelDebug,
-								fmt.Sprintf("%v: submitted message %v", n.ID(), m),
-							)
-						},
-					))
+					cmds = append(cmds, n.do_select())
 				}
 			}
 		}
@@ -225,6 +258,10 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case button.SubmitMessage:
+		if msg.ID == n.select_button.ID() {
+			cmds = append(cmds, n.do_select())
+		}
 	case HighlightMessage:
 		if msg.ID == n.ID() {
 			source, err := msg.Value.Value.Virtual()
@@ -240,19 +277,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if (n.selected_index == -1 && len(n.table.Rows()) > 0) || (n.selected_index >= 0 && n.selected_index != n.table.Cursor()) {
 		n.selected_index = n.table.Cursor()
-		m := HighlightMessage{
-			ID:    n.ID(),
-			Value: n.Value(),
-		}
-		cmds = append(cmds, tea.Sequence(
-			func() tea.Msg { return m },
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: highlighted message %v", n.ID(), m),
-				)
-			},
-		))
+		cmds = append(cmds, n.do_highlight())
 	}
 
 	return n, tea.Batch(cmds...)
@@ -263,56 +288,62 @@ func (n *Node) View() string {
 		n.clickable.ID(),
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			n.image.View(),
-			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-				color_profile.UIForeground[n.FocusState()],
-			).Render(
-				lipgloss.JoinVertical(
-					lipgloss.Left,
-					lipgloss.NewStyle().Foreground(color_profile.UIForeground[n.FocusState()]).Render(
-						fmt.Sprintf(
-							"%v%v%v%v",
-							map[bool]string{
-								true:  "──",
-								false: "─ ",
-							}[n.key.Label == ""],
-							n.key.Label,
-							map[bool]string{
-								true:  "─",
-								false: " ",
-							}[n.key.Label == ""],
-							strings.Repeat("─", n.column.Width()-len(n.key.Label)-3),
-						),
-					),
+			n.image.View(), // image
+			lipgloss.JoinVertical( // table and button
+				lipgloss.Left,
+				lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+					color_profile.UIForeground[n.FocusState()],
+				).Render(
 					lipgloss.JoinVertical(
-						lipgloss.Right,
-						lipgloss.JoinHorizontal(
-							lipgloss.Top,
-							lipgloss.JoinVertical(
-								lipgloss.Left,
-								lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-									color_profile.UIForeground[n.FocusState()],
-								).Render(" "),
-								lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).BorderForeground(
-									color_profile.UIForeground[n.FocusState()],
-								).Render(strings.Repeat("\n", n.table.Height()-1)),
-							),
-							n.table.View(),
-						),
+						lipgloss.Left,
 						lipgloss.NewStyle().Foreground(
-							color_profile.BackgroundNegligible,
-						).Render(
+							color_profile.UIForeground[n.FocusState()],
+						).Render( // label
 							fmt.Sprintf(
-								"%d / %d",
-								map[bool]int{
-									true:  n.table.Cursor() + 1,
-									false: 0,
-								}[len(n.table.Rows()) > 0],
-								len(n.table.Rows()),
+								"%v%v%v%v",
+								map[bool]string{
+									true:  "──",
+									false: "─ ",
+								}[n.key.Label == ""],
+								n.key.Label,
+								map[bool]string{
+									true:  "─",
+									false: " ",
+								}[n.key.Label == ""],
+								strings.Repeat("─", n.column.Width()-len(n.key.Label)-3),
+							),
+						),
+						lipgloss.JoinVertical( // tabel
+							lipgloss.Right,
+							lipgloss.JoinHorizontal(
+								lipgloss.Top,
+								lipgloss.JoinVertical( // border-left
+									lipgloss.Left,
+									lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+										color_profile.UIForeground[n.FocusState()],
+									).Render(" "),
+									lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).BorderForeground(
+										color_profile.UIForeground[n.FocusState()],
+									).Render(strings.Repeat("\n", n.table.Height()-1)),
+								),
+								n.table.View(),
+							),
+							lipgloss.NewStyle().Foreground(
+								color_profile.BackgroundNegligible,
+							).Render( // line count
+								fmt.Sprintf(
+									"%d / %d",
+									map[bool]int{
+										true:  n.table.Cursor() + 1,
+										false: 0,
+									}[len(n.table.Rows()) > 0],
+									len(n.table.Rows()),
+								),
 							),
 						),
 					),
 				),
+				n.select_button.View(),
 			),
 		),
 	)
