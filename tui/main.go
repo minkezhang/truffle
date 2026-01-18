@@ -12,8 +12,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/client/option"
-	"github.com/minkezhang/truffle-api/data/node"
-	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/errors"
@@ -23,7 +21,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/viewport"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
-	"github.com/minkezhang/truffle/tui/util/node/virtual"
+	"github.com/minkezhang/truffle/tui/util/search"
 
 	cpb "github.com/minkezhang/truffle-api/proto/go/config"
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
@@ -45,7 +43,38 @@ var (
 			},
 			Truffle: &cpb.Truffle{},
 		},
-		nil,
+		&dpb.Database{
+			Nodes: []*dpb.Node{
+				&dpb.Node{
+					Header: &dpb.NodeHeader{
+						Id:   "frieren-anime",
+						Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+					},
+				},
+			},
+			Sources: []*dpb.Source{
+				&dpb.Source{
+					NodeId: "frieren-anime",
+					Header: &dpb.SourceHeader{
+						Api:  epb.SourceAPI_SOURCE_API_MAL,
+						Id:   "52991",
+						Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+					},
+				},
+				&dpb.Source{
+					NodeId: "frieren-anime",
+					Header: &dpb.SourceHeader{
+						Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
+						Id:   "frieren-anime-truffle",
+						Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
+					},
+					Titles: []*dpb.Title{
+						&dpb.Title{Title: "Frieren", Localization: "en"},
+					},
+					Synopsis: "An anime series",
+				},
+			},
+		},
 	)
 )
 
@@ -64,72 +93,6 @@ func make_page(c *column.C) page {
 					Key:   "search-results",
 				},
 				CacheDirectory: cache,
-				Data: []util_node.N{
-					node.Make(
-						&dpb.Node{
-							Header: &dpb.NodeHeader{
-								Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
-								Id:   "",
-							},
-						},
-					).WithSources(
-						[]source.S{
-							source.Make(
-								&dpb.Source{
-									Header: &dpb.SourceHeader{
-										Api:  epb.SourceAPI_SOURCE_API_MAL,
-										Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
-										Id:   "523",
-									},
-									Titles: []*dpb.Title{
-										&dpb.Title{
-											Title:        "Meitantei Conan",
-											Localization: "",
-										},
-										&dpb.Title{
-											Title:        "Case Closed",
-											Localization: "en",
-										},
-									},
-									Score:      81,
-									PreviewUrl: "https://cdn.myanimelist.net/images/anime/7/75199l.jpg",
-								},
-							),
-						},
-					),
-					node.Make(
-						&dpb.Node{
-							Header: &dpb.NodeHeader{
-								Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
-								Id:   "",
-							},
-						},
-					).WithSources(
-						[]source.S{
-							source.Make(
-								&dpb.Source{
-									Header: &dpb.SourceHeader{
-										Api:  epb.SourceAPI_SOURCE_API_MAL,
-										Type: epb.SourceType_SOURCE_TYPE_SERIES_ANIME,
-										Id:   "52991",
-									},
-									Titles: []*dpb.Title{
-										&dpb.Title{
-											Title:        "Sousou no Frieren",
-											Localization: "ja",
-										},
-										&dpb.Title{
-											Title:        "Frieren: Beyond Journey's End",
-											Localization: "en",
-										},
-									},
-									Score:      92,
-									PreviewUrl: "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg",
-								},
-							),
-						},
-					),
-				},
 			}),
 		},
 	}
@@ -149,11 +112,11 @@ func (p page) Init() tea.Cmd {
 
 func do_search(msg search.SubmitSearchMessage) tea.Cmd {
 	return func() tea.Msg {
-		types := map[epb.SourceType]bool{}
+		var types []epb.SourceType
 		for _, t := range msg.SourceTypes.Value {
 			if t.Value {
 				if v, ok := epb.SourceType_value[t.Key.Key]; ok {
-					types[epb.SourceType(v)] = true
+					types = append(types, epb.SourceType(v))
 				}
 			}
 		}
@@ -175,11 +138,8 @@ func do_search(msg search.SubmitSearchMessage) tea.Cmd {
 				}
 			}
 		}
-		results, err := _db.Search(
-			context.Background(),
-			msg.Query.Value,
-			opts,
-		)
+
+		results, err := util_search.Search(context.Background(), _db, msg.Query.Value, opts, types)
 		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
@@ -187,18 +147,8 @@ func do_search(msg search.SubmitSearchMessage) tea.Cmd {
 			)
 		}
 
-		var nodes []util_node.N
-		for _, r := range results {
-			if types[r.Header().Type()] {
-				nodes = append(
-					nodes,
-					virtual.Make(r.PB()),
-				)
-			}
-		}
-
 		return search_result_message{
-			results: nodes,
+			results: results,
 		}
 	}
 }
@@ -306,7 +256,12 @@ func main() {
 			Node:     make_page(c.WithWidth(c.Width() - 2)),
 		}),
 	}
-	p := tea.NewProgram(rt, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(
+		rt,
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+		tea.WithoutCatchPanics(),
+	)
 	errors.SetProgram(p)
 
 	if _, err := p.Run(); err != nil {

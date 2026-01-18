@@ -10,7 +10,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/google/go-cmp v0.7.0
 	github.com/lrstanley/bubblezone v1.0.0
-	github.com/minkezhang/truffle-api v0.0.0-20260117131815-a31751a157b0
+	github.com/minkezhang/truffle-api v0.0.0-20260118085330-8bc56d755897
 	golang.org/x/image v0.35.0
 	golang.org/x/text v0.33.0
 )
