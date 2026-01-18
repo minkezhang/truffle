@@ -377,13 +377,13 @@ func (n *Node) SetValues(data []util_node.N) tea.Cmd {
 		tea.Sequence(
 			n.image.SetURL(""),
 			func() tea.Msg {
-
 				for _, d := range data {
 					r, c := n.to_row(d)
 					rows = append(rows, r)
 					cmds = append(cmds, c)
-					n.data = append([]util_node.N{}, data...)
 				}
+				n.data = append([]util_node.N{}, data...)
+				n.select_button.SetIsInvisible(n.IsInvisible())
 				n.table.SetRows(rows)
 				n.table.SetCursor(0)
 				n.table.GotoTop()
@@ -394,6 +394,8 @@ func (n *Node) SetValues(data []util_node.N) tea.Cmd {
 	)
 	return tea.Batch(cmds...)
 }
+
+func (n *Node) IsInvisible() bool { return n.Node.IsInvisible() || len(n.data) == 0 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
 	n.table.SetStyles(styles[types.FocusStateActive])

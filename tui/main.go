@@ -228,7 +228,13 @@ func (p page) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (p page) View() string {
 	var parts []string
 	for _, c := range p.children {
-		parts = append(parts, c.View())
+		if t, ok := c.(*table.Node); ok { // Only display table if there are results
+			if !t.IsInvisible() {
+				parts = append(parts, c.View())
+			}
+		} else {
+			parts = append(parts, c.View())
+		}
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
