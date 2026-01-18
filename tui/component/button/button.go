@@ -78,16 +78,22 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	_, c = n.clickable.Update(msg)
+	cmds = append(cmds, c)
+
 	switch msg := msg.(type) {
 	case clickable.Click:
 		if msg.ID == n.clickable.ID() {
-			cmds = append(cmds, tea.Sequence(
-				func() tea.Msg {
+			var _cmds []tea.Cmd
+			if n.FocusState() == types.FocusStateNone {
+				_cmds = append(_cmds, func() tea.Msg {
 					return types.FocusMessage{
 						ID:    n.ID(),
 						Index: 0,
 					}
-				},
+				})
+			}
+			_cmds = append(_cmds,
 				func() tea.Msg {
 					return SubmitMessage{
 						ID:  n.ID(),
@@ -100,13 +106,10 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						fmt.Sprintf("%v: clicked button %v", n.ID(), n.key.Key),
 					)
 				},
-			),
 			)
+			cmds = append(cmds, tea.Sequence(_cmds...))
 		}
 	}
-
-	_, c = n.clickable.Update(msg)
-	cmds = append(cmds, c)
 
 	return n, tea.Batch(cmds...)
 }

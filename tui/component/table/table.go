@@ -284,16 +284,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
-	return zone.Mark(
-		n.clickable.ID(),
-		lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			n.image.View(), // image
-			lipgloss.JoinVertical( // table and button
-				lipgloss.Left,
-				lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-					color_profile.UIForeground[n.FocusState()],
-				).Render(
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		n.image.View(), // image
+		lipgloss.JoinVertical( // table and button
+			lipgloss.Left,
+			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+				color_profile.UIForeground[n.FocusState()],
+			).Render(
+				zone.Mark(
+					n.clickable.ID(),
 					lipgloss.JoinVertical(
 						lipgloss.Left,
 						lipgloss.NewStyle().Foreground(
@@ -343,8 +343,8 @@ func (n *Node) View() string {
 						),
 					),
 				),
-				n.select_button.View(),
 			),
+			n.select_button.View(),
 		),
 	)
 }
