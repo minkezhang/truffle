@@ -50,7 +50,7 @@ func New(o O) *Node {
 		Prefix:      "search-textinput",
 		ParentID:    n.ID(),
 		Width:       o.Column.Content() - 4,
-		Placeholder: "Frieren, mal:manga/52991",
+		Placeholder: "Frieren t:manga t:anime api:mal nsfw:false, mal:manga/52991",
 		Prompt:      "⚲ ",
 		Value: form.Value[string]{
 			Key: form.Key{
