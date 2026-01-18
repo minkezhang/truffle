@@ -5,11 +5,13 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/client/option"
+	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/search"
+	"github.com/minkezhang/truffle/tui/component/table"
 	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/search"
 
@@ -49,6 +51,8 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case search.SubmitSearchMessage:
 		cmds = append(cmds, do_search(n.context, n.db, msg))
+	case table.AddLinkMessage:
+		cmds = append(cmds, do_add_link(n.context, n.db, msg))
 	}
 
 	return n, tea.Batch(cmds...)
@@ -56,6 +60,34 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type SearchResultMessage struct {
 	Results []util_node.N
+}
+
+type AddLinkResultMessage struct {
+	Result source.S
+}
+
+func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.Cmd {
+	return func() tea.Msg {
+		h, err := _db.Put(ctx, msg.Value.Value.WithNodeID(msg.NodeID))
+		if err != nil {
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				err.Error(),
+			)
+		}
+
+		s, err := _db.Get(ctx, h, option.Remote(false))
+		if err != nil {
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				err.Error(),
+			)
+		}
+
+		return AddLinkResultMessage{
+			Result: s,
+		}
+	}
 }
 
 func do_search(ctx context.Context, _db *db.DB, msg search.SubmitSearchMessage) tea.Cmd {

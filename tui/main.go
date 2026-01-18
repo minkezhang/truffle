@@ -88,7 +88,7 @@ func make_page(c *column.C) page {
 				Column: c,
 				Key: form.Key{
 					Label: "Results",
-					Key:   "search-results",
+					Key:   "table-selection",
 				},
 				CacheDirectory: cache,
 			}),
@@ -115,6 +115,8 @@ func (p page) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case component_db.SearchResultMessage:
 		cmds = append(cmds, p.children[2].(*table.Node).SetValues(msg.Results))
+	case component_db.AddLinkResultMessage:
+		cmds = append(cmds, p.children[2].(*table.Node).PutSource(msg.Result))
 	}
 
 	for i := range p.children {

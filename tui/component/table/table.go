@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/data/node"
+	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/column"
@@ -21,6 +22,10 @@ import (
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
+	"github.com/minkezhang/truffle/tui/util/node/virtual"
+
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 const (
@@ -72,7 +77,10 @@ type Node struct {
 	clickable      *clickable.Node
 	key            form.Key
 	data           []util_node.N
-	select_button  *button.Node
+
+	select_button *button.Node
+	add_button    *button.Node
+	// link_button *button.Node  // TODO
 }
 
 type O struct {
@@ -144,6 +152,13 @@ func New(o O) *Node {
 			Key:   "table-select",
 		},
 	})
+	n.add_button = button.New(button.O{
+		ParentID: n.ID(),
+		Key: form.Key{
+			Label: "Add",
+			Key:   "table-add",
+		},
+	})
 	return n
 }
 
@@ -153,6 +168,7 @@ func (n *Node) Init() tea.Cmd {
 		n.image.Init(),
 		n.SetValues(n.data),
 		n.select_button.Init(),
+		n.add_button.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -168,6 +184,12 @@ type HighlightMessage struct {
 
 type SelectMessage HighlightMessage
 
+type AddLinkMessage struct {
+	ID     string
+	NodeID string
+	Value  form.Value[source.S]
+}
+
 func (n *Node) Value() form.Value[util_node.N] {
 	if n.selected_index == -1 {
 		return form.Value[util_node.N]{
@@ -179,6 +201,43 @@ func (n *Node) Value() form.Value[util_node.N] {
 		Key:   n.key,
 		Value: n.data[n.selected_index],
 	}
+}
+
+func (n *Node) do_add_link(node_id string) tea.Cmd {
+	// Only add link for single sources.
+	if _, ok := n.Value().Value.(virtual.N); !ok {
+		return nil
+	}
+
+	s, err := n.Value().Value.Virtual()
+	if err != nil {
+		return func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("%v: cannot get source: %v", err),
+			)
+		}
+	}
+
+	m := AddLinkMessage{
+		ID:     n.ID(),
+		NodeID: node_id,
+		Value: form.Value[source.S]{
+			Key: form.Key{
+				Key: "table-add-link",
+			},
+			Value: s,
+		},
+	}
+	return tea.Sequence(
+		func() tea.Msg { return m },
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: add to DB %v", n.ID(), m),
+			)
+		},
+	)
 }
 
 func (n *Node) do_select() tea.Cmd {
@@ -218,12 +277,15 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
 
-	_, c = n.image.Update(msg)
-	cmds = append(cmds, c)
-	_, c = n.clickable.Update(msg)
-	cmds = append(cmds, c)
-	_, c = n.select_button.Update(msg)
-	cmds = append(cmds, c)
+	for _, m := range []tea.Model{
+		n.image,
+		n.clickable,
+		n.select_button,
+		n.add_button,
+	} {
+		_, c = m.Update(msg)
+		cmds = append(cmds, c)
+	}
 
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
@@ -259,8 +321,20 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case button.SubmitMessage:
-		if msg.ID == n.select_button.ID() {
+		switch id := msg.ID; id {
+		case n.select_button.ID():
 			cmds = append(cmds, n.do_select())
+		case n.add_button.ID():
+			cmds = append(
+				cmds,
+				n.do_add_link(""),
+				func() tea.Msg {
+					return types.FocusMessage{
+						ID:    n.ID(),
+						Index: 0,
+					}
+				},
+			)
 		}
 	case HighlightMessage:
 		if msg.ID == n.ID() {
@@ -270,7 +344,13 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return errors.ToErrorMessage(err)
 				})
 			} else {
-				cmds = append(cmds, n.image.SetURL(source.PreviewURL()))
+				cmds = append(cmds,
+					n.image.SetURL(source.PreviewURL()),
+					n.add_button.SetIsInvisible(map[epb.SourceAPI]bool{
+						epb.SourceAPI_SOURCE_API_NONE:    true,
+						epb.SourceAPI_SOURCE_API_TRUFFLE: true,
+					}[source.Header().API()]),
+				)
 			}
 		}
 	}
@@ -284,6 +364,15 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
+	var buttons []string
+	for _, b := range []*button.Node{
+		n.select_button,
+		n.add_button,
+	} {
+		if !b.IsInvisible() {
+			buttons = append(buttons, b.View())
+		}
+	}
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		n.image.View(), // image
@@ -344,7 +433,7 @@ func (n *Node) View() string {
 					),
 				),
 			),
-			n.select_button.View(),
+			lipgloss.JoinHorizontal(lipgloss.Top, buttons...),
 		),
 	)
 }
@@ -368,7 +457,78 @@ func (n *Node) to_row(data util_node.N) (table.Row, tea.Cmd) {
 	}, nil
 }
 
-func (n *Node) SetValues(data []util_node.N) tea.Cmd {
+func (n *Node) PutSource(s source.S) tea.Cmd {
+	return tea.Sequence(
+		func() tea.Msg {
+			old_node_index := -1 // Remove from old node if it exists in the table
+			old_source_index := -1
+			new_node_index := -1 // Add to an existing node if it exists in the table
+
+			for i, m := range n.data {
+				if s.NodeID() != "" && s.NodeID() == m.Header().ID() {
+					new_node_index = i
+				}
+				for j, t := range m.Sources() {
+					if s.Header() == t.Header() {
+						old_node_index = i
+						old_source_index = j
+					}
+				}
+			}
+
+			if old_node_index >= 0 {
+				// Replace old node if it is virtual or being deleted.
+				if len(n.data[old_node_index].Sources()) == 1 {
+					n.data[old_node_index] = node.Make(
+						&dpb.Node{
+							Header: &dpb.NodeHeader{
+								Id:   s.NodeID(),
+								Type: s.Header().Type(),
+							},
+						},
+					).WithSources([]source.S{s})
+					return nil
+				}
+
+				// If both old and new node exists, move source.
+				sources := append([]source.S{}, n.data[old_node_index].Sources()...)
+				n.data[old_node_index] = n.data[old_node_index].(node.N).WithSources(
+					append(
+						sources[:old_source_index],
+						sources[old_source_index+1:]...,
+					),
+				)
+				if new_node_index >= 0 {
+					n.data[new_node_index] = n.data[new_node_index].(node.N).WithSources(append(n.data[new_node_index].Sources(), s))
+				} else {
+					// If no matching node was found, create a new
+					// one in the view.
+					n.data = append(
+						n.data[:new_node_index],
+						append(
+							[]util_node.N{
+								node.Make(
+									&dpb.Node{
+										Header: &dpb.NodeHeader{
+											Id:   s.NodeID(),
+											Type: s.Header().Type(),
+										},
+									},
+								).WithSources([]source.S{s}),
+							},
+							n.data[new_node_index:]...,
+						)...,
+					)
+				}
+			}
+			return nil
+		},
+		n.set_values(n.data, false),
+	)
+}
+func (n *Node) SetValues(data []util_node.N) tea.Cmd { return n.set_values(data, true) }
+
+func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
 	var cmds []tea.Cmd
 	var rows []table.Row
 
@@ -384,9 +544,12 @@ func (n *Node) SetValues(data []util_node.N) tea.Cmd {
 				}
 				n.data = append([]util_node.N{}, data...)
 				n.select_button.SetIsInvisible(n.IsInvisible())
+				n.add_button.SetIsInvisible(n.IsInvisible())
 				n.table.SetRows(rows)
-				n.table.SetCursor(0)
-				n.table.GotoTop()
+				if reset_cursor {
+					n.table.SetCursor(0)
+					n.table.GotoTop()
+				}
 				n.selected_index = -1
 				return nil
 			},
