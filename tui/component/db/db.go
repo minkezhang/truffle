@@ -120,29 +120,21 @@ func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.
 func do_search(ctx context.Context, _db *db.DB, msg search.SubmitSearchMessage) tea.Cmd {
 	return func() tea.Msg {
 		var types []epb.SourceType
-		for _, t := range msg.SourceTypes.Value {
-			if t.Value {
-				if v, ok := epb.SourceType_value[t.Key.Key]; ok {
-					types = append(types, epb.SourceType(v))
-				}
+		for t, ok := range msg.SourceTypes.Value {
+			if ok {
+				types = append(types, t)
 			}
 		}
 
 		_opts := []option.O{option.Remote(true)}
 		for _, o := range msg.Options.Value {
-			if o.Value {
-				_opts = append(_opts, map[string]option.O{
-					"options-nsfw": option.NSFW(true),
-				}[o.Key.Key])
-			}
+			_opts = append(_opts, o)
 		}
 
 		opts := map[epb.SourceAPI][]option.O{}
-		for _, api := range msg.APIs.Value {
-			if api.Value {
-				if v, ok := epb.SourceAPI_value[api.Key.Key]; ok {
-					opts[epb.SourceAPI(v)] = append([]option.O{}, _opts...)
-				}
+		for api, ok := range msg.APIs.Value {
+			if ok {
+				opts[api] = append([]option.O{}, _opts...)
 			}
 		}
 

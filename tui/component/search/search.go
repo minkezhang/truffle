@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
+	"github.com/minkezhang/truffle-api/client/option"
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/clickable"
@@ -20,6 +21,31 @@ import (
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	directory "github.com/minkezhang/truffle/tui/component/directory/focusable"
+)
+
+var (
+	key_checkboxes = map[string]map[string]form.Key{
+		"api": map[string]form.Key{
+			"truffle": form.Key{"Truffle", epb.SourceAPI_SOURCE_API_TRUFFLE.String()},
+			"mal":     form.Key{"MAL", epb.SourceAPI_SOURCE_API_MAL.String()},
+		},
+		"t": map[string]form.Key{
+			"anime":       form.Key{"Anime", epb.SourceType_SOURCE_TYPE_SERIES_ANIME.String()},
+			"anime_movie": form.Key{"Anime Movie", epb.SourceType_SOURCE_TYPE_MOVIE_ANIME.String()},
+			"manga":       form.Key{"Manga", epb.SourceType_SOURCE_TYPE_BOOK_MANGA.String()},
+			"light_novel": form.Key{"Light Novel", epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL.String()},
+		},
+	}
+	key_options = map[string]form.Key{
+		"nsfw": form.Key{"NSFW", "options-nsfw"},
+	}
+
+	key_submit_message = map[string]form.Key{
+		"apis":    form.Key{"APIs", "search-apis"},
+		"types":   form.Key{"Media", "search-source-types"},
+		"options": form.Key{"Options", "search-options"},
+		"submit":  form.Key{"Search", "search-submit"},
+	}
 )
 
 type Node struct {
@@ -53,10 +79,7 @@ func New(o O) *Node {
 		Placeholder: "Frieren t:manga t:anime api:mal nsfw:false, mal:manga/52991",
 		Prompt:      "⚲ ",
 		Value: form.Value[string]{
-			Key: form.Key{
-				Label: "Search",
-				Key:   "search-textinput",
-			},
+			Key: form.Key{"Search", "search-textinput"},
 		},
 	})
 	n.apis = checkbox_group.New(checkbox_group.O{
@@ -64,25 +87,10 @@ func New(o O) *Node {
 		ParentID: n.ID(),
 		IsRadio:  false,
 		Value: form.Value[[]form.Value[bool]]{
-			Key: form.Key{
-				Label: "APIs",
-				Key:   "search-apis",
-			},
+			Key: key_submit_message["apis"],
 			Value: []form.Value[bool]{
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "Truffle",
-						Key:   epb.SourceAPI_SOURCE_API_TRUFFLE.String(),
-					},
-					Value: true,
-				},
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "MAL",
-						Key:   epb.SourceAPI_SOURCE_API_MAL.String(),
-					},
-					Value: true,
-				},
+				form.Value[bool]{key_checkboxes["api"]["truffle"], true},
+				form.Value[bool]{key_checkboxes["api"]["mal"], true},
 			},
 		},
 	})
@@ -91,39 +99,12 @@ func New(o O) *Node {
 		ParentID: n.ID(),
 		IsRadio:  false,
 		Value: form.Value[[]form.Value[bool]]{
-			Key: form.Key{
-				Label: "Media",
-				Key:   "search-source-types",
-			},
+			Key: key_submit_message["types"],
 			Value: []form.Value[bool]{
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "Anime",
-						Key:   epb.SourceType_SOURCE_TYPE_SERIES_ANIME.String(),
-					},
-					Value: true,
-				},
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "Anime Movie",
-						Key:   epb.SourceType_SOURCE_TYPE_MOVIE_ANIME.String(),
-					},
-					Value: true,
-				},
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "Manga",
-						Key:   epb.SourceType_SOURCE_TYPE_BOOK_MANGA.String(),
-					},
-					Value: true,
-				},
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "Light Novel",
-						Key:   epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL.String(),
-					},
-					Value: false,
-				},
+				form.Value[bool]{key_checkboxes["t"]["anime"], true},
+				form.Value[bool]{key_checkboxes["t"]["anime_movie"], true},
+				form.Value[bool]{key_checkboxes["t"]["manga"], true},
+				form.Value[bool]{key_checkboxes["t"]["light_novel"], true},
 			},
 		},
 	})
@@ -132,27 +113,15 @@ func New(o O) *Node {
 		ParentID: n.ID(),
 		IsRadio:  false,
 		Value: form.Value[[]form.Value[bool]]{
-			Key: form.Key{
-				Label: "Options",
-				Key:   "search-options",
-			},
+			Key: key_submit_message["options"],
 			Value: []form.Value[bool]{
-				form.Value[bool]{
-					Key: form.Key{
-						Label: "NSFW",
-						Key:   "options-nsfw",
-					},
-					Value: false,
-				},
+				form.Value[bool]{key_options["nsfw"], false},
 			},
 		},
 	})
 	n.submit_button = button.New(button.O{
 		ParentID: n.ID(),
-		Key: form.Key{
-			Label: "Search",
-			Key:   "search-submit",
-		},
+		Key:      key_submit_message["submit"],
 	})
 	n.clickable = clickable.New(n.ID())
 	return n
@@ -186,27 +155,59 @@ func (n *Node) Init() tea.Cmd {
 type SubmitSearchMessage struct {
 	ID          string
 	Query       form.Value[string]
-	APIs        form.Value[[]form.Value[bool]]
-	SourceTypes form.Value[[]form.Value[bool]]
-	Options     form.Value[[]form.Value[bool]]
+	APIs        form.Value[map[epb.SourceAPI]bool]
+	SourceTypes form.Value[map[epb.SourceType]bool]
+	Options     form.Value[[]option.O]
 }
 
 func (n *Node) submit() tea.Cmd {
-	m := SubmitSearchMessage{
-		ID:          n.ID(),
-		Query:       n.input.Value(),
-		APIs:        n.apis.Value(),
-		SourceTypes: n.source_types.Value(),
-		Options:     n.options.Value(),
-	}
-
 	// Ignore blank queries.
-	if m.Query.Value == "" {
+	if n.input.Value().Value == "" {
 		return nil
 	}
 
+	apis := map[epb.SourceAPI]bool{}
+	types := map[epb.SourceType]bool{}
+	var options []option.O
+
+	for _, api := range n.apis.Value().Value {
+		apis[epb.SourceAPI(epb.SourceAPI_value[api.Key.Key])] = api.Value
+	}
+	for _, t := range n.source_types.Value().Value {
+		types[epb.SourceType(epb.SourceType_value[t.Key.Key])] = t.Value
+	}
+	for _, opt := range n.options.Value().Value {
+		switch opt.Key.Key {
+		case key_options["nsfw"].Key:
+			options = append(options, option.NSFW(opt.Value))
+		}
+	}
+
+	/*
+		// Set option overrides
+		var query []string
+		for _, token := range strings.Split(n.input.Value(), " ") {
+			if head, tail, ok := strings.Cut(token, ":"); ok {
+				if _, ok := keys[head]; ok {
+					if k, ok := keys[head][tail]; ok {
+
+					}
+				}
+			} else {
+				query = append(query, token)
+			}
+		}
+	*/
+
+	m := SubmitSearchMessage{
+		ID:          n.ID(),
+		Query:       n.input.Value(),
+		APIs:        form.Value[map[epb.SourceAPI]bool]{key_submit_message["apis"], apis},
+		SourceTypes: form.Value[map[epb.SourceType]bool]{key_submit_message["types"], types},
+		Options:     form.Value[[]option.O]{key_submit_message["options"], options},
+	}
+
 	return tea.Sequence(
-		n.input.SetValue(""),
 		func() tea.Msg {
 			return errors.ToLogMessage(
 				errors.LevelDebug,
