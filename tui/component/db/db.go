@@ -11,6 +11,8 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/util/form"
+	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/search"
 
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
@@ -59,7 +61,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.Cmd {
 	return func() tea.Msg {
-		h, err := _db.Put(ctx, msg.Value.Value)
+		h, err := _db.Put(ctx, msg.Body.Value)
 		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
@@ -100,9 +102,14 @@ func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage)
 		}
 
 		return message.PutResponseMessage{
-			ID:          msg.ID,
-			Node:        n,
-			SourceIndex: source_index,
+			ID: msg.ID,
+			Body: form.Value[message.PutResponseBody]{
+				Key: msg.Body.Key,
+				Value: message.PutResponseBody{
+					Node:        n,
+					SourceIndex: source_index,
+				},
+			},
 		}
 	}
 }
@@ -110,25 +117,25 @@ func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage)
 func do_search(ctx context.Context, _db *db.DB, msg message.SearchRequestMessage) tea.Cmd {
 	return func() tea.Msg {
 		var types []epb.SourceType
-		for t, ok := range msg.SourceTypes.Value {
+		for t, ok := range msg.Body.Value.SourceTypes {
 			if ok {
 				types = append(types, t)
 			}
 		}
 
 		_opts := []option.O{option.Remote(true)}
-		for _, o := range msg.Options.Value {
+		for _, o := range msg.Body.Value.Options {
 			_opts = append(_opts, o)
 		}
 
 		opts := map[epb.SourceAPI][]option.O{}
-		for api, ok := range msg.APIs.Value {
+		for api, ok := range msg.Body.Value.APIs {
 			if ok {
 				opts[api] = append([]option.O{}, _opts...)
 			}
 		}
 
-		results, err := util_search.Search(ctx, _db, msg.Query.Value, opts, types)
+		results, err := util_search.Search(ctx, _db, msg.Body.Value.Query, opts, types)
 		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
@@ -137,8 +144,11 @@ func do_search(ctx context.Context, _db *db.DB, msg message.SearchRequestMessage
 		}
 
 		return message.SearchResponseMessage{
-			ID:      msg.ID,
-			Results: results,
+			ID: msg.ID,
+			Body: form.Value[[]util_node.N]{
+				Key:   msg.Body.Key,
+				Value: results,
+			},
 		}
 	}
 }

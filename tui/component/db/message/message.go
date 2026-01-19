@@ -13,31 +13,39 @@ import (
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
+type SearchRequestBody struct {
+	Query       string
+	APIs        map[epb.SourceAPI]bool
+	SourceTypes map[epb.SourceType]bool
+	Options     []option.O
+}
+
 type SearchRequestMessage struct {
-	ID          string
-	Query       form.Value[string]
-	APIs        form.Value[map[epb.SourceAPI]bool]
-	SourceTypes form.Value[map[epb.SourceType]bool]
-	Options     form.Value[[]option.O]
+	ID   string
+	Body form.Value[SearchRequestBody]
 }
 
 type SearchResponseMessage struct {
-	ID      string
-	Results []util_node.N
+	ID   string
+	Body form.Value[[]util_node.N]
 }
 
 type GetNodeRequestMessage struct {
-	ID    string
-	Value form.Value[util_node.N]
+	ID   string
+	Body form.Value[util_node.N]
 }
 
 type PutRequestMessage struct {
-	ID    string
-	Value form.Value[source.S]
+	ID   string
+	Body form.Value[source.S]
+}
+
+type PutResponseBody struct {
+	Node        node.N
+	SourceIndex int
 }
 
 type PutResponseMessage struct {
-	ID          string
-	Node        node.N
-	SourceIndex int
+	ID   string
+	Body form.Value[PutResponseBody]
 }

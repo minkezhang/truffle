@@ -28,6 +28,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/node/virtual"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
+	search_key "github.com/minkezhang/truffle/tui/component/search/key"
 )
 
 const (
@@ -67,6 +68,10 @@ var (
 			),
 		},
 	}
+
+	// Put is passed along to the PutRequestMessage sent by this UI node.
+	// This is checked by this UI node in the PutResponseMessage.
+	Put = form.Key{Key: "table-add-link"}
 )
 
 type Node struct {
@@ -212,10 +217,8 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 
 	m := message.PutRequestMessage{
 		ID: n.ID(),
-		Value: form.Value[source.S]{
-			Key: form.Key{
-				Key: "table-add-link",
-			},
+		Body: form.Value[source.S]{
+			Key:   Put,
 			Value: s.WithNodeID(node_id),
 		},
 	}
@@ -232,8 +235,8 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 
 func (n *Node) do_select() tea.Cmd {
 	m := message.GetNodeRequestMessage{
-		ID:    n.ID(),
-		Value: n.Value(),
+		ID:   n.ID(),
+		Body: n.Value(),
 	}
 	return tea.Sequence(
 		func() tea.Msg { return m },
@@ -249,8 +252,8 @@ func (n *Node) do_select() tea.Cmd {
 
 func (n *Node) do_highlight() tea.Cmd {
 	m := HighlightMessage{
-		ID:    n.ID(),
-		Value: n.Value(),
+		ID:   n.ID(),
+		Body: n.Value(),
 	}
 	return tea.Sequence(
 		func() tea.Msg { return m },
@@ -328,7 +331,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case HighlightMessage:
 		if msg.ID == n.ID() {
-			source, err := msg.Value.Value.Virtual()
+			source, err := msg.Body.Value.Virtual()
 			if err != nil {
 				cmds = append(cmds, func() tea.Msg {
 					return errors.ToErrorMessage(err)
@@ -344,12 +347,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case message.SearchResponseMessage:
-		if msg.ID == n.ID() {
-			cmds = append(cmds, n.SetValues(msg.Results))
+		if msg.Body.Key == search_key.Search {
+			cmds = append(cmds, n.SetValues(msg.Body.Value))
 		}
 	case message.PutResponseMessage:
-		if msg.ID == n.ID() {
-			cmds = append(cmds, n.PutSource(msg.Node, msg.SourceIndex))
+		if msg.Body.Key == Put {
+			cmds = append(cmds, n.PutSource(msg.Body.Value.Node, msg.Body.Value.SourceIndex))
 		}
 	}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/component/search/key"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
@@ -225,11 +226,16 @@ func (n *Node) submit() tea.Cmd {
 	}
 
 	m := message.SearchRequestMessage{
-		ID:          n.ID(),
-		Query:       form.Value[string]{key_submit_message["query"], strings.Join(query, " ")},
-		APIs:        form.Value[map[epb.SourceAPI]bool]{key_submit_message["apis"], apis},
-		SourceTypes: form.Value[map[epb.SourceType]bool]{key_submit_message["types"], types},
-		Options:     form.Value[[]option.O]{key_submit_message["options"], options},
+		ID: n.ID(),
+		Body: form.Value[message.SearchRequestBody]{
+			Key: key.Search,
+			Value: message.SearchRequestBody{
+				Query:       strings.Join(query, " "),
+				APIs:        apis,
+				SourceTypes: types,
+				Options:     options,
+			},
+		},
 	}
 
 	cmds := []tea.Cmd{

@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/column"
-	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
@@ -57,19 +56,6 @@ func (n Node) Init() tea.Cmd {
 
 func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-
-	// Reroute messages.
-	switch msg := msg.(type) {
-	case message.SearchResponseMessage:
-		if msg.ID == n.search_bar.ID() {
-			cmds = append(cmds, func() tea.Msg {
-				return message.SearchResponseMessage{
-					ID:      n.table.ID(),
-					Results: msg.Results,
-				}
-			})
-		}
-	}
 
 	for _, c := range []tea.Model{
 		n.org,
