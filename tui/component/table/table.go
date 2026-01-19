@@ -1,3 +1,5 @@
+// Package table displays a series of Truffle nodes and affords an interface to
+// expand to a dedicated view of each node.
 package table
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
@@ -176,18 +179,7 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-type HighlightMessage struct {
-	ID    string
-	Value form.Value[util_node.N]
-}
-
-type SelectMessage HighlightMessage
-
-type AddLinkMessage struct {
-	ID     string
-	NodeID string
-	Value  form.Value[source.S]
-}
+type HighlightMessage message.GetNodeRequestMessage
 
 func (n *Node) Value() form.Value[util_node.N] {
 	if n.selected_index == -1 {
@@ -218,7 +210,7 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 		}
 	}
 
-	m := AddLinkMessage{
+	m := message.AddLinkRequestMessage{
 		ID:     n.ID(),
 		NodeID: node_id,
 		Value: form.Value[source.S]{
@@ -240,7 +232,7 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 }
 
 func (n *Node) do_select() tea.Cmd {
-	m := SelectMessage{
+	m := message.GetNodeRequestMessage{
 		ID:    n.ID(),
 		Value: n.Value(),
 	}

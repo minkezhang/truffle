@@ -7,12 +7,11 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
 	"github.com/minkezhang/truffle/tui/util/form"
-
-	component_db "github.com/minkezhang/truffle/tui/component/db"
 )
 
 type O struct {
@@ -60,9 +59,9 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case component_db.SearchResultMessage:
+	case message.SearchResponseMessage:
 		cmds = append(cmds, n.table.SetValues(msg.Results))
-	case component_db.AddLinkResultMessage:
+	case message.AddLinkResponseMessage:
 		cmds = append(cmds, n.table.PutSource(msg.Node, msg.SourceIndex))
 	}
 

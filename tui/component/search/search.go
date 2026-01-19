@@ -13,6 +13,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/checkbox_group"
 	"github.com/minkezhang/truffle/tui/component/clickable"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/errors"
@@ -155,14 +156,6 @@ func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(cmds...)
 }
 
-type SubmitSearchMessage struct {
-	ID          string
-	Query       form.Value[string]
-	APIs        form.Value[map[epb.SourceAPI]bool]
-	SourceTypes form.Value[map[epb.SourceType]bool]
-	Options     form.Value[[]option.O]
-}
-
 func (n *Node) submit() tea.Cmd {
 	// Ignore blank queries.
 	if n.input.Value().Value == "" {
@@ -231,7 +224,7 @@ func (n *Node) submit() tea.Cmd {
 		options = append(options, opt)
 	}
 
-	m := SubmitSearchMessage{
+	m := message.SearchRequestMessage{
 		ID:          n.ID(),
 		Query:       form.Value[string]{key_submit_message["query"], strings.Join(query, " ")},
 		APIs:        form.Value[map[epb.SourceAPI]bool]{key_submit_message["apis"], apis},

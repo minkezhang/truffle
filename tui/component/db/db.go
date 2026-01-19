@@ -7,12 +7,10 @@ import (
 	"github.com/minkezhang/truffle-api/client/option"
 	"github.com/minkezhang/truffle-api/data/node"
 	"github.com/minkezhang/truffle-api/db"
+	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
-	"github.com/minkezhang/truffle/tui/component/search"
-	"github.com/minkezhang/truffle/tui/component/table"
-	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/search"
 
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
@@ -50,25 +48,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case search.SubmitSearchMessage:
+	case message.SearchRequestMessage:
 		cmds = append(cmds, do_search(n.context, n.db, msg))
-	case table.AddLinkMessage:
+	case message.AddLinkRequestMessage:
 		cmds = append(cmds, do_add_link(n.context, n.db, msg))
 	}
 
 	return n, tea.Batch(cmds...)
 }
 
-type SearchResultMessage struct {
-	Results []util_node.N
-}
-
-type AddLinkResultMessage struct {
-	Node        node.N
-	SourceIndex int
-}
-
-func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.Cmd {
+func do_add_link(ctx context.Context, _db *db.DB, msg message.AddLinkRequestMessage) tea.Cmd {
 	return func() tea.Msg {
 		h, err := _db.Put(ctx, msg.Value.Value.WithNodeID(msg.NodeID))
 		if err != nil {
@@ -110,14 +99,14 @@ func do_add_link(ctx context.Context, _db *db.DB, msg table.AddLinkMessage) tea.
 			}
 		}
 
-		return AddLinkResultMessage{
+		return message.AddLinkResponseMessage{
 			Node:        n,
 			SourceIndex: source_index,
 		}
 	}
 }
 
-func do_search(ctx context.Context, _db *db.DB, msg search.SubmitSearchMessage) tea.Cmd {
+func do_search(ctx context.Context, _db *db.DB, msg message.SearchRequestMessage) tea.Cmd {
 	return func() tea.Msg {
 		var types []epb.SourceType
 		for t, ok := range msg.SourceTypes.Value {
@@ -146,7 +135,7 @@ func do_search(ctx context.Context, _db *db.DB, msg search.SubmitSearchMessage) 
 			)
 		}
 
-		return SearchResultMessage{
+		return message.SearchResponseMessage{
 			Results: results,
 		}
 	}
