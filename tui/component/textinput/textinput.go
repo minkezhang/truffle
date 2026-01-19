@@ -78,7 +78,7 @@ func (n *Node) Value() form.Value[string] {
 }
 
 func (n *Node) SetValue(v string) tea.Cmd {
-	n.input.SetValue("")
+	n.input.SetValue(v)
 	return nil
 }
 
