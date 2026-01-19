@@ -58,11 +58,17 @@ func (n Node) Init() tea.Cmd {
 func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
+	// Reroute messages.
 	switch msg := msg.(type) {
 	case message.SearchResponseMessage:
-		cmds = append(cmds, n.table.SetValues(msg.Results))
-	case message.AddLinkResponseMessage:
-		cmds = append(cmds, n.table.PutSource(msg.Node, msg.SourceIndex))
+		if msg.ID == n.search_bar.ID() {
+			cmds = append(cmds, func() tea.Msg {
+				return message.SearchResponseMessage{
+					ID:      n.table.ID(),
+					Results: msg.Results,
+				}
+			})
+		}
 	}
 
 	for _, c := range []tea.Model{

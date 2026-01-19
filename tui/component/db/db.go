@@ -50,16 +50,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case message.SearchRequestMessage:
 		cmds = append(cmds, do_search(n.context, n.db, msg))
-	case message.AddLinkRequestMessage:
+	case message.PutRequestMessage:
 		cmds = append(cmds, do_add_link(n.context, n.db, msg))
 	}
 
 	return n, tea.Batch(cmds...)
 }
 
-func do_add_link(ctx context.Context, _db *db.DB, msg message.AddLinkRequestMessage) tea.Cmd {
+func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.Cmd {
 	return func() tea.Msg {
-		h, err := _db.Put(ctx, msg.Value.Value.WithNodeID(msg.NodeID))
+		h, err := _db.Put(ctx, msg.Value.Value)
 		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
@@ -99,7 +99,8 @@ func do_add_link(ctx context.Context, _db *db.DB, msg message.AddLinkRequestMess
 			}
 		}
 
-		return message.AddLinkResponseMessage{
+		return message.PutResponseMessage{
+			ID:          msg.ID,
 			Node:        n,
 			SourceIndex: source_index,
 		}
@@ -136,6 +137,7 @@ func do_search(ctx context.Context, _db *db.DB, msg message.SearchRequestMessage
 		}
 
 		return message.SearchResponseMessage{
+			ID:      msg.ID,
 			Results: results,
 		}
 	}

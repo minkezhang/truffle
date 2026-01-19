@@ -22,6 +22,7 @@ type SearchRequestMessage struct {
 }
 
 type SearchResponseMessage struct {
+	ID      string
 	Results []util_node.N
 }
 
@@ -30,13 +31,13 @@ type GetNodeRequestMessage struct {
 	Value form.Value[util_node.N]
 }
 
-type AddLinkRequestMessage struct {
-	ID     string // UI node ID
-	NodeID string // Truffle node
-	Value  form.Value[source.S]
+type PutRequestMessage struct {
+	ID    string
+	Value form.Value[source.S]
 }
 
-type AddLinkResponseMessage struct {
+type PutResponseMessage struct {
+	ID          string
 	Node        node.N
 	SourceIndex int
 }

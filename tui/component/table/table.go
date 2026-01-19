@@ -210,14 +210,13 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 		}
 	}
 
-	m := message.AddLinkRequestMessage{
-		ID:     n.ID(),
-		NodeID: node_id,
+	m := message.PutRequestMessage{
+		ID: n.ID(),
 		Value: form.Value[source.S]{
 			Key: form.Key{
 				Key: "table-add-link",
 			},
-			Value: s,
+			Value: s.WithNodeID(node_id),
 		},
 	}
 	return tea.Sequence(
@@ -343,6 +342,14 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}[source.Header().API()]),
 				)
 			}
+		}
+	case message.SearchResponseMessage:
+		if msg.ID == n.ID() {
+			cmds = append(cmds, n.SetValues(msg.Results))
+		}
+	case message.PutResponseMessage:
+		if msg.ID == n.ID() {
+			cmds = append(cmds, n.PutSource(msg.Node, msg.SourceIndex))
 		}
 	}
 
