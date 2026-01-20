@@ -251,13 +251,19 @@ func (n *Node) do_select() tea.Cmd {
 }
 
 func (n *Node) do_highlight() tea.Cmd {
-	m := HighlightMessage{
-		ID:   n.ID(),
-		Body: n.Value(),
-	}
 	return tea.Sequence(
-		func() tea.Msg { return m },
 		func() tea.Msg {
+			n.selected_index = n.table.Cursor()
+			return HighlightMessage{
+				ID:   n.ID(),
+				Body: n.Value(),
+			}
+		},
+		func() tea.Msg {
+			m := HighlightMessage{
+				ID:   n.ID(),
+				Body: n.Value(),
+			}
 			return errors.ToLogMessage(
 				errors.LevelDebug,
 				fmt.Sprintf("%v: highlighted message %v", n.ID(), m),
@@ -279,6 +285,8 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, c = m.Update(msg)
 		cmds = append(cmds, c)
 	}
+	n.table, c = n.table.Update(msg)
+	cmds = append(cmds, c)
 
 	if n.FocusState() == types.FocusStateActive {
 		switch msg := msg.(type) {
@@ -296,8 +304,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		n.table, c = n.table.Update(msg)
-		cmds = append(cmds, c)
 	} else {
 		switch msg := msg.(type) {
 		case clickable.Click:
@@ -318,16 +324,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case n.select_button.ID():
 			cmds = append(cmds, n.do_select())
 		case n.add_button.ID():
-			cmds = append(
-				cmds,
-				n.do_add_link(""),
-				func() tea.Msg {
-					return types.FocusMessage{
-						ID:    n.ID(),
-						Index: 0,
-					}
-				},
-			)
+			cmds = append(cmds, n.do_add_link(""))
 		}
 	case HighlightMessage:
 		if msg.ID == n.ID() {
@@ -356,8 +353,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if (n.selected_index == -1 && len(n.table.Rows()) > 0) || (n.selected_index >= 0 && n.selected_index != n.table.Cursor()) {
-		n.selected_index = n.table.Cursor()
+	if n.selected_index != n.table.Cursor() && len(n.table.Rows()) > 0 {
 		cmds = append(cmds, n.do_highlight())
 	}
 
@@ -513,6 +509,7 @@ func (n *Node) PutSource(m node.N, source_index int) tea.Cmd {
 		n.set_values(n.data, false),
 	)
 }
+
 func (n *Node) SetValues(data []util_node.N) tea.Cmd { return n.set_values(data, true) }
 
 func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
@@ -521,28 +518,27 @@ func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
 
 	cmds = append(
 		cmds,
-		tea.Sequence(
-			n.image.SetURL(""),
-			func() tea.Msg {
-				for _, d := range data {
-					r, c := n.to_row(d)
-					rows = append(rows, r)
-					cmds = append(cmds, c)
-				}
-				n.data = append([]util_node.N{}, data...)
-				n.select_button.SetIsInvisible(n.IsInvisible())
-				n.add_button.SetIsInvisible(n.IsInvisible())
-				n.table.SetRows(rows)
-				if reset_cursor {
-					n.table.SetCursor(0)
-					n.table.GotoTop()
-				}
+		func() tea.Msg {
+			for _, d := range data {
+				r, c := n.to_row(d)
+				rows = append(rows, r)
+				cmds = append(cmds, c)
+			}
+			n.data = append([]util_node.N{}, data...)
+			n.select_button.SetIsInvisible(n.IsInvisible())
+			n.add_button.SetIsInvisible(n.IsInvisible())
+			n.table.SetRows(rows)
+			if reset_cursor {
+				n.table.SetCursor(0)
+				n.table.GotoTop()
 				n.selected_index = -1
-				return nil
-			},
-		),
+				n.image.SetURL("")
+			}
+			return nil
+		},
+		n.do_highlight(),
 	)
-	return tea.Batch(cmds...)
+	return tea.Sequence(cmds...)
 }
 
 func (n *Node) IsInvisible() bool { return n.Node.IsInvisible() || len(n.data) == 0 }
