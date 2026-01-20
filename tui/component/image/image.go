@@ -50,6 +50,9 @@ type update_cache_message struct {
 
 func (n *Node) SetURL(v string) tea.Cmd {
 	return func() tea.Msg {
+		if n.url == v {
+			return nil
+		}
 		n.url = v
 		if n.url == "" {
 			return update_cache_message{
