@@ -54,22 +54,21 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 	if v == nil {
 		return nil
 	}
-	return tea.Sequence(
-		func() tea.Msg {
-			source, err := v.Virtual()
-			if err != nil {
-				n.node = nil
-				return errors.ToLogMessage(
-					errors.LevelWarn,
-					fmt.Sprintf("%v: cannot get source from node: %v", n.ID(), err),
-				)
-			}
+	source, err := v.Virtual()
+	if err != nil {
+		n.node = nil
+		return func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("%v: cannot get source from node: %v", n.ID(), err),
+			)
+		}
+	}
 
-			n.node = v
-			n.source = source
-			return n.image.SetValue(n.source.PreviewURL())()
-		},
-	)
+	n.node = v
+	n.source = source
+
+	return n.image.SetValue(n.source.PreviewURL())
 }
 
 func (n *Node) Init() tea.Cmd {
@@ -88,9 +87,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
 
-	_, c = n.image.Update(msg)
-	cmds = append(cmds, c)
-
 	switch msg := msg.(type) {
 	case message.GetNodeResponseMessage:
 		cmds = append(
@@ -106,6 +102,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			),
 		)
 	}
+
+	_, c = n.image.Update(msg)
+	cmds = append(cmds, c)
 
 	return n, tea.Batch(cmds...)
 }

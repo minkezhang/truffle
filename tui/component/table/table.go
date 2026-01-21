@@ -335,7 +335,10 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			source, err := msg.Body.Value.Virtual()
 			if err != nil {
 				cmds = append(cmds, func() tea.Msg {
-					return errors.ToErrorMessage(err)
+					return errors.ToLogMessage(
+						errors.LevelWarn,
+						fmt.Sprintf("%v: cannot get node source: %v", err),
+					)
 				})
 			} else {
 				cmds = append(cmds,
@@ -459,59 +462,54 @@ func (n *Node) to_row(data util_node.N) (table.Row, tea.Cmd) {
 }
 
 func (n *Node) PutSource(m node.N, source_index int) tea.Cmd {
-	return tea.Sequence(
-		func() tea.Msg {
-			old_node_index := -1 // Remove from old node if it exists in the table
-			old_source_index := -1
-			new_node_index := -1 // Add to an existing node if it exists in the table
+	old_node_index := -1 // Remove from old node if it exists in the table
+	old_source_index := -1
+	new_node_index := -1 // Add to an existing node if it exists in the table
 
-			s := m.Sources()[source_index]
+	s := m.Sources()[source_index]
 
-			for i, o := range n.data {
-				if m.Header().ID() != "" && m.Header() == o.Header() {
-					new_node_index = i
-				}
-				for j, t := range o.Sources() {
-					if s.Header() == t.Header() {
-						old_node_index = i
-						old_source_index = j
-					}
-				}
+	for i, o := range n.data {
+		if m.Header().ID() != "" && m.Header() == o.Header() {
+			new_node_index = i
+		}
+		for j, t := range o.Sources() {
+			if s.Header() == t.Header() {
+				old_node_index = i
+				old_source_index = j
 			}
+		}
+	}
 
-			if old_node_index >= 0 {
-				// Replace old node if it is virtual or being deleted.
-				if len(n.data[old_node_index].Sources()) == 1 {
-					n.data[old_node_index] = m
-					return nil
-				}
+	if old_node_index >= 0 {
+		// Replace old node if it is virtual or being deleted.
+		if len(n.data[old_node_index].Sources()) == 1 {
+			n.data[old_node_index] = m
+			return n.set_values(n.data, false)
+		}
 
-				// If both old and new node exists, move source.
-				sources := append([]source.S{}, n.data[old_node_index].Sources()...)
-				n.data[old_node_index] = n.data[old_node_index].(node.N).WithSources(
-					append(
-						sources[:old_source_index],
-						sources[old_source_index+1:]...,
-					),
-				)
-				if new_node_index >= 0 {
-					n.data[new_node_index] = m
-				} else {
-					// If no matching node was found, create a new
-					// one in the view.
-					n.data = append(
-						n.data[:new_node_index],
-						append(
-							[]util_node.N{m},
-							n.data[new_node_index:]...,
-						)...,
-					)
-				}
-			}
-			return nil
-		},
-		n.set_values(n.data, false),
-	)
+		// If both old and new node exists, move source.
+		sources := append([]source.S{}, n.data[old_node_index].Sources()...)
+		n.data[old_node_index] = n.data[old_node_index].(node.N).WithSources(
+			append(
+				sources[:old_source_index],
+				sources[old_source_index+1:]...,
+			),
+		)
+		if new_node_index >= 0 {
+			n.data[new_node_index] = m
+		} else {
+			// If no matching node was found, create a new
+			// one in the view.
+			n.data = append(
+				n.data[:new_node_index],
+				append(
+					[]util_node.N{m},
+					n.data[new_node_index:]...,
+				)...,
+			)
+		}
+	}
+	return n.set_values(n.data, false)
 }
 
 func (n *Node) SetValues(data []util_node.N) tea.Cmd { return n.set_values(data, true) }
@@ -520,29 +518,24 @@ func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
 	var cmds []tea.Cmd
 	var rows []table.Row
 
-	cmds = append(
-		cmds,
-		func() tea.Msg {
-			for _, d := range data {
-				r, c := n.to_row(d)
-				rows = append(rows, r)
-				cmds = append(cmds, c)
-			}
-			n.data = append([]util_node.N{}, data...)
-			n.select_button.SetIsInvisible(n.IsInvisible())
-			n.add_button.SetIsInvisible(n.IsInvisible())
-			n.table.SetRows(rows)
-			if reset_cursor {
-				n.table.SetCursor(0)
-				n.table.GotoTop()
-				n.selected_index = -1
-				cmds = append(cmds, n.image.SetValue(""))
-			}
-			return nil
-		},
-		n.do_highlight(),
-	)
-	return tea.Batch(cmds...)
+	for _, d := range data {
+		r, c := n.to_row(d)
+		rows = append(rows, r)
+		cmds = append(cmds, c)
+	}
+	n.data = append([]util_node.N{}, data...)
+	n.select_button.SetIsInvisible(n.IsInvisible())
+	n.add_button.SetIsInvisible(n.IsInvisible())
+	n.table.SetRows(rows)
+	if reset_cursor {
+		n.table.SetCursor(0)
+		n.table.GotoTop()
+		n.selected_index = -1
+		cmds = append(cmds, n.image.SetValue(""))
+	}
+
+	cmds = append(cmds, n.do_highlight())
+	return tea.Sequence(cmds...)
 }
 
 func (n *Node) IsInvisible() bool { return n.Node.IsInvisible() || len(n.data) == 0 }

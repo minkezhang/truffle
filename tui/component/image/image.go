@@ -8,8 +8,6 @@
 package image
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
@@ -43,37 +41,26 @@ func New(o O) *Node {
 	}
 }
 
-type update_cache_message struct {
-	id      string
-	payload string
-}
-
-func (n *Node) URL() string { return n.url }
-
 func (n *Node) SetValue(v string) tea.Cmd {
-	return func() tea.Msg {
-		if n.url == v {
-			return nil
-		}
-		n.url = v
-		if n.url == "" {
-			return update_cache_message{
-				id:      n.ID(),
-				payload: "",
-			}
-		}
-		s, err := data(n.url, n.directory, n.width)
-		if err != nil {
+	if n.url == v {
+		return nil
+	}
+	n.url = v
+	if n.url == "" {
+		n.cache = ""
+		return nil
+	}
+	s, err := data(n.url, n.directory, n.width)
+	if err != nil {
+		return func() tea.Msg {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
 				err.Error(),
 			)
 		}
-		return update_cache_message{
-			id:      n.ID(),
-			payload: s,
-		}
 	}
+	n.cache = s
+	return nil
 }
 
 func (n *Node) Init() tea.Cmd {
@@ -87,22 +74,7 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	switch msg := msg.(type) {
-	case update_cache_message:
-		if n.ID() == msg.id {
-			n.cache = string(msg.payload)
-			cmds = append(cmds, func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: updating cache with url = \"%v\"", n.ID(), n.url),
-				)
-			})
-		}
-	}
-	return n, tea.Batch(cmds...)
-}
+func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return n, nil }
 
 func (n *Node) View() string {
 	return lipgloss.Place(
