@@ -54,9 +54,15 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, do_search(n.context, n.db, msg))
 	case message.PutRequestMessage:
 		cmds = append(cmds, do_add_link(n.context, n.db, msg))
+	case message.GetNodeRequestMessage:
+		cmds = append(cmds, do_get_node(n.context, n.db, msg))
 	}
 
 	return n, tea.Batch(cmds...)
+}
+
+func do_get_node(ctx context.Context, _db *db.DB, msg message.GetNodeRequestMessage) tea.Cmd {
+	return func() tea.Msg { return message.GetNodeResponseMessage(msg) }
 }
 
 func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.Cmd {

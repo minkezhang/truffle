@@ -48,7 +48,9 @@ type update_cache_message struct {
 	payload string
 }
 
-func (n *Node) SetURL(v string) tea.Cmd {
+func (n *Node) URL() string { return n.url }
+
+func (n *Node) SetValue(v string) tea.Cmd {
 	return func() tea.Msg {
 		if n.url == v {
 			return nil
@@ -60,23 +62,23 @@ func (n *Node) SetURL(v string) tea.Cmd {
 				payload: "",
 			}
 		}
-		if s, err := data(n.url, n.directory, n.width); err != nil {
+		s, err := data(n.url, n.directory, n.width)
+		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
 				err.Error(),
 			)
-		} else {
-			return update_cache_message{
-				id:      n.ID(),
-				payload: s,
-			}
+		}
+		return update_cache_message{
+			id:      n.ID(),
+			payload: s,
 		}
 	}
 }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Batch(
-		n.SetURL(n.url),
+		n.SetValue(n.url),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,

@@ -134,7 +134,7 @@ func New(o O) *Node {
 					LineUp:       table.DefaultKeyMap().LineUp,
 					LineDown:     table.DefaultKeyMap().LineDown,
 					PageUp:       table.DefaultKeyMap().PageUp,
-					PageDown:     key.NewBinding(key.WithKeys("f", "pgdn")), // table.DefaultKeyMap().PageDown,
+					PageDown:     key.NewBinding(key.WithKeys("f", "pgdn")),
 					HalfPageUp:   table.DefaultKeyMap().HalfPageUp,
 					HalfPageDown: table.DefaultKeyMap().HalfPageDown,
 					GotoTop:      table.DefaultKeyMap().GotoTop,
@@ -251,6 +251,10 @@ func (n *Node) do_select() tea.Cmd {
 }
 
 func (n *Node) do_highlight() tea.Cmd {
+	if n.selected_index == n.table.Cursor() || len(n.table.Rows()) == 0 {
+		return nil
+	}
+
 	return tea.Sequence(
 		func() tea.Msg {
 			n.selected_index = n.table.Cursor()
@@ -335,7 +339,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			} else {
 				cmds = append(cmds,
-					n.image.SetURL(source.PreviewURL()),
+					n.image.SetValue(source.PreviewURL()),
 					n.add_button.SetIsInvisible(map[epb.SourceAPI]bool{
 						epb.SourceAPI_SOURCE_API_NONE:    true,
 						epb.SourceAPI_SOURCE_API_TRUFFLE: true,
@@ -357,7 +361,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, n.do_highlight())
 	}
 
-	return n, tea.Batch(cmds...)
+	return n, tea.Sequence(cmds...)
 }
 
 func (n *Node) View() string {
@@ -532,13 +536,13 @@ func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
 				n.table.SetCursor(0)
 				n.table.GotoTop()
 				n.selected_index = -1
-				n.image.SetURL("")
+				cmds = append(cmds, n.image.SetValue(""))
 			}
 			return nil
 		},
 		n.do_highlight(),
 	)
-	return tea.Sequence(cmds...)
+	return tea.Batch(cmds...)
 }
 
 func (n *Node) IsInvisible() bool { return n.Node.IsInvisible() || len(n.data) == 0 }

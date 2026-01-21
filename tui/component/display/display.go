@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/node/view"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
@@ -33,6 +34,10 @@ func Make(o O) Node {
 			},
 			CacheDirectory: o.CacheDirectory,
 		}),
+		node_view: view.New(view.O{
+			CacheDirectory: o.CacheDirectory,
+			Column:         o.Column,
+		}),
 	}
 }
 
@@ -40,6 +45,7 @@ type Node struct {
 	org        *org.Node
 	search_bar *search.Node
 	table      *table.Node
+	node_view  *view.Node
 }
 
 func (n Node) Init() tea.Cmd {
@@ -48,6 +54,7 @@ func (n Node) Init() tea.Cmd {
 		n.org,
 		n.search_bar,
 		n.table,
+		n.node_view,
 	} {
 		cmds = append(cmds, c.Init())
 	}
@@ -61,6 +68,7 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.org,
 		n.search_bar,
 		n.table,
+		n.node_view,
 	} {
 		_, d := c.Update(msg)
 		cmds = append(cmds, d)
@@ -73,8 +81,12 @@ func (n Node) View() string {
 		n.org.View(),
 		n.search_bar.View(),
 	}
+
 	if !n.table.IsInvisible() {
 		parts = append(parts, n.table.View())
 	}
+
+	parts = append(parts, n.node_view.View())
+
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }

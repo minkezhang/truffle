@@ -35,6 +35,11 @@ type GetNodeRequestMessage struct {
 	Body form.Value[util_node.N]
 }
 
+type GetNodeResponseMessage struct {
+	ID   string
+	Body form.Value[util_node.N]
+}
+
 type PutRequestMessage struct {
 	ID   string
 	Body form.Value[source.S]

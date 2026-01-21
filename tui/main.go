@@ -88,6 +88,7 @@ func main() {
 	opts := []tea.ProgramOption{
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
+		tea.WithoutCatchPanics(),
 	}
 	p := tea.NewProgram(n, opts...)
 	errors.SetProgram(p)
