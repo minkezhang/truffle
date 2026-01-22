@@ -222,15 +222,7 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 			Value: s.WithNodeID(node_id),
 		},
 	}
-	return tea.Sequence(
-		func() tea.Msg { return m },
-		func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: add to DB %v", n.ID(), m),
-			)
-		},
-	)
+	return func() tea.Msg { return m }
 }
 
 func (n *Node) do_select() tea.Cmd {
@@ -238,16 +230,7 @@ func (n *Node) do_select() tea.Cmd {
 		ID:   n.ID(),
 		Body: n.Value(),
 	}
-	return tea.Sequence(
-		func() tea.Msg { return m },
-		func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: submitted message %v", n.ID(), m),
-			)
-		},
-	)
-
+	return func() tea.Msg { return m }
 }
 
 func (n *Node) do_highlight() tea.Cmd {
@@ -255,25 +238,12 @@ func (n *Node) do_highlight() tea.Cmd {
 		return nil
 	}
 
-	return tea.Sequence(
-		func() tea.Msg {
-			n.selected_index = n.table.Cursor()
-			return HighlightMessage{
-				ID:   n.ID(),
-				Body: n.Value(),
-			}
-		},
-		func() tea.Msg {
-			m := HighlightMessage{
-				ID:   n.ID(),
-				Body: n.Value(),
-			}
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: highlighted message %v", n.ID(), m),
-			)
-		},
-	)
+	n.selected_index = n.table.Cursor()
+	m := HighlightMessage{
+		ID:   n.ID(),
+		Body: n.Value(),
+	}
+	return func() tea.Msg { return m }
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -358,9 +328,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Body.Key == Put {
 			cmds = append(cmds, n.PutSource(msg.Body.Value.Node, msg.Body.Value.SourceIndex))
 		}
-	}
-
-	if n.selected_index != n.table.Cursor() && len(n.table.Rows()) > 0 {
+	case tea.KeyMsg: // May have updated cursor.
+		cmds = append(cmds, n.do_highlight())
+	case tea.MouseMsg: // May have updated cursor.
 		cmds = append(cmds, n.do_highlight())
 	}
 
@@ -442,14 +412,10 @@ func (n *Node) View() string {
 	)
 }
 
-func (n *Node) to_row(data util_node.N) (table.Row, tea.Cmd) {
+func (n *Node) to_row(data util_node.N) (table.Row, error) {
 	source, err := data.Virtual()
 	if err != nil {
-		return nil, func() tea.Msg {
-			return errors.ToErrorMessage(
-				fmt.Errorf("Virtual() returned non-nil error: %v", err),
-			)
-		}
+		return nil, err
 	}
 
 	return []string{
@@ -484,29 +450,28 @@ func (n *Node) PutSource(m node.N, source_index int) tea.Cmd {
 		// Replace old node if it is virtual or being deleted.
 		if len(n.data[old_node_index].Sources()) == 1 {
 			n.data[old_node_index] = m
-			return n.set_values(n.data, false)
-		}
-
-		// If both old and new node exists, move source.
-		sources := append([]source.S{}, n.data[old_node_index].Sources()...)
-		n.data[old_node_index] = n.data[old_node_index].(node.N).WithSources(
-			append(
-				sources[:old_source_index],
-				sources[old_source_index+1:]...,
-			),
-		)
-		if new_node_index >= 0 {
-			n.data[new_node_index] = m
 		} else {
-			// If no matching node was found, create a new
-			// one in the view.
-			n.data = append(
-				n.data[:new_node_index],
+			// If both old and new node exists, move source.
+			sources := append([]source.S{}, n.data[old_node_index].Sources()...)
+			n.data[old_node_index] = n.data[old_node_index].(node.N).WithSources(
 				append(
-					[]util_node.N{m},
-					n.data[new_node_index:]...,
-				)...,
+					sources[:old_source_index],
+					sources[old_source_index+1:]...,
+				),
 			)
+			if new_node_index >= 0 {
+				n.data[new_node_index] = m
+			} else {
+				// If no matching node was found, create a new
+				// one in the view.
+				n.data = append(
+					n.data[:new_node_index],
+					append(
+						[]util_node.N{m},
+						n.data[new_node_index:]...,
+					)...,
+				)
+			}
 		}
 	}
 	return n.set_values(n.data, false)
@@ -519,20 +484,26 @@ func (n *Node) set_values(data []util_node.N, reset_cursor bool) tea.Cmd {
 	var rows []table.Row
 
 	for _, d := range data {
-		r, c := n.to_row(d)
-		rows = append(rows, r)
-		cmds = append(cmds, c)
+		r, err := n.to_row(d)
+		if err != nil {
+			cmds = append(cmds, func() tea.Msg { return errors.ToErrorMessage(err) })
+		} else {
+			rows = append(rows, r)
+		}
 	}
 	n.data = append([]util_node.N{}, data...)
-	n.select_button.SetIsInvisible(n.IsInvisible())
-	n.add_button.SetIsInvisible(n.IsInvisible())
+	cmds = append(
+		cmds,
+		n.select_button.SetIsInvisible(n.IsInvisible()),
+		n.add_button.SetIsInvisible(n.IsInvisible()),
+	)
 	n.table.SetRows(rows)
 	if reset_cursor {
 		n.table.SetCursor(0)
 		n.table.GotoTop()
-		n.selected_index = -1
 		cmds = append(cmds, n.image.SetValue(""))
 	}
+	n.selected_index = -1
 
 	cmds = append(cmds, n.do_highlight())
 	return tea.Sequence(cmds...)
