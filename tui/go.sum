@@ -54,6 +54,8 @@ github.com/charmbracelet/x/cellbuf v0.0.14 h1:iUEMryGyFTelKW3THW4+FfPgi4fkmKnnaL
 github.com/charmbracelet/x/cellbuf v0.0.14/go.mod h1:P447lJl49ywBbil/KjCk2HexGh4tEY9LH0/1QrZZ9rA=
 github.com/charmbracelet/x/mosaic v0.0.0-20260116010723-b770f9f0bfed h1:UAjbNYa0Ahzx/I6RQx72LVl7XsJkBPfZb7DDQWj5Xwc=
 github.com/charmbracelet/x/mosaic v0.0.0-20260116010723-b770f9f0bfed/go.mod h1:r+fiJS0jb0Z5XKO+1mgKbwbPWzTy8e2dMjBMqa+XqsY=
+github.com/charmbracelet/x/mosaic v0.0.0-20260119114936-fd556377ea59 h1:PBk60ZtN7yKwUsAvAQHMeCPQ08wZ+9CVC5cmQbMQA2g=
+github.com/charmbracelet/x/mosaic v0.0.0-20260119114936-fd556377ea59/go.mod h1:M8ApwVT9ZIYP481ANGFgpgYgqVhyJ6fqwOYv6x2PKVc=
 github.com/charmbracelet/x/term v0.2.2 h1:xVRT/S2ZcKdhhOuSP4t5cLi5o+JxklsoEObBSgfgZRk=
 github.com/charmbracelet/x/term v0.2.2/go.mod h1:kF8CY5RddLWrsgVwpw4kAa6TESp6EB5y3uxGLeCqzAI=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
@@ -66,6 +68,8 @@ github.com/clipperhouse/stringish v0.1.1 h1:+NSqMOr3GR6k1FdRhhnXrLfztGzuG+VuFDfa
 github.com/clipperhouse/stringish v0.1.1/go.mod h1:v/WhFtE1q0ovMta2+m+UbpZ+2/HEXNWYXQgCt4hdOzA=
 github.com/clipperhouse/uax29/v2 v2.3.0 h1:SNdx9DVUqMoBuBoW3iLOj4FQv3dN5mDtuqwuhIGpJy4=
 github.com/clipperhouse/uax29/v2 v2.3.0/go.mod h1:Wn1g7MK6OoeDT0vL+Q0SQLDz/KpfsVRgg6W7ihQeh4g=
+github.com/clipperhouse/uax29/v2 v2.3.1 h1:RjM8gnVbFbgI67SBekIC7ihFpyXwRPYWXn9BZActHbw=
+github.com/clipperhouse/uax29/v2 v2.3.1/go.mod h1:Wn1g7MK6OoeDT0vL+Q0SQLDz/KpfsVRgg6W7ihQeh4g=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -149,6 +153,8 @@ github.com/minkezhang/truffle-api v0.0.0-20260117131815-a31751a157b0 h1:PpIO5mNW
 github.com/minkezhang/truffle-api v0.0.0-20260117131815-a31751a157b0/go.mod h1:3+gw0PRSKV9Ow55qGqm9wX6LOtsmvEK+VaLuzOTck6A=
 github.com/minkezhang/truffle-api v0.0.0-20260118085330-8bc56d755897 h1:afdOSjOkaV1R32/TyjhfdEqEtKqZZ20tJM90Y4Cqljs=
 github.com/minkezhang/truffle-api v0.0.0-20260118085330-8bc56d755897/go.mod h1:3+gw0PRSKV9Ow55qGqm9wX6LOtsmvEK+VaLuzOTck6A=
+github.com/minkezhang/truffle-api v0.0.0-20260120094446-76fbfdba3565 h1:Q9QHPpdmDbNk8FDUGrjljqn5Vo/gxOS8d3mksFG4L3s=
+github.com/minkezhang/truffle-api v0.0.0-20260120094446-76fbfdba3565/go.mod h1:3+gw0PRSKV9Ow55qGqm9wX6LOtsmvEK+VaLuzOTck6A=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 h1:ZK8zHtRHOkbHy6Mmr5D264iyp3TiX5OmNcI5cIARiQI=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6/go.mod h1:CJlz5H+gyd6CUWT45Oy4q24RdLyn7Md9Vj2/ldJBSIo=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=
