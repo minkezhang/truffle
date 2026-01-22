@@ -82,7 +82,7 @@ func (n *Node) View() string {
 		// Two vertical pixels per character may leave a pixel
 		// unaccounted for.
 		height(n.width)/2+1,
-		lipgloss.Top,
+		lipgloss.Center,
 		lipgloss.Center,
 		n.cache,
 	)

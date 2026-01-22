@@ -12,7 +12,11 @@ import (
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/image"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/node"
+	"github.com/minkezhang/truffle/tui/util/node/view"
+
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 const (
@@ -101,6 +105,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				n.SetValue(msg.Body.Value),
 			),
 		)
+	case message.PutResponseMessage:
+		cmds = append(cmds,
+			n.SetValue(msg.Body.Value.Node),
+			func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelDebug,
+					fmt.Sprintf("%v: received PutResponseMessage: %v", n.ID(), msg),
+				)
+			},
+		)
 	}
 
 	_, c = n.image.Update(msg)
@@ -114,16 +128,71 @@ func (n *Node) View() string {
 		return ""
 	}
 
+	parts := []string{
+		fmt.Sprintf(
+			"%v%v%v",
+			view.WithHeader("Type", view.R(n.source).Type(), view.RenderHeaderModeNone),
+			lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(" > "),
+			view.WithHeader("ID", view.R(n.source).ID(), view.RenderHeaderModeNone),
+		),
+		view.R(n.source).Title(),
+		view.WithHeader("Score", view.R(n.source).Score(), view.RenderHeaderModeNone),
+		view.WithHeader("Status", view.R(n.source).Status(), view.RenderHeaderModeInline),
+		view.WithHeader("Genres", view.R(n.source).Genres(), view.RenderHeaderModeIndent),
+	}
+
+	if map[epb.SourceType]bool{
+		epb.SourceType_SOURCE_TYPE_BOOK:             true,
+		epb.SourceType_SOURCE_TYPE_BOOK_MANGA:       true,
+		epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL: true,
+	}[n.source.Header().Type()] {
+		parts = append(
+			parts,
+			view.WithHeader("Authors", view.R(n.source).Authors(), view.RenderHeaderModeIndent),
+			view.WithHeader("Illustrators", view.R(n.source).Illustrators(), view.RenderHeaderModeIndent),
+		)
+	}
+
+	if map[epb.SourceType]bool{
+		epb.SourceType_SOURCE_TYPE_SERIES_ANIME: true,
+		epb.SourceType_SOURCE_TYPE_MOVIE_ANIME:  true,
+	}[n.source.Header().Type()] {
+		parts = append(
+			parts,
+			view.WithHeader("Studio", view.R(n.source).Studios(), view.RenderHeaderModeIndent),
+		)
+	}
+
+	if map[epb.SourceType]bool{
+		epb.SourceType_SOURCE_TYPE_SERIES_ANIME: true,
+	}[n.source.Header().Type()] {
+		parts = append(
+			parts,
+			view.WithHeader("Seasons", view.R(n.source).Seasons(), view.RenderHeaderModeIndent),
+		)
+	}
+
+	parts = append(
+		parts,
+		view.WithHeader("Synopsis", view.R(n.source).Synopsis(), view.RenderHeaderModeNone),
+		view.WithHeader("Notes", view.R(n.source).Notes(), view.RenderHeaderModeSpacer),
+	)
+
+	for i, p := range parts {
+		if i != len(parts)-1 {
+			parts[i] = lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(p)
+		}
+	}
+
 	return n.column.RenderOrDie(
 		n.column.Style().Render(
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				n.image.View(),
-				n.column.WithWidth(n.column.Width()-image_width).Style().Render(
+				n.column.WithWidth(n.column.Width()-image_width).WithPadding(0, 0, 0, 1).Style().Render(
 					lipgloss.JoinVertical(
 						lipgloss.Left,
-						n.source.Title().Title(),
-						n.source.Synopsis(),
+						parts...,
 					),
 				),
 			),

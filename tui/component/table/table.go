@@ -29,6 +29,7 @@ import (
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	search_key "github.com/minkezhang/truffle/tui/component/search/key"
+	util_table "github.com/minkezhang/truffle/tui/util/node/table"
 )
 
 const (
@@ -108,7 +109,7 @@ func New(o O) *Node {
 			table.WithColumns([]table.Column{
 				table.Column{
 					Title: "Title",
-					Width: o.Column.Content() - /* other columns */ 45 - /* padding */ 10 - /* border-left */ 1 - /* image */ image_width,
+					Width: o.Column.Content() - /* other columns */ 45 - /* column padding */ 10 - /* border-left */ 1 - /* image */ image_width - /* frame padding */ 1,
 				},
 				table.Column{
 					Title: "Media", // e.g. "Light Novel"
@@ -350,64 +351,66 @@ func (n *Node) View() string {
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		n.image.View(), // image
-		lipgloss.JoinVertical( // table and button
-			lipgloss.Left,
-			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-				color_profile.UIForeground[n.FocusState()],
-			).Render(
-				zone.Mark(
-					n.clickable.ID(),
-					lipgloss.JoinVertical(
-						lipgloss.Left,
-						lipgloss.NewStyle().Foreground(
-							color_profile.UIForeground[n.FocusState()],
-						).Render( // label
-							fmt.Sprintf(
-								"%v%v%v%v",
-								map[bool]string{
-									true:  "──",
-									false: "─ ",
-								}[n.key.Label == ""],
-								n.key.Label,
-								map[bool]string{
-									true:  "─",
-									false: " ",
-								}[n.key.Label == ""],
-								strings.Repeat("─", n.column.Width()-len(n.key.Label)-3),
-							),
-						),
-						lipgloss.JoinVertical( // tabel
-							lipgloss.Right,
-							lipgloss.JoinHorizontal(
-								lipgloss.Top,
-								lipgloss.JoinVertical( // border-left
-									lipgloss.Left,
-									lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-										color_profile.UIForeground[n.FocusState()],
-									).Render(" "),
-									lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).BorderForeground(
-										color_profile.UIForeground[n.FocusState()],
-									).Render(strings.Repeat("\n", n.table.Height()-1)),
-								),
-								n.table.View(),
-							),
+		lipgloss.NewStyle().Padding(0, 0, 0, 1).Render(
+			lipgloss.JoinVertical( // table and button
+				lipgloss.Left,
+				lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+					color_profile.UIForeground[n.FocusState()],
+				).Render(
+					zone.Mark(
+						n.clickable.ID(),
+						lipgloss.JoinVertical(
+							lipgloss.Left,
 							lipgloss.NewStyle().Foreground(
-								color_profile.BackgroundNegligible,
-							).Render( // line count
+								color_profile.UIForeground[n.FocusState()],
+							).Render( // label
 								fmt.Sprintf(
-									"%d / %d",
-									map[bool]int{
-										true:  n.table.Cursor() + 1,
-										false: 0,
-									}[len(n.table.Rows()) > 0],
-									len(n.table.Rows()),
+									"%v%v%v%v",
+									map[bool]string{
+										true:  "──",
+										false: "─ ",
+									}[n.key.Label == ""],
+									n.key.Label,
+									map[bool]string{
+										true:  "─",
+										false: " ",
+									}[n.key.Label == ""],
+									strings.Repeat("─", n.column.Width()-len(n.key.Label)-3),
+								),
+							),
+							lipgloss.JoinVertical( // tabel
+								lipgloss.Right,
+								lipgloss.JoinHorizontal(
+									lipgloss.Top,
+									lipgloss.JoinVertical( // border-left
+										lipgloss.Left,
+										lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+											color_profile.UIForeground[n.FocusState()],
+										).Render(" "),
+										lipgloss.NewStyle().Border(lipgloss.ThickBorder(), false, false, false, true).BorderForeground(
+											color_profile.UIForeground[n.FocusState()],
+										).Render(strings.Repeat("\n", n.table.Height()-1)),
+									),
+									n.table.View(),
+								),
+								lipgloss.NewStyle().Foreground(
+									color_profile.BackgroundNegligible,
+								).Render( // line count
+									fmt.Sprintf(
+										"%d / %d",
+										map[bool]int{
+											true:  n.table.Cursor() + 1,
+											false: 0,
+										}[len(n.table.Rows()) > 0],
+										len(n.table.Rows()),
+									),
 								),
 							),
 						),
 					),
 				),
+				lipgloss.JoinHorizontal(lipgloss.Top, buttons...),
 			),
-			lipgloss.JoinHorizontal(lipgloss.Top, buttons...),
 		),
 	)
 }
@@ -419,11 +422,11 @@ func (n *Node) to_row(data util_node.N) (table.Row, error) {
 	}
 
 	return []string{
-		util_node.Table.Title(source.Title()),
-		util_node.Table.Type(source.Header().Type()),
-		util_node.Table.API(source.Header().API()),
-		util_node.Table.Status(source.Status()),
-		util_node.Table.Score(source.Score()),
+		util_table.R(source).Title(),
+		util_table.R(source).Type(),
+		util_table.R(source).API(),
+		util_table.R(source).Status(),
+		util_table.R(source).Score(),
 	}, nil
 }
 
