@@ -104,26 +104,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 var (
-	unselected_border = lipgloss.Border{
-		Top:         lipgloss.RoundedBorder().Top,
-		Bottom:      lipgloss.RoundedBorder().Bottom,
-		Left:        lipgloss.RoundedBorder().Left,
-		Right:       lipgloss.RoundedBorder().Right,
-		TopLeft:     lipgloss.RoundedBorder().TopLeft,
-		TopRight:    lipgloss.RoundedBorder().TopRight,
-		BottomLeft:  "┴",
-		BottomRight: "┴",
-	}
-
 	selected_border = lipgloss.Border{
 		Top:         lipgloss.RoundedBorder().Top,
-		Bottom:      " ",
 		Left:        lipgloss.RoundedBorder().Left,
 		Right:       lipgloss.RoundedBorder().Right,
 		TopLeft:     lipgloss.RoundedBorder().TopLeft,
 		TopRight:    lipgloss.RoundedBorder().TopRight,
-		BottomLeft:  lipgloss.RoundedBorder().BottomRight,
-		BottomRight: lipgloss.RoundedBorder().BottomLeft,
 	}
 )
 
@@ -134,14 +120,7 @@ func (n *Node) View() string {
 		p := zone.Mark(
 			n.tabs[i].ID(),
 			lipgloss.NewStyle().Border(
-				map[bool]lipgloss.Border{
-					false: unselected_border,
-					true:  selected_border,
-				}[i == n.FocusIndex()],
-				true,
-				true,
-				false,
-				true,
+				lipgloss.RoundedBorder(), true, true, false, true,
 			).BorderForeground(
 				map[bool]lipgloss.Color{
 					false: color_profile.UIForeground[types.FocusStateNone],
@@ -161,6 +140,7 @@ func (n *Node) View() string {
 			border = append(border, strings.Repeat("─", lipgloss.Width(p)))
 		}
 	}
+	border = append(border, strings.Repeat("─", n.column.Content() - lipgloss.Width(strings.Join(border, ""))))
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		lipgloss.JoinHorizontal(lipgloss.Top, parts...),
