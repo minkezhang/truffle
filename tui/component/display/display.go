@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/column"
-	"github.com/minkezhang/truffle/tui/component/node/view"
+	"github.com/minkezhang/truffle/tui/component/node"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
@@ -34,7 +34,7 @@ func Make(o O) Node {
 			},
 			CacheDirectory: o.CacheDirectory,
 		}),
-		node_view: view.New(view.O{
+		node: component_node.New(component_node.O{
 			CacheDirectory: o.CacheDirectory,
 			Column:         o.Column,
 		}),
@@ -45,7 +45,7 @@ type Node struct {
 	org        *org.Node
 	search_bar *search.Node
 	table      *table.Node
-	node_view  *view.Node
+	node       *component_node.Node
 }
 
 func (n Node) Init() tea.Cmd {
@@ -54,7 +54,7 @@ func (n Node) Init() tea.Cmd {
 		n.org,
 		n.search_bar,
 		n.table,
-		n.node_view,
+		n.node,
 	} {
 		cmds = append(cmds, c.Init())
 	}
@@ -68,7 +68,7 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.org,
 		n.search_bar,
 		n.table,
-		n.node_view,
+		n.node,
 	} {
 		_, d := c.Update(msg)
 		cmds = append(cmds, d)
@@ -86,7 +86,7 @@ func (n Node) View() string {
 		parts = append(parts, n.table.View())
 	}
 
-	parts = append(parts, n.node_view.View())
+	parts = append(parts, n.node.View())
 
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }

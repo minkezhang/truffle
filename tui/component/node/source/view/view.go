@@ -7,13 +7,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle/tui/component/column"
-	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/image"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
-	"github.com/minkezhang/truffle/tui/util/node"
 	"github.com/minkezhang/truffle/tui/util/node/view"
 
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -26,7 +23,7 @@ const (
 type O struct {
 	ParentID       string
 	Column         *column.C
-	Node           util_node.N
+	Source         source.S
 	CacheDirectory string
 }
 
@@ -35,15 +32,14 @@ type Node struct {
 
 	column *column.C
 	image  *image.Node
-	node   util_node.N
 	source source.S
 }
 
 func New(o O) *Node {
 	n := &Node{
-		Node:   focusable.New("node-view", o.ParentID, 0),
+		Node:   focusable.New("source-view", o.ParentID, 0),
 		column: o.Column,
-		node:   o.Node,
+		source: o.Source,
 	}
 	n.image = image.New(image.O{
 		ParentID:       n.ID(),
@@ -54,31 +50,15 @@ func New(o O) *Node {
 	return n
 }
 
-func (n *Node) SetValue(v util_node.N) tea.Cmd {
-	if v == nil {
-		return nil
-	}
-	source, err := v.Virtual()
-	if err != nil {
-		n.node = nil
-		return func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				fmt.Sprintf("%v: cannot get source from node: %v", n.ID(), err),
-			)
-		}
-	}
-
-	n.node = v
-	n.source = source
-
-	return n.image.SetValue(n.source.PreviewURL())
+func (n *Node) SetValue(v source.S) tea.Cmd {
+	n.source = v
+	return n.image.SetValue(v.PreviewURL())
 }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.image.Init(),
-		n.SetValue(n.node),
+		n.SetValue(n.source),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -91,32 +71,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd
 
-	switch msg := msg.(type) {
-	case message.GetNodeResponseMessage:
-		cmds = append(
-			cmds,
-			tea.Batch(
-				func() tea.Msg {
-					return errors.ToLogMessage(
-						errors.LevelDebug,
-						fmt.Sprintf("%v: got node response message: %v", n.ID(), msg),
-					)
-				},
-				n.SetValue(msg.Body.Value),
-			),
-		)
-	case message.PutResponseMessage:
-		cmds = append(cmds,
-			n.SetValue(msg.Body.Value.Node),
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: received PutResponseMessage: %v", n.ID(), msg),
-				)
-			},
-		)
-	}
-
 	_, c = n.image.Update(msg)
 	cmds = append(cmds, c)
 
@@ -124,10 +78,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
-	if n.node == nil {
-		return ""
-	}
-
 	parts := []string{
 		fmt.Sprintf(
 			"%v%v%v",
