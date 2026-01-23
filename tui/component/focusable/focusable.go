@@ -35,6 +35,16 @@ func (n *Node) FocusIndex() int              { return n.index }
 func (n *Node) NElements() int               { return n.n_elements }
 func (n *Node) IsInvisible() bool            { return n.is_invisible || n.NElements() == 0 }
 
+func (n *Node) SetFocusState(v types.FocusState) tea.Cmd {
+	n.focus_state = v
+	return nil
+}
+
+func (n *Node) SetNElements(v int) tea.Cmd {
+	n.n_elements = v
+	return nil
+}
+
 func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 	n.is_invisible = v
 	// Signal EOF if setting to invisible.

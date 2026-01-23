@@ -23,7 +23,6 @@ const (
 type O struct {
 	ParentID       string
 	Column         *column.C
-	Source         source.S
 	CacheDirectory string
 }
 
@@ -39,7 +38,6 @@ func New(o O) *Node {
 	n := &Node{
 		Node:   focusable.New("source-view", o.ParentID, 0),
 		column: o.Column,
-		source: o.Source,
 	}
 	n.image = image.New(image.O{
 		ParentID:       n.ID(),
