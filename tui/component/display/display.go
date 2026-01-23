@@ -65,7 +65,7 @@ func (n Node) Init() tea.Cmd {
 	} {
 		cmds = append(cmds, c.Init())
 	}
-	cmds = append(cmds, n.tablist.SetValue([]string{"MAL/X", "TRUFFLE/Y", "OMDB/Z"}))
+	cmds = append(cmds, n.tablist.SetValue([]string{"MAL/X", "TRUFFLE/Y", "OMDB/Z", "+"}))
 	return tea.Sequence(cmds...)
 }
 
