@@ -142,9 +142,6 @@ func (n *Node) set_content(s string) tea.Cmd {
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
-	if i == n.FocusIndex() {
-		return nil
-	}
 	return tea.Sequence(
 		n.Node.OnFocus(i),
 		n.set_content(n.render()),
