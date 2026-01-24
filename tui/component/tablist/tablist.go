@@ -13,7 +13,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
 	"github.com/minkezhang/truffle/tui/component/focusable"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
 
@@ -29,6 +28,7 @@ type Node struct {
 	tabs     []*clickable.Node
 	labels   []string
 	viewport viewport.Model
+	viewport_offset int
 }
 
 func New(o O) *Node {
@@ -86,15 +86,36 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if n.FocusState() == types.FocusStateActive {
-		if msg, ok := msg.(tea.KeyMsg); ok {
-			n.viewport.SetHorizontalStep(5)
-			n.viewport, c = n.viewport.Update(msg)
-			cmds = append(cmds, c, func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: viewport processing key message %v", n.ID(), msg),
-				)
-			})
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch t := msg.Type; t {
+			case tea.KeyShiftTab:
+				begin := 0 // beginning of tab
+				w := 0
+				for i := 0; i < len(n.labels) && i < n.FocusIndex(); i++ {
+					w = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
+					begin += w
+				}
+				window_start := 0
+				if begin < n.viewport_offset {
+					window_start = begin - 1
+					n.viewport_offset = window_start
+				}
+				n.viewport.SetXOffset(n.viewport_offset)
+			case tea.KeyTab:
+				begin := 0 // beginning of tab
+				w := 0
+				for i := 0; i < len(n.labels) && i <= n.FocusIndex(); i++ {
+					w = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
+					begin += w
+				}
+				window_start := 0
+				if begin + w > n.viewport_offset + n.column.Content() {
+					window_start = begin - n.column.Content() + 1
+					n.viewport_offset = window_start
+				}
+				n.viewport.SetXOffset(n.viewport_offset)
+			}
 		}
 	}
 
