@@ -35,6 +35,15 @@ func (r R) Title() string {
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
+func (r R) API() string {
+	s := lipgloss.NewStyle()
+	api := source.S(r).Header().API()
+	if api == epb.SourceAPI_SOURCE_API_TRUFFLE {
+		s = s.Foreground(color_profile.UserViewText)
+	}
+	return s.Render(table.R(r).API())
+}
+
 func (r R) ID() string {
 	id := source.S(r).Header().ID()
 	if source.S(r).Header().API() == epb.SourceAPI_SOURCE_API_MAL {
@@ -53,7 +62,7 @@ func (r R) ID() string {
 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		lipgloss.NewStyle().Foreground(color).Render(table.R(r).API()),
+		lipgloss.NewStyle().Foreground(color).Render(r.API()),
 		map[bool]string{
 			true:  "",
 			false: lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(" > "),

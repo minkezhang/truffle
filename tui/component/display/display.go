@@ -12,8 +12,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/search"
 	"github.com/minkezhang/truffle/tui/component/table"
 	"github.com/minkezhang/truffle/tui/util/form"
-
-	"github.com/minkezhang/truffle/tui/component/tablist"
 )
 
 type O struct {
@@ -40,9 +38,6 @@ func Make(o O) Node {
 			CacheDirectory: o.CacheDirectory,
 			Column:         o.Column,
 		}),
-		tablist: tablist.New(tablist.O{
-			Column: o.Column,
-		}),
 	}
 }
 
@@ -51,7 +46,6 @@ type Node struct {
 	search_bar *search.Node
 	table      *table.Node
 	node       *component_node.Node
-	tablist    *tablist.Node // DEBUG
 }
 
 func (n Node) Init() tea.Cmd {
@@ -61,33 +55,9 @@ func (n Node) Init() tea.Cmd {
 		n.search_bar,
 		n.table,
 		n.node,
-		n.tablist,
 	} {
 		cmds = append(cmds, c.Init())
 	}
-	cmds = append(
-		cmds,
-		n.tablist.SetValue(
-			[]string{
-				"MAL/A", "TRUFFLE/A", "OMDB/A",
-				"MAL/B", "TRUFFLE/B", "OMDB/B",
-				"MAL/C", "TRUFFLE/C", "OMDB/C",
-				"MAL/D", "TRUFFLE/D", "OMDB/D",
-				"MAL/E", "TRUFFLE/E", "OMDB/E",
-				"MAL/F", "TRUFFLE/F", "OMDB/F",
-				"MAL/G", "TRUFFLE/G", "OMDB/G",
-				"MAL/H", "TRUFFLE/H", "OMDB/H",
-				"MAL/I", "TRUFFLE/I", "OMDB/I",
-				"MAL/J", "TRUFFLE/J", "OMDB/J",
-				"MAL/K", "TRUFFLE/K", "OMDB/K",
-				"MAL/L", "TRUFFLE/L", "OMDB/L",
-				"MAL/M", "TRUFFLE/M", "OMDB/M",
-				"MAL/N", "TRUFFLE/N", "OMDB/N",
-				"MAL/O", "TRUFFLE/O", "OMDB/O",
-				"+",
-			},
-		),
-	)
 	return tea.Sequence(cmds...)
 }
 
@@ -99,7 +69,6 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.search_bar,
 		n.table,
 		n.node,
-		n.tablist,
 	} {
 		_, d := c.Update(msg)
 		cmds = append(cmds, d)
@@ -118,7 +87,6 @@ func (n Node) View() string {
 	}
 
 	parts = append(parts, n.node.View())
-	parts = append(parts, n.tablist.View())
 
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }

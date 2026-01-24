@@ -4,13 +4,18 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/minkezhang/truffle-api/data/node"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/node/source/view"
+	"github.com/minkezhang/truffle/tui/component/tablist"
 	"github.com/minkezhang/truffle/tui/util/node"
+
+	util_view "github.com/minkezhang/truffle/tui/util/node/view"
 )
 
 type O struct {
@@ -23,9 +28,10 @@ type O struct {
 type Node struct {
 	*focusable.Node
 
-	column *column.C
-	node   util_node.N
-	source *view.Node
+	column  *column.C
+	node    util_node.N
+	source  *view.Node
+	tablist *tablist.Node
 }
 
 func New(o O) *Node {
@@ -38,6 +44,10 @@ func New(o O) *Node {
 		ParentID:       n.ID(),
 		Column:         o.Column,
 		CacheDirectory: o.CacheDirectory,
+	})
+	n.tablist = tablist.New(tablist.O{
+		ParentID: n.ID(),
+		Column:   o.Column,
 	})
 	return n
 }
@@ -56,12 +66,26 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 			)
 		}
 	}
-	return n.source.SetValue(source)
+
+	var labels []string
+	if _, ok := v.(node.N); ok {
+		labels = append(labels, "⌂")
+	}
+	for _, s := range v.Sources() {
+		labels = append(labels, util_view.R(s).API())
+	}
+	labels = append(labels, "+")
+
+	return tea.Batch(
+		n.tablist.SetValue(labels),
+		n.source.SetValue(source),
+	)
 }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.source.Init(),
+		n.tablist.Init(),
 		n.SetValue(n.node),
 		func() tea.Msg {
 			return base.RegisterMessage{
@@ -76,6 +100,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var c tea.Cmd
 
 	_, c = n.source.Update(msg)
+	cmds = append(cmds, c)
+
+	_, c = n.tablist.Update(msg)
 	cmds = append(cmds, c)
 
 	switch msg := msg.(type) {
@@ -111,6 +138,10 @@ func (n *Node) View() string {
 		return ""
 	}
 	return n.column.RenderOrDie(n.column.Style().Render(
-		n.source.View(),
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(n.tablist.View()),
+			n.source.View(),
+		),
 	))
 }
