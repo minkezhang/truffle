@@ -12,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
@@ -24,10 +25,10 @@ type O struct {
 type Node struct {
 	*focusable.Node
 
-	column   *column.C
-	tabs     []*clickable.Node
-	labels   []string
-	viewport viewport.Model
+	column          *column.C
+	tabs            []*clickable.Node
+	labels          []string
+	viewport        viewport.Model
 	viewport_offset int
 }
 
@@ -85,40 +86,6 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, c)
 	}
 
-	if n.FocusState() == types.FocusStateActive {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch t := msg.Type; t {
-			case tea.KeyShiftTab:
-				begin := 0 // beginning of tab
-				w := 0
-				for i := 0; i < len(n.labels) && i < n.FocusIndex(); i++ {
-					w = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
-					begin += w
-				}
-				window_start := 0
-				if begin < n.viewport_offset {
-					window_start = begin - 1
-					n.viewport_offset = window_start
-				}
-				n.viewport.SetXOffset(n.viewport_offset)
-			case tea.KeyTab:
-				begin := 0 // beginning of tab
-				w := 0
-				for i := 0; i < len(n.labels) && i <= n.FocusIndex(); i++ {
-					w = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
-					begin += w
-				}
-				window_start := 0
-				if begin + w > n.viewport_offset + n.column.Content() {
-					window_start = begin - n.column.Content() + 1
-					n.viewport_offset = window_start
-				}
-				n.viewport.SetXOffset(n.viewport_offset)
-			}
-		}
-	}
-
 	switch msg := msg.(type) {
 	case clickable.Click:
 		for i, t := range n.tabs {
@@ -154,6 +121,46 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 	return tea.Sequence(
 		n.Node.OnFocus(i),
 		n.set_content(n.render()),
+		func() tea.Msg {
+			tab_widths := make([]int, len(n.labels))
+			tab_start := make([]int, len(n.labels))
+			tab_end := make([]int, len(n.labels))
+
+			for i := range len(n.labels) {
+				tab_widths[i] = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
+				if i > 0 {
+					tab_start[i] = tab_end[i-1]
+				}
+				tab_end[i] = tab_start[i] + tab_widths[i]
+			}
+
+			forward_buffer := 0
+			backward_buffer := 0
+			if n.FocusIndex() > 2 {
+				backward_buffer = tab_widths[n.FocusIndex()-2] + tab_widths[n.FocusIndex()-1]
+			} else if n.FocusIndex() > 1 {
+				backward_buffer = tab_widths[n.FocusIndex()-1]
+			}
+			if n.FocusIndex() < len(n.labels)-2 {
+				forward_buffer = tab_widths[n.FocusIndex()+2] + tab_widths[n.FocusIndex()+1]
+			} else if n.FocusIndex() < len(n.labels)-1 {
+				forward_buffer = tab_widths[n.FocusIndex()+1]
+			}
+			if n.FocusIndex() <= 0 {
+				n.viewport_offset = 0
+			} else if tab_start[n.FocusIndex()]-backward_buffer < n.viewport_offset {
+				n.viewport_offset = tab_start[n.FocusIndex()] - backward_buffer
+			} else if tab_end[n.FocusIndex()]+forward_buffer > n.viewport_offset+n.column.Content() {
+				n.viewport_offset = tab_end[n.FocusIndex()] - n.column.Content() + forward_buffer
+			}
+			n.viewport.SetXOffset(n.viewport_offset)
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: setting tab widths:\nstart = %v\nwidth = %v\nend = %v",
+					n.ID(), tab_start, tab_widths, tab_end,
+				),
+			)
+		},
 	)
 }
 
