@@ -6,16 +6,20 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/data/node"
+	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/component/node/source/edit"
 	"github.com/minkezhang/truffle/tui/component/node/source/view"
 	"github.com/minkezhang/truffle/tui/component/tablist"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
 
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 	util_view "github.com/minkezhang/truffle/tui/util/node/view"
 )
 
@@ -32,12 +36,14 @@ type Node struct {
 	column  *column.C
 	node    util_node.N
 	source  *view.Node
+	edit    *edit.Node
+	is_edit bool
 	tablist *tablist.Node
 }
 
 func New(o O) *Node {
 	n := &Node{
-		Node:   focusable.New("node-view", o.ParentID, 0),
+		Node:   focusable.New("node", o.ParentID, 0),
 		column: o.Column,
 		node:   o.Node,
 	}
@@ -51,6 +57,10 @@ func New(o O) *Node {
 		Column:   o.Column,
 		Key:      form.Key{"", "tab-select"},
 	})
+	n.edit = edit.New(edit.O{
+		ParentID: n.ID(),
+		Column:   o.Column,
+	})
 	return n
 }
 
@@ -59,7 +69,7 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		return nil
 	}
 	n.node = v
-	source, err := v.Virtual()
+	s, err := v.Virtual()
 	if err != nil {
 		return func() tea.Msg {
 			return errors.ToLogMessage(
@@ -90,7 +100,8 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 
 	return tea.Batch(
 		n.tablist.SetValue(values),
-		n.source.SetValue(source),
+		n.source.SetValue(s),
+		n.edit.SetValue(source.S{}),
 	)
 }
 
@@ -98,6 +109,7 @@ func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.source.Init(),
 		n.tablist.Init(),
+		n.edit.Init(),
 		n.SetValue(n.node),
 		func() tea.Msg {
 			return base.RegisterMessage{
@@ -115,6 +127,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, c)
 
 	_, c = n.tablist.Update(msg)
+	cmds = append(cmds, c)
+
+	_, c = n.edit.Update(msg)
 	cmds = append(cmds, c)
 
 	switch msg := msg.(type) {
@@ -142,6 +157,8 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
+			n.is_edit = msg.Value.Value.Type == tablist.TabTypeEdit
+			cmds = append(cmds, n.edit.SetIsInvisible(!n.is_edit))
 			switch msg.Value.Value.Type {
 			case tablist.TabTypeVirtual:
 				source, err := n.node.Virtual()
@@ -158,12 +175,44 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tablist.TabTypeSource:
 				cmds = append(cmds, n.source.SetValue(n.node.Sources()[msg.Value.Value.Key]))
 			case tablist.TabTypeEdit:
-				cmds = append(cmds, func() tea.Msg {
-					return errors.ToLogMessage(
-						errors.LevelWarn,
-						fmt.Sprintf("%v: unimplemented edit source", n.ID()),
-					)
-				})
+				// Cannot edit remote sources
+				if _, ok := n.node.(node.N); !ok {
+					break
+				}
+				var s source.S
+				var is_exists bool
+				for _, _s := range n.node.Sources() {
+					if _s.Header().API() == epb.SourceAPI_SOURCE_API_TRUFFLE {
+						if is_exists {
+							cmds = append(cmds, func() tea.Msg {
+								return errors.ToLogMessage(
+									errors.LevelWarn,
+									fmt.Sprintf("%v: multiple Truffle sources found: %v", n.ID(), _s.Header()),
+								)
+							})
+						} else {
+							s = _s
+							is_exists = true
+						}
+					}
+				}
+				if !is_exists {
+					s = source.Make(&dpb.Source{
+						Header: &dpb.SourceHeader{
+							Type: n.node.Header().Type(),
+							Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
+						},
+					}).WithNodeID(n.ID())
+				}
+				cmds = append(cmds,
+					n.edit.SetValue(s),
+					func() tea.Msg {
+						return errors.ToLogMessage(
+							errors.LevelWarn,
+							fmt.Sprintf("%v: unimplemented edit source", n.ID()),
+						)
+					},
+				)
 			}
 		}
 	}
@@ -179,7 +228,10 @@ func (n *Node) View() string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(n.tablist.View()),
-			n.source.View(),
+			map[bool]string{
+				false: n.source.View(),
+				true:  n.edit.View(),
+			}[n.is_edit],
 		),
 	))
 }
