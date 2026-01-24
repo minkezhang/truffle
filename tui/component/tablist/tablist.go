@@ -12,14 +12,29 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
+	"github.com/minkezhang/truffle/tui/util/form"
 )
+
+type TabType int
+
+const (
+	TabTypeVirtual TabType = iota
+	TabTypeSource
+	TabTypeEdit
+)
+
+type Tab struct {
+	Type  TabType
+	Key   int
+	Label string
+}
 
 type O struct {
 	ParentID string
 	Column   *column.C
+	Key      form.Key
 }
 
 type Node struct {
@@ -27,7 +42,8 @@ type Node struct {
 
 	column          *column.C
 	tabs            []*clickable.Node
-	labels          []string
+	key             form.Key
+	values          []Tab
 	viewport        viewport.Model
 	viewport_offset int
 }
@@ -36,13 +52,14 @@ func New(o O) *Node {
 	return &Node{
 		Node:     focusable.New("tablist", o.ParentID, 0),
 		column:   o.Column,
+		key:      o.Key,
 		viewport: viewport.New(o.Column.Content(), 3),
 	}
 }
 
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
-		n.SetValue(n.labels),
+		n.SetValue(n.values),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -51,7 +68,7 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) SetValue(vs []string) tea.Cmd {
+func (n *Node) SetValue(vs []Tab) tea.Cmd {
 	var tabs []*clickable.Node
 
 	var cmds []tea.Cmd
@@ -60,7 +77,7 @@ func (n *Node) SetValue(vs []string) tea.Cmd {
 		tabs = append(tabs, t)
 		cmds = append(cmds, t.Init())
 	}
-	n.labels = append([]string{}, vs...)
+	n.values = append([]Tab{}, vs...)
 	n.tabs = append(n.tabs, tabs...)
 	n.viewport.SetContent(n.render())
 
@@ -72,9 +89,16 @@ func (n *Node) SetValue(vs []string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (n *Node) Value() form.Value[Tab] {
+	return form.Value[Tab]{
+		Key:   n.key,
+		Value: n.values[n.FocusIndex()],
+	}
+}
+
 type HighlightMessage struct {
 	ID    string
-	Index int
+	Value form.Value[Tab]
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -98,18 +122,18 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 		}
-	case types.FocusMessage:
-		if msg.ID == n.ID() {
-			cmds = append(cmds, func() tea.Msg {
-				return HighlightMessage{
-					ID:    n.ID(),
-					Index: msg.Index,
-				}
-			})
-		}
 	}
 
 	return n, tea.Batch(cmds...)
+}
+
+func (n *Node) do_highlight() tea.Cmd {
+	return func() tea.Msg {
+		return HighlightMessage{
+			ID:    n.ID(),
+			Value: n.Value(),
+		}
+	}
 }
 
 func (n *Node) set_content(s string) tea.Cmd {
@@ -118,16 +142,19 @@ func (n *Node) set_content(s string) tea.Cmd {
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
+	if i == n.FocusIndex() {
+		return nil
+	}
 	return tea.Sequence(
 		n.Node.OnFocus(i),
 		n.set_content(n.render()),
 		func() tea.Msg {
-			tab_widths := make([]int, len(n.labels))
-			tab_start := make([]int, len(n.labels))
-			tab_end := make([]int, len(n.labels))
+			tab_widths := make([]int, len(n.values))
+			tab_start := make([]int, len(n.values))
+			tab_end := make([]int, len(n.values))
 
-			for i := range len(n.labels) {
-				tab_widths[i] = lipgloss.Width(n.labels[i]) + /* padding */ 2 + /* borders */ 2
+			for i := range len(n.values) {
+				tab_widths[i] = lipgloss.Width(n.values[i].Label) + /* padding */ 2 + /* borders */ 2
 				if i > 0 {
 					tab_start[i] = tab_end[i-1]
 				}
@@ -141,9 +168,9 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 			} else if n.FocusIndex() > 1 {
 				backward_buffer = tab_widths[n.FocusIndex()-1]
 			}
-			if n.FocusIndex() < len(n.labels)-2 {
+			if n.FocusIndex() < len(n.values)-2 {
 				forward_buffer = tab_widths[n.FocusIndex()+2] + tab_widths[n.FocusIndex()+1]
-			} else if n.FocusIndex() < len(n.labels)-1 {
+			} else if n.FocusIndex() < len(n.values)-1 {
 				forward_buffer = tab_widths[n.FocusIndex()+1]
 			}
 			if n.FocusIndex() <= 0 {
@@ -154,13 +181,9 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 				n.viewport_offset = tab_end[n.FocusIndex()] - n.column.Content() + forward_buffer
 			}
 			n.viewport.SetXOffset(n.viewport_offset)
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: setting tab widths:\nstart = %v\nwidth = %v\nend = %v",
-					n.ID(), tab_start, tab_widths, tab_end,
-				),
-			)
+			return nil
 		},
+		n.do_highlight(),
 	)
 }
 
@@ -184,7 +207,7 @@ var (
 func (n *Node) render() string {
 	var parts []string
 	var border []string
-	for i, l := range n.labels {
+	for i, v := range n.values {
 		p := zone.Mark(
 			n.tabs[i].ID(),
 			lipgloss.NewStyle().Border(
@@ -199,7 +222,7 @@ func (n *Node) render() string {
 					false: color_profile.UIForeground[types.FocusStateNone],
 					true:  color_profile.UIForeground[types.FocusStateActive],
 				}[i == n.FocusIndex() && n.FocusState() == types.FocusStateActive],
-			).Render(l),
+			).Render(v.Label),
 		)
 		parts = append(parts, p)
 		if i == n.FocusIndex() {

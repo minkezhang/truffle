@@ -13,6 +13,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/node/source/view"
 	"github.com/minkezhang/truffle/tui/component/tablist"
+	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
 
 	util_view "github.com/minkezhang/truffle/tui/util/node/view"
@@ -48,6 +49,7 @@ func New(o O) *Node {
 	n.tablist = tablist.New(tablist.O{
 		ParentID: n.ID(),
 		Column:   o.Column,
+		Key:      form.Key{"", "tab-select"},
 	})
 	return n
 }
@@ -67,17 +69,27 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		}
 	}
 
-	var labels []string
+	var values []tablist.Tab
 	if _, ok := v.(node.N); ok {
-		labels = append(labels, "⌂")
+		values = append(values, tablist.Tab{
+			Type:  tablist.TabTypeVirtual,
+			Label: "⌂",
+		})
 	}
-	for _, s := range v.Sources() {
-		labels = append(labels, util_view.R(s).API())
+	for i, s := range v.Sources() {
+		values = append(values, tablist.Tab{
+			Type:  tablist.TabTypeSource,
+			Key:   i,
+			Label: util_view.R(s).API(),
+		})
 	}
-	labels = append(labels, "+")
+	values = append(values, tablist.Tab{
+		Type:  tablist.TabTypeEdit,
+		Label: "+",
+	})
 
 	return tea.Batch(
-		n.tablist.SetValue(labels),
+		n.tablist.SetValue(values),
 		n.source.SetValue(source),
 	)
 }
@@ -128,6 +140,32 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			},
 		)
+	case tablist.HighlightMessage:
+		if msg.ID == n.tablist.ID() {
+			switch msg.Value.Value.Type {
+			case tablist.TabTypeVirtual:
+				source, err := n.node.Virtual()
+				if err != nil {
+					cmds = append(cmds, func() tea.Msg {
+						return errors.ToLogMessage(
+							errors.LevelWarn,
+							fmt.Sprintf("%v: Virtual() returned error: %v", err),
+						)
+					})
+				} else {
+					cmds = append(cmds, n.source.SetValue(source))
+				}
+			case tablist.TabTypeSource:
+				cmds = append(cmds, n.source.SetValue(n.node.Sources()[msg.Value.Value.Key]))
+			case tablist.TabTypeEdit:
+				cmds = append(cmds, func() tea.Msg {
+					return errors.ToLogMessage(
+						errors.LevelWarn,
+						fmt.Sprintf("%v: unimplemented edit source", n.ID()),
+					)
+				})
+			}
+		}
 	}
 
 	return n, tea.Batch(cmds...)
