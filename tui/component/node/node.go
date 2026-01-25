@@ -102,19 +102,14 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		Label: "+",
 	})
 
-	cmds := []tea.Cmd{
+	var cmds []tea.Cmd
+
+	cmds = append(cmds,
 		tea.Sequence(
 			n.tablist.SetValue(values),
-
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: setting tablist value", n.ID()),
-				)
-			},
+			n.do_highlight(n.tablist.Value()),
 		),
-		n.source.SetValue(s),
-	}
+	)
 
 	if truffle_index == -1 {
 		s = source.Make(&dpb.Source{
@@ -141,6 +136,78 @@ func (n *Node) Init() tea.Cmd {
 			}
 		},
 	)
+}
+
+func (n *Node) set_is_edit(v bool) tea.Cmd {
+	n.is_edit = v
+	return tea.Batch(
+		n.edit.SetIsInvisible(!n.is_edit),
+		n.source.SetIsInvisible(n.is_edit),
+	)
+}
+
+func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
+	cmds := []tea.Cmd{
+		n.set_is_edit(v.Value.Type == tablist.TabTypeEdit),
+	}
+
+	switch v.Value.Type {
+	case tablist.TabTypeVirtual:
+		s, err := n.node.Virtual()
+		if err != nil {
+			cmds = append(cmds, func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelWarn,
+					fmt.Sprintf("%v: Virtual() returned error: %v", err),
+				)
+			})
+		} else {
+			cmds = append(cmds, n.source.SetValue(s))
+		}
+	case tablist.TabTypeSource:
+		cmds = append(cmds, n.source.SetValue(n.node.Sources()[v.Value.Key]))
+	case tablist.TabTypeEdit:
+		// Cannot edit remote sources
+		if _, ok := n.node.(node.N); !ok {
+			break
+		}
+
+		var s source.S
+		var is_exists bool
+		for _, _s := range n.node.Sources() {
+			if _s.Header().API() == epb.SourceAPI_SOURCE_API_TRUFFLE {
+				if is_exists {
+					cmds = append(cmds, func() tea.Msg {
+						return errors.ToLogMessage(
+							errors.LevelWarn,
+							fmt.Sprintf("%v: multiple Truffle sources found: %v", n.ID(), _s.Header()),
+						)
+					})
+				} else {
+					s = _s
+					is_exists = true
+				}
+			}
+		}
+		if !is_exists {
+			s = source.Make(&dpb.Source{
+				Header: &dpb.SourceHeader{
+					Type: n.node.Header().Type(),
+					Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
+				},
+			}).WithNodeID(n.ID())
+		}
+		cmds = append(cmds,
+			n.edit.SetValue(s),
+			func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelWarn,
+					fmt.Sprintf("%v: unimplemented edit source", n.ID()),
+				)
+			},
+		)
+	}
+	return tea.Sequence(cmds...)
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -181,73 +248,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
-			n.is_edit = msg.Value.Value.Type == tablist.TabTypeEdit
-			cmds = append(
-				cmds,
-				n.edit.SetIsInvisible(!n.is_edit),
-				n.source.SetIsInvisible(n.is_edit),
-			)
-			cmds = append(cmds, func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: recieved highlight message: %v", n.ID(), msg),
-				)
-			})
-			switch msg.Value.Value.Type {
-			case tablist.TabTypeVirtual:
-				source, err := n.node.Virtual()
-				if err != nil {
-					cmds = append(cmds, func() tea.Msg {
-						return errors.ToLogMessage(
-							errors.LevelWarn,
-							fmt.Sprintf("%v: Virtual() returned error: %v", err),
-						)
-					})
-				} else {
-					cmds = append(cmds, n.source.SetValue(source))
-				}
-			case tablist.TabTypeSource:
-				cmds = append(cmds, n.source.SetValue(n.node.Sources()[msg.Value.Value.Key]))
-			case tablist.TabTypeEdit:
-				// Cannot edit remote sources
-				if _, ok := n.node.(node.N); !ok {
-					break
-				}
-				var s source.S
-				var is_exists bool
-				for _, _s := range n.node.Sources() {
-					if _s.Header().API() == epb.SourceAPI_SOURCE_API_TRUFFLE {
-						if is_exists {
-							cmds = append(cmds, func() tea.Msg {
-								return errors.ToLogMessage(
-									errors.LevelWarn,
-									fmt.Sprintf("%v: multiple Truffle sources found: %v", n.ID(), _s.Header()),
-								)
-							})
-						} else {
-							s = _s
-							is_exists = true
-						}
-					}
-				}
-				if !is_exists {
-					s = source.Make(&dpb.Source{
-						Header: &dpb.SourceHeader{
-							Type: n.node.Header().Type(),
-							Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
-						},
-					}).WithNodeID(n.ID())
-				}
-				cmds = append(cmds,
-					n.edit.SetValue(s),
-					func() tea.Msg {
-						return errors.ToLogMessage(
-							errors.LevelWarn,
-							fmt.Sprintf("%v: unimplemented edit source", n.ID()),
-						)
-					},
-				)
-			}
+			cmds = append(cmds, n.do_highlight(msg.Value))
 		}
 	}
 

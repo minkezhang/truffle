@@ -12,7 +12,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
@@ -72,15 +71,7 @@ func (n *Node) Init() tea.Cmd {
 
 func (n *Node) SetValue(vs []Tab) tea.Cmd {
 	var tabs []*clickable.Node
-
-	cmds := []tea.Cmd{
-		func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: calling tablist.SetValue: %v, i = %v", n.ID(), vs, n.FocusIndex()),
-			)
-		},
-	}
+	var cmds []tea.Cmd
 
 	for i := len(n.tabs); i < len(vs); i++ {
 		t := clickable.New(n.ID())
@@ -95,12 +86,6 @@ func (n *Node) SetValue(vs []Tab) tea.Cmd {
 		cmds,
 		tea.Sequence(
 			n.SetNElements(len(vs)),
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: after setNelements: i = %v", n.ID(), vs, n.FocusIndex()),
-				)
-			},
 			func() tea.Msg {
 				var c tea.Cmd
 				if n.FocusIndex() >= n.NElements() {
@@ -122,7 +107,9 @@ func (n *Node) SetValue(vs []Tab) tea.Cmd {
 }
 
 func (n *Node) Value() form.Value[Tab] {
-	if n.FocusIndex() < 0 { return form.Value[Tab]{} }
+	if n.FocusIndex() < 0 || n.FocusIndex() >= n.NElements() {
+		return form.Value[Tab]{}
+	}
 	return form.Value[Tab]{
 		Key:   n.key,
 		Value: n.values[n.FocusIndex()],
