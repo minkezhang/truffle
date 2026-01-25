@@ -164,7 +164,7 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 		SetIsInvisible(v bool) tea.Cmd
 	}
 
-	var children []i
+	children := []i{n.Node}
 	for _, _t := range n.titles {
 		children = append(children,
 			_t.Title,
