@@ -10,6 +10,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
@@ -161,9 +162,17 @@ func New(o O) *Node {
 func (n *Node) SetValue(v source.S) tea.Cmd {
 	var cmds []tea.Cmd
 
+	cmds = append(cmds, func() tea.Msg {
+		return errors.ToLogMessage(
+			errors.LevelDebug,
+			fmt.Sprintf("%v: SetValue(): v = %v", n.ID(), v.Titles()),
+		)
+	})
+
 	n.source = v
 	// Additional title for adding.
 	var _cmds []tea.Cmd
+	var _titles []t
 	for i := len(n.titles); i <= len(v.Titles()); i++ {
 		_t := t{
 			Title: textinput.New(textinput.O{
@@ -180,7 +189,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 				},
 			}),
 			Localization: textinput.New(textinput.O{
-				Prefix:      "edit-source-title",
+				Prefix:      "edit-source-localization",
 				ParentID:    n.ID(),
 				Width:       9,
 				Placeholder: "en",
@@ -192,13 +201,14 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 				},
 			}),
 		}
-		n.titles = append(n.titles, _t)
+		_titles = append(_titles, _t)
 		_cmds = append(
 			_cmds,
 			_t.Title.Init(),
 			_t.Localization.Init(),
 		)
 	}
+	n.titles = append(n.titles, _titles...)
 
 	// Reorder children tab order.
 	children := []string{

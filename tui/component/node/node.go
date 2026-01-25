@@ -33,12 +33,12 @@ type O struct {
 type Node struct {
 	*focusable.Node
 
-	column  *column.C
-	node    util_node.N
-	source  *view.Node
-	edit    *edit.Node
-	is_edit bool
-	tablist *tablist.Node
+	column      *column.C
+	node        util_node.N
+	source      *view.Node
+	edit        *edit.Node
+	render_type tablist.TabType
+	tablist     *tablist.Node
 }
 
 func New(o O) *Node {
@@ -69,18 +69,9 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		return nil
 	}
 	n.node = v
-	s, err := v.Virtual()
-	if err != nil {
-		return func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				fmt.Sprintf("%v: cannot get a merged source component: %v", err),
-			)
-		}
-	}
 
 	var values []tablist.Tab
-	truffle_index := -1
+
 	if _, ok := v.(node.N); ok {
 		values = append(values, tablist.Tab{
 			Type:  tablist.TabTypeVirtual,
@@ -88,22 +79,19 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		})
 	}
 	for i, s := range v.Sources() {
-		if s.Header().API() == epb.SourceAPI_SOURCE_API_TRUFFLE {
-			truffle_index = i
-		}
 		values = append(values, tablist.Tab{
 			Type:  tablist.TabTypeSource,
 			Key:   i,
 			Label: util_view.R(s).API(),
 		})
 	}
+
 	values = append(values, tablist.Tab{
 		Type:  tablist.TabTypeEdit,
 		Label: "+",
 	})
 
 	var cmds []tea.Cmd
-
 	cmds = append(cmds,
 		tea.Sequence(
 			n.tablist.SetValue(values),
@@ -111,16 +99,6 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		),
 	)
 
-	if truffle_index == -1 {
-		s = source.Make(&dpb.Source{
-			Header: &dpb.SourceHeader{
-				Type: n.node.Header().Type(),
-				Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
-			},
-		}).WithNodeID(n.node.Header().ID())
-	}
-
-	cmds = append(cmds, n.edit.SetValue(s))
 	return tea.Batch(cmds...)
 }
 
@@ -138,18 +116,8 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) set_is_edit(v bool) tea.Cmd {
-	n.is_edit = v
-	return tea.Batch(
-		n.edit.SetIsInvisible(!n.is_edit),
-		n.source.SetIsInvisible(n.is_edit),
-	)
-}
-
 func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
-	cmds := []tea.Cmd{
-		n.set_is_edit(v.Value.Type == tablist.TabTypeEdit),
-	}
+	var cmds []tea.Cmd
 
 	switch v.Value.Type {
 	case tablist.TabTypeVirtual:
@@ -168,6 +136,8 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 		cmds = append(cmds, n.source.SetValue(n.node.Sources()[v.Value.Key]))
 	case tablist.TabTypeEdit:
 		// Cannot edit remote sources
+		//
+		// TODO(minkezhang): Add handler for linking virtual source.
 		if _, ok := n.node.(node.N); !ok {
 			break
 		}
@@ -207,6 +177,15 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 			},
 		)
 	}
+	n.render_type = v.Value.Type
+	if n.node != nil && n.node.Header().ID() == "" && n.render_type == tablist.TabTypeEdit {
+		n.render_type = tablist.TabTypeNone
+	}
+	cmds = append(
+		cmds,
+		n.edit.SetIsInvisible(n.render_type == tablist.TabTypeEdit && n.render_type == tablist.TabTypeEdit),
+		n.source.SetIsInvisible(n.render_type == tablist.TabTypeVirtual || n.render_type == tablist.TabTypeSource),
+	)
 	return tea.Sequence(cmds...)
 }
 
@@ -252,7 +231,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return n, tea.Batch(cmds...)
+	return n, tea.Sequence(cmds...)
 }
 
 func (n *Node) View() string {
@@ -263,10 +242,11 @@ func (n *Node) View() string {
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(n.tablist.View()),
-			map[bool]string{
-				false: n.source.View(),
-				true:  n.edit.View(),
-			}[n.is_edit],
+			map[tablist.TabType]string{
+				tablist.TabTypeSource:  n.source.View(),
+				tablist.TabTypeVirtual: n.source.View(),
+				tablist.TabTypeEdit:    n.edit.View(),
+			}[n.render_type],
 		),
 	))
 }
