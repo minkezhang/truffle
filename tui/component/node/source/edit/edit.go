@@ -159,6 +159,37 @@ func New(o O) *Node {
 	return n
 }
 
+func (n *Node) SetIsInvisible(v bool) tea.Cmd {
+	type i interface {
+		SetIsInvisible(v bool) tea.Cmd
+	}
+
+	var children []i
+	for _, _t := range n.titles {
+		children = append(children,
+			_t.Title,
+			_t.Localization,
+		)
+	}
+
+	children = append(children,
+		n.image,
+		n.score,
+		n.genres,
+		n.studios,
+		n.seasons,
+		n.authors,
+		n.illustrators,
+		n.button_unlink,
+	)
+
+	var cmds []tea.Cmd
+	for _, c := range children {
+		cmds = append(cmds, c.SetIsInvisible(v))
+	}
+	return tea.Batch(cmds...)
+}
+
 func (n *Node) SetValue(v source.S) tea.Cmd {
 	var cmds []tea.Cmd
 

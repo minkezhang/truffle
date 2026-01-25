@@ -183,8 +183,8 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 	}
 	cmds = append(
 		cmds,
-		n.edit.SetIsInvisible(n.render_type == tablist.TabTypeEdit && n.render_type == tablist.TabTypeEdit),
-		n.source.SetIsInvisible(n.render_type == tablist.TabTypeVirtual || n.render_type == tablist.TabTypeSource),
+		n.edit.SetIsInvisible(n.render_type != tablist.TabTypeEdit),
+		n.source.SetIsInvisible(n.render_type != tablist.TabTypeVirtual && n.render_type != tablist.TabTypeSource),
 	)
 	return tea.Sequence(cmds...)
 }
