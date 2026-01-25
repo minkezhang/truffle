@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle-api/data/source"
@@ -13,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/textinput"
+	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node/view"
 )
@@ -195,10 +195,35 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 		n.titles = append(n.titles, _t)
 		_cmds = append(
 			_cmds,
-				_t.Title.Init(),
-				_t.Localization.Init(),
+			_t.Title.Init(),
+			_t.Localization.Init(),
 		)
 	}
+
+	// Reorder children tab order.
+	children := []string{
+		n.button_unlink.ID(),
+		n.image.ID(),
+	}
+	for _, _t := range n.titles {
+		children = append(children, _t.Title.ID(), _t.Localization.ID())
+	}
+	children = append(
+		children,
+		n.score.ID(),
+		n.genres.ID(),
+		n.studios.ID(),
+		n.seasons.ID(),
+		n.authors.ID(),
+		n.illustrators.ID(),
+	)
+
+	_cmds = append(_cmds, func() tea.Msg {
+		return base.PutChildrenMessage{
+			ID:       n.ID(),
+			Children: children,
+		}
+	})
 
 	cmds = append(cmds, tea.Sequence(_cmds...))
 
@@ -302,12 +327,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (n *Node) View() string {
 	parts := []string{
 		lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(
-		fmt.Sprintf(
-			"%v%v%v",
-			view.WithHeader("Type", view.R(n.source).Type(), view.RenderHeaderModeNone),
-			lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(" > "),
-			view.WithHeader("ID", view.R(n.source).ID(), view.RenderHeaderModeNone),
-		),
+			fmt.Sprintf(
+				"%v%v%v",
+				view.WithHeader("Type", view.R(n.source).Type(), view.RenderHeaderModeNone),
+				lipgloss.NewStyle().Foreground(color_profile.ForegroundNegligible).Render(" > "),
+				view.WithHeader("ID", view.R(n.source).ID(), view.RenderHeaderModeNone),
+			),
 		),
 	}
 
@@ -339,7 +364,7 @@ func (n *Node) View() string {
 			),
 		),
 	))
-			
+
 	for _, m := range []tea.Model{
 		n.genres,
 		n.studios,

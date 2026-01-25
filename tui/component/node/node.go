@@ -102,7 +102,7 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		Label: "+",
 	})
 
-	cmds := []tea.Cmd {
+	cmds := []tea.Cmd{
 		n.tablist.SetValue(values),
 		n.source.SetValue(s),
 	}
@@ -110,7 +110,7 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		s = source.Make(&dpb.Source{
 			Header: &dpb.SourceHeader{
 				Type: n.node.Header().Type(),
-				Api: epb.SourceAPI_SOURCE_API_TRUFFLE,
+				Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
 			},
 		}).WithNodeID(n.node.Header().ID())
 	}

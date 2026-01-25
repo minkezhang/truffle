@@ -107,6 +107,11 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 		}
+	case base.PutChildrenMessage:
+		d.dirty = true
+		_, c := d.directory.Update(msg)
+		cmds = append(cmds, c)
+
 	case types.FocusMessage:
 		if n, ok := d.directory.Nodes[d.current_node_id]; ok {
 			cmds = append(cmds, n.(Node).OnBlur())

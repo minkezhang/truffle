@@ -1,3 +1,6 @@
+// Package textinput encapsulates logic for a simple text input bar.
+//
+// TODO(minkezhang): Implement int type constraint.
 package textinput
 
 import (

@@ -26,6 +26,12 @@ type RegisterMessage struct {
 	Node Identifiable
 }
 
+// Manually set children tab order.
+type PutChildrenMessage struct {
+	ID       string
+	Children []string
+}
+
 type D struct {
 	Nodes    map[string]Identifiable
 	Children map[string][]string
@@ -48,6 +54,8 @@ func (d *D) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		d.Nodes[msg.Node.ID()] = msg.Node
 		d.Children[msg.Node.ParentID()] = append(d.Children[msg.Node.ParentID()], msg.Node.ID())
 		d.Parent[msg.Node.ID()] = msg.Node.ParentID()
+	case PutChildrenMessage:
+		d.Children[msg.ID] = msg.Children
 	}
 	return d, nil
 }
