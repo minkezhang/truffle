@@ -12,6 +12,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/directory/focusable/types"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
@@ -20,7 +21,8 @@ import (
 type TabType int
 
 const (
-	TabTypeVirtual TabType = iota
+	TabTypeNone TabType = iota
+	TabTypeVirtual
 	TabTypeSource
 	TabTypeEdit
 )
@@ -71,7 +73,15 @@ func (n *Node) Init() tea.Cmd {
 func (n *Node) SetValue(vs []Tab) tea.Cmd {
 	var tabs []*clickable.Node
 
-	var cmds []tea.Cmd
+	cmds := []tea.Cmd{
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: calling tablist.SetValue: %v, i = %v", n.ID(), vs, n.FocusIndex()),
+			)
+		},
+	}
+
 	for i := len(n.tabs); i < len(vs); i++ {
 		t := clickable.New(n.ID())
 		tabs = append(tabs, t)
@@ -83,13 +93,36 @@ func (n *Node) SetValue(vs []Tab) tea.Cmd {
 
 	cmds = append(
 		cmds,
-		n.SetNElements(len(vs)),
+		tea.Sequence(
+			n.SetNElements(len(vs)),
+			func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelDebug,
+					fmt.Sprintf("%v: after setNelements: i = %v", n.ID(), vs, n.FocusIndex()),
+				)
+			},
+			func() tea.Msg {
+				var c tea.Cmd
+				if n.FocusIndex() >= n.NElements() {
+					c = n.SetFocusIndex(n.NElements() - 1)
+				} else if n.FocusIndex() < 0 && n.NElements() > 0 {
+					c = n.SetFocusIndex(0)
+				}
+				cmds = append(cmds, tea.Sequence(
+					c,
+					n.update_content(),
+				))
+				return nil
+			},
+			n.do_highlight(),
+		),
 	)
 
 	return tea.Batch(cmds...)
 }
 
 func (n *Node) Value() form.Value[Tab] {
+	if n.FocusIndex() < 0 { return form.Value[Tab]{} }
 	return form.Value[Tab]{
 		Key:   n.key,
 		Value: n.values[n.FocusIndex()],
@@ -136,50 +169,49 @@ func (n *Node) do_highlight() tea.Cmd {
 	}
 }
 
-func (n *Node) set_content(s string) tea.Cmd {
-	n.viewport.SetContent(s)
-	return nil
+func (n *Node) update_content() tea.Cmd {
+	n.viewport.SetContent(n.render())
+	return func() tea.Msg {
+		tab_widths := make([]int, len(n.values))
+		tab_start := make([]int, len(n.values))
+		tab_end := make([]int, len(n.values))
+
+		for i := range len(n.values) {
+			tab_widths[i] = lipgloss.Width(n.values[i].Label) + /* padding */ 2 + /* borders */ 2
+			if i > 0 {
+				tab_start[i] = tab_end[i-1]
+			}
+			tab_end[i] = tab_start[i] + tab_widths[i]
+		}
+
+		forward_buffer := 0
+		backward_buffer := 0
+		if n.FocusIndex() > 2 {
+			backward_buffer = tab_widths[n.FocusIndex()-2] + tab_widths[n.FocusIndex()-1]
+		} else if n.FocusIndex() > 1 {
+			backward_buffer = tab_widths[n.FocusIndex()-1]
+		}
+		if n.FocusIndex() < len(n.values)-2 {
+			forward_buffer = tab_widths[n.FocusIndex()+2] + tab_widths[n.FocusIndex()+1]
+		} else if n.FocusIndex() < len(n.values)-1 {
+			forward_buffer = tab_widths[n.FocusIndex()+1]
+		}
+		if n.FocusIndex() <= 0 {
+			n.viewport_offset = 0
+		} else if tab_start[n.FocusIndex()]-backward_buffer < n.viewport_offset {
+			n.viewport_offset = tab_start[n.FocusIndex()] - backward_buffer
+		} else if tab_end[n.FocusIndex()]+forward_buffer > n.viewport_offset+n.column.Content() {
+			n.viewport_offset = tab_end[n.FocusIndex()] - n.column.Content() + forward_buffer
+		}
+		n.viewport.SetXOffset(n.viewport_offset)
+		return nil
+	}
 }
 
 func (n *Node) OnFocus(i int) tea.Cmd {
 	return tea.Sequence(
 		n.Node.OnFocus(i),
-		n.set_content(n.render()),
-		func() tea.Msg {
-			tab_widths := make([]int, len(n.values))
-			tab_start := make([]int, len(n.values))
-			tab_end := make([]int, len(n.values))
-
-			for i := range len(n.values) {
-				tab_widths[i] = lipgloss.Width(n.values[i].Label) + /* padding */ 2 + /* borders */ 2
-				if i > 0 {
-					tab_start[i] = tab_end[i-1]
-				}
-				tab_end[i] = tab_start[i] + tab_widths[i]
-			}
-
-			forward_buffer := 0
-			backward_buffer := 0
-			if n.FocusIndex() > 2 {
-				backward_buffer = tab_widths[n.FocusIndex()-2] + tab_widths[n.FocusIndex()-1]
-			} else if n.FocusIndex() > 1 {
-				backward_buffer = tab_widths[n.FocusIndex()-1]
-			}
-			if n.FocusIndex() < len(n.values)-2 {
-				forward_buffer = tab_widths[n.FocusIndex()+2] + tab_widths[n.FocusIndex()+1]
-			} else if n.FocusIndex() < len(n.values)-1 {
-				forward_buffer = tab_widths[n.FocusIndex()+1]
-			}
-			if n.FocusIndex() <= 0 {
-				n.viewport_offset = 0
-			} else if tab_start[n.FocusIndex()]-backward_buffer < n.viewport_offset {
-				n.viewport_offset = tab_start[n.FocusIndex()] - backward_buffer
-			} else if tab_end[n.FocusIndex()]+forward_buffer > n.viewport_offset+n.column.Content() {
-				n.viewport_offset = tab_end[n.FocusIndex()] - n.column.Content() + forward_buffer
-			}
-			n.viewport.SetXOffset(n.viewport_offset)
-			return nil
-		},
+		n.update_content(),
 		n.do_highlight(),
 	)
 }
@@ -187,7 +219,7 @@ func (n *Node) OnFocus(i int) tea.Cmd {
 func (n *Node) OnBlur() tea.Cmd {
 	return tea.Sequence(
 		n.Node.OnBlur(),
-		n.set_content(n.render()),
+		n.update_content(),
 	)
 }
 

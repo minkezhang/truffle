@@ -103,9 +103,19 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 	})
 
 	cmds := []tea.Cmd{
-		n.tablist.SetValue(values),
+		tea.Sequence(
+			n.tablist.SetValue(values),
+
+			func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelDebug,
+					fmt.Sprintf("%v: setting tablist value", n.ID()),
+				)
+			},
+		),
 		n.source.SetValue(s),
 	}
+
 	if truffle_index == -1 {
 		s = source.Make(&dpb.Source{
 			Header: &dpb.SourceHeader{
@@ -114,6 +124,7 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 			},
 		}).WithNodeID(n.node.Header().ID())
 	}
+
 	cmds = append(cmds, n.edit.SetValue(s))
 	return tea.Batch(cmds...)
 }
@@ -171,7 +182,17 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
 			n.is_edit = msg.Value.Value.Type == tablist.TabTypeEdit
-			cmds = append(cmds, n.edit.SetIsInvisible(!n.is_edit))
+			cmds = append(
+				cmds,
+				n.edit.SetIsInvisible(!n.is_edit),
+				n.source.SetIsInvisible(n.is_edit),
+			)
+			cmds = append(cmds, func() tea.Msg {
+				return errors.ToLogMessage(
+					errors.LevelDebug,
+					fmt.Sprintf("%v: recieved highlight message: %v", n.ID(), msg),
+				)
+			})
 			switch msg.Value.Value.Type {
 			case tablist.TabTypeVirtual:
 				source, err := n.node.Virtual()

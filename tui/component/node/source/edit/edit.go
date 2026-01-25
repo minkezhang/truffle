@@ -249,6 +249,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 			)
 		}
 	}
+
 	cmds = append(
 		cmds,
 		n.image.SetValue(v.PreviewURL()),
