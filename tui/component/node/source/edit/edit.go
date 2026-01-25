@@ -14,6 +14,10 @@ import (
 	"github.com/minkezhang/truffle/tui/util/form"
 )
 
+const (
+	image_width = 50
+)
+
 type O struct {
 	ParentID string
 	Column   *column.C
@@ -31,6 +35,7 @@ type Node struct {
 	source source.S
 
 	titles        []t
+	image         *textinput.Node
 	button_unlink *button.Node
 }
 
@@ -44,6 +49,19 @@ func New(o O) *Node {
 		form.Key{
 			Label: "Unlink",
 			Key:   "edit-unlink",
+		},
+	})
+	n.image = textinput.New(textinput.O{
+		Prefix:      "edit-source-image",
+		ParentID:    n.ID(),
+		Width:       image_width,
+		Placeholder: "https://cdn.myanimelist.net/images/anime/1015/138006.jpg",
+		Prompt:      "> ",
+		Value: form.Value[string]{
+			Key: form.Key{
+				Label: "Image URL",
+				Key:   "edit-source-preview-url",
+			},
 		},
 	})
 	return n
@@ -60,7 +78,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 				Prefix:      "edit-source-title",
 				ParentID:    n.ID(),
 				Width:       40,
-				Placeholder: "Frieren",
+				Placeholder: "Sousou no Frieren",
 				Prompt:      "> ",
 				Value: form.Value[string]{
 					Key: form.Key{
@@ -107,6 +125,10 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 			)
 		}
 	}
+	cmds = append(
+		cmds,
+		n.image.SetValue(v.PreviewURL()),
+	)
 	return tea.Batch(cmds...)
 }
 
@@ -124,6 +146,7 @@ func (n *Node) Init() tea.Cmd {
 	cmds = append(
 		cmds,
 		n.button_unlink.Init(),
+		n.image.Init(),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -143,6 +166,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, c = _t.Localization.Update(msg)
 		cmds = append(cmds, c)
 	}
+
+	_, c = n.image.Update(msg)
+	cmds = append(cmds, c)
 
 	return n, tea.Batch(cmds...)
 }
@@ -166,9 +192,15 @@ func (n *Node) View() string {
 
 	return n.column.RenderOrDie(
 		n.column.Style().Render(
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				parts...,
+			lipgloss.JoinHorizontal(
+				lipgloss.Top,
+				n.image.View(),
+				n.column.WithWidth(n.column.Width()-image_width).WithMargin(0, 0, 0, 1).Style().Render(
+					lipgloss.JoinVertical(
+						lipgloss.Left,
+						parts...,
+					),
+				),
 			),
 		),
 	)

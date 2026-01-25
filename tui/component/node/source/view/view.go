@@ -137,7 +137,7 @@ func (n *Node) View() string {
 			lipgloss.JoinHorizontal(
 				lipgloss.Top,
 				n.image.View(),
-				n.column.WithWidth(n.column.Width()-image_width).WithPadding(0, 0, 0, 1).Style().Render(
+				n.column.WithWidth(n.column.Width()-image_width).WithMargin(0, 0, 0, 1).Style().Render(
 					lipgloss.JoinVertical(
 						lipgloss.Left,
 						parts...,

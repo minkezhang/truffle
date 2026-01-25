@@ -68,9 +68,17 @@ func (c *C) WithWidth(w int) *C {
 	return d
 }
 
-func (c *C) WithPadding(top, right, bottom, left int) *C {
+func (c *C) WithPadding(_top, _right, _bottom, _left int) *C {
 	d := c.clone()
-	if err := d.SetPadding(top, right, bottom, left); err != nil {
+	if err := d.SetPadding(_top, _right, _bottom, _left); err != nil {
+		return nil
+	}
+	return d
+}
+
+func (c *C) WithMargin(_top, _right, _bottom, _left int) *C {
+	d := c.clone()
+	if err := d.SetMargin(_top, _right, _bottom, _left); err != nil {
 		return nil
 	}
 	return d
