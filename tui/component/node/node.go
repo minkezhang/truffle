@@ -80,6 +80,7 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 	}
 
 	var values []tablist.Tab
+	truffle_index := -1
 	if _, ok := v.(node.N); ok {
 		values = append(values, tablist.Tab{
 			Type:  tablist.TabTypeVirtual,
@@ -87,6 +88,9 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		})
 	}
 	for i, s := range v.Sources() {
+		if s.Header().API() == epb.SourceAPI_SOURCE_API_TRUFFLE {
+			truffle_index = i
+		}
 		values = append(values, tablist.Tab{
 			Type:  tablist.TabTypeSource,
 			Key:   i,
@@ -98,11 +102,20 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 		Label: "+",
 	})
 
-	return tea.Batch(
+	cmds := []tea.Cmd {
 		n.tablist.SetValue(values),
 		n.source.SetValue(s),
-		n.edit.SetValue(source.S{}),
-	)
+	}
+	if truffle_index == -1 {
+		s = source.Make(&dpb.Source{
+			Header: &dpb.SourceHeader{
+				Type: n.node.Header().Type(),
+				Api: epb.SourceAPI_SOURCE_API_TRUFFLE,
+			},
+		}).WithNodeID(n.node.Header().ID())
+	}
+	cmds = append(cmds, n.edit.SetValue(s))
+	return tea.Batch(cmds...)
 }
 
 func (n *Node) Init() tea.Cmd {
