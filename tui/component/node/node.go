@@ -204,27 +204,9 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case message.GetNodeResponseMessage:
-		cmds = append(
-			cmds,
-			n.SetValue(msg.Body.Value),
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: received GetNodeResponseMessage: %v", n.ID(), msg),
-				)
-			},
-		)
+		cmds = append(cmds, n.SetValue(msg.Body.Value))
 	case message.PutResponseMessage:
-		cmds = append(
-			cmds,
-			n.SetValue(msg.Body.Value.Node),
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelDebug,
-					fmt.Sprintf("%v: received PutResponseMessage: %v", n.ID(), msg),
-				)
-			},
-		)
+		cmds = append(cmds, n.SetValue(msg.Body.Value.Node))
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
 			cmds = append(cmds, n.do_highlight(msg.Value))

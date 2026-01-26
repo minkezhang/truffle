@@ -157,7 +157,7 @@ func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(cmds...)
 }
 
-func (n *Node) submit() tea.Cmd {
+func (n *Node) do_submit() tea.Cmd {
 	// Ignore blank queries.
 	if n.input.Value().Value == "" {
 		return nil
@@ -279,12 +279,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case button.SubmitMessage:
 		if msg.ID == n.submit_button.ID() {
-			cmds = append(cmds, n.submit())
+			cmds = append(cmds, n.do_submit())
 		}
 	case tea.KeyMsg:
 		if n.input.FocusState() == types.FocusStateActive {
 			if msg.Type == tea.KeyEnter {
-				cmds = append(cmds, n.submit())
+				cmds = append(cmds, n.do_submit())
 			}
 		}
 		if n.FocusState() == types.FocusStateActive {

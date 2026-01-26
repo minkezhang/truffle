@@ -74,6 +74,18 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
+func (n *Node) SetValue(v string) tea.Cmd {
+	n.input.SetValue(v)
+	return nil
+}
+
+func (n *Node) Value() form.Value[string] {
+	return form.Value[string]{
+		Key:   n.key,
+		Value: n.input.Value(),
+	}
+}
+
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var c tea.Cmd

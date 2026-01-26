@@ -2,6 +2,8 @@ package edit
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
@@ -9,6 +11,7 @@ import (
 	"github.com/minkezhang/truffle-api/data/source"
 	"github.com/minkezhang/truffle/tui/component/button"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
@@ -17,6 +20,7 @@ import (
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node/view"
 
+	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
@@ -52,21 +56,18 @@ type Node struct {
 	authors      *textinput.Node
 	illustrators *textinput.Node
 	// last updated
-	button_unlink *button.Node
+	save_button *button.Node
 }
+
+var (
+	key = form.Key{"", "edit-source"}
+)
 
 func New(o O) *Node {
 	n := &Node{
 		Node:   focusable.New("edit-node", o.ParentID, 0),
 		column: o.Column,
 	}
-	n.button_unlink = button.New(button.O{
-		n.ID(),
-		form.Key{
-			Label: "Unlink",
-			Key:   "edit-unlink",
-		},
-	})
 	n.image = textinput.New(textinput.O{
 		Prefix:      "edit-source-image",
 		ParentID:    n.ID(),
@@ -158,6 +159,13 @@ func New(o O) *Node {
 			},
 		},
 	})
+	n.save_button = button.New(button.O{
+		n.ID(),
+		form.Key{
+			Label: "Save",
+			Key:   "edit-save",
+		},
+	})
 	return n
 }
 
@@ -178,7 +186,7 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 		n.image,
 		n.score,
 		n.genres,
-		n.button_unlink,
+		n.save_button,
 	)
 
 	var cmds []tea.Cmd
@@ -265,7 +273,6 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 
 	// Reorder children tab order.
 	children := []string{
-		n.button_unlink.ID(),
 		n.image.ID(),
 	}
 	for _, _t := range n.titles {
@@ -279,6 +286,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 		n.seasons.ID(),
 		n.authors.ID(),
 		n.illustrators.ID(),
+		n.save_button.ID(),
 	)
 
 	_cmds = append(_cmds, func() tea.Msg {
@@ -328,7 +336,6 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 
 func (n *Node) Init() tea.Cmd {
 	cmds := []tea.Cmd{
-		n.button_unlink.Init(),
 		n.image.Init(),
 	}
 
@@ -347,6 +354,7 @@ func (n *Node) Init() tea.Cmd {
 		n.seasons,
 		n.authors,
 		n.illustrators,
+		n.save_button,
 	} {
 		cmds = append(cmds, m.Init())
 	}
@@ -359,6 +367,15 @@ func (n *Node) Init() tea.Cmd {
 		},
 	)
 	return tea.Sequence(cmds...)
+}
+
+func (n *Node) do_save() tea.Cmd {
+	return func() tea.Msg {
+		return message.PutRequestMessage{
+			ID:   n.ID(),
+			Body: n.Value(),
+		}
+	}
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -385,7 +402,61 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, c)
 	}
 
+	_, c = n.save_button.Update(msg)
+	cmds = append(cmds, c)
+
+	switch msg := msg.(type) {
+	case button.SubmitMessage:
+		if msg.ID == n.save_button.ID() {
+			cmds = append(cmds, n.do_save())
+		}
+	}
+
 	return n, tea.Batch(cmds...)
+}
+
+func split(v string) []string {
+	re := regexp.MustCompile(",\\s*")
+	var res []string
+	for _, v := range re.Split(v, -1) {
+		if u := strings.Trim(v, " "); u != "" {
+			res = append(res, u)
+		}
+	}
+	return res
+}
+
+func sanitize(v string) string { return strings.Trim(v, " ") }
+
+func (n *Node) Value() form.Value[source.S] {
+	pb := &dpb.Source{
+		Header: n.source.Header().PB(),
+		NodeId: n.source.NodeID(),
+	}
+	for _, _t := range n.titles {
+		if title := sanitize(_t.Title.Value().Value); title != "" {
+			pb.Titles = append(pb.Titles, &dpb.Title{
+				Title:        title,
+				Localization: sanitize(_t.Localization.Value().Value),
+			})
+		}
+	}
+	pb.PreviewUrl = sanitize(n.image.Value().Value)
+	score, err := strconv.Atoi(sanitize(n.score.Value().Value))
+	if err != nil {
+		score = 0
+	}
+	pb.Score = int64(score)
+	pb.Genres = split(sanitize(n.genres.Value().Value))
+	pb.Studios = split(sanitize(n.studios.Value().Value))
+	pb.Seasons = split(sanitize(n.seasons.Value().Value))
+	pb.Authors = split(sanitize(n.authors.Value().Value))
+	pb.Illustrators = split(sanitize(n.illustrators.Value().Value))
+
+	return form.Value[source.S]{
+		Key:   key,
+		Value: source.Make(pb),
+	}
 }
 
 func (n *Node) View() string {
@@ -443,6 +514,8 @@ func (n *Node) View() string {
 			parts = append(parts, lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(m.View()))
 		}
 	}
+
+	parts = append(parts, n.save_button.View())
 
 	return n.column.RenderOrDie(
 		n.column.Style().Render(
