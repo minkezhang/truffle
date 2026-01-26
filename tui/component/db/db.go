@@ -53,7 +53,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case message.SearchRequestMessage:
 		cmds = append(cmds, do_search(n.context, n.db, msg))
 	case message.PutRequestMessage:
-		cmds = append(cmds, do_add_link(n.context, n.db, msg))
+		cmds = append(cmds, do_put(n.context, n.db, msg))
 	case message.GetNodeRequestMessage:
 		cmds = append(cmds, do_get_node(n.context, n.db, msg))
 	}
@@ -62,25 +62,31 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func do_get_node(ctx context.Context, _db *db.DB, msg message.GetNodeRequestMessage) tea.Cmd {
-	return func() tea.Msg { return message.GetNodeResponseMessage(msg) }
+	return func() tea.Msg {
+		n, err := _db.GetNode(ctx, msg.Body.Value.Header(), option.Remote(false)) // TODO(minkezhang)
+		if err != nil {
+			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+		}
+		return message.GetNodeResponseMessage{
+			ID: msg.ID,
+			Body: form.Value[util_node.N]{
+				Key:   msg.Body.Key,
+				Value: n,
+			},
+		}
+	}
 }
 
-func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.Cmd {
+func do_put(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.Cmd {
 	return func() tea.Msg {
 		h, err := _db.Put(ctx, msg.Body.Value)
 		if err != nil {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				err.Error(),
-			)
+			return errors.ToLogMessage(errors.LevelWarn, err.Error())
 		}
 
 		s, err := _db.Get(ctx, h, option.Remote(false))
 		if err != nil {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				err.Error(),
-			)
+			return errors.ToLogMessage(errors.LevelWarn, err.Error())
 		}
 
 		n, err := _db.GetNode(
@@ -94,10 +100,7 @@ func do_add_link(ctx context.Context, _db *db.DB, msg message.PutRequestMessage)
 			option.Remote(false),
 		)
 		if err != nil {
-			return errors.ToLogMessage(
-				errors.LevelWarn,
-				err.Error(),
-			)
+			return errors.ToLogMessage(errors.LevelWarn, err.Error())
 		}
 
 		source_index := 0
