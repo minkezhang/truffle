@@ -16,6 +16,8 @@ import (
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node/view"
+
+	epb "github.com/minkezhang/truffle-api/proto/go/enums"
 )
 
 const (
@@ -176,10 +178,6 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 		n.image,
 		n.score,
 		n.genres,
-		n.studios,
-		n.seasons,
-		n.authors,
-		n.illustrators,
 		n.button_unlink,
 	)
 
@@ -187,6 +185,30 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 	for _, c := range children {
 		cmds = append(cmds, c.SetIsInvisible(v))
 	}
+
+	_t := n.source.Header().Type()
+
+	cmds = append(
+		cmds,
+		n.studios.SetIsInvisible(v || !map[epb.SourceType]bool{
+			epb.SourceType_SOURCE_TYPE_SERIES_ANIME: true,
+			epb.SourceType_SOURCE_TYPE_MOVIE_ANIME:  true,
+		}[_t]),
+		n.seasons.SetIsInvisible(v || !map[epb.SourceType]bool{
+			epb.SourceType_SOURCE_TYPE_SERIES_ANIME: true,
+		}[_t]),
+		n.authors.SetIsInvisible(v || !map[epb.SourceType]bool{
+			epb.SourceType_SOURCE_TYPE_BOOK:             true,
+			epb.SourceType_SOURCE_TYPE_BOOK_MANGA:       true,
+			epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL: true,
+		}[_t]),
+		n.illustrators.SetIsInvisible(v || !map[epb.SourceType]bool{
+			epb.SourceType_SOURCE_TYPE_BOOK:             true,
+			epb.SourceType_SOURCE_TYPE_BOOK_MANGA:       true,
+			epb.SourceType_SOURCE_TYPE_BOOK_LIGHT_NOVEL: true,
+		}[_t]),
+	)
+
 	return tea.Batch(cmds...)
 }
 
@@ -407,14 +429,19 @@ func (n *Node) View() string {
 		),
 	))
 
-	for _, m := range []tea.Model{
+	for _, m := range []interface {
+		View() string
+		IsInvisible() bool
+	}{
 		n.genres,
 		n.studios,
 		n.seasons,
 		n.authors,
 		n.illustrators,
 	} {
-		parts = append(parts, lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(m.View()))
+		if !m.IsInvisible() {
+			parts = append(parts, lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(m.View()))
+		}
 	}
 
 	return n.column.RenderOrDie(
