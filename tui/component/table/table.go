@@ -227,9 +227,20 @@ func (n *Node) do_add_link(node_id string) tea.Cmd {
 }
 
 func (n *Node) do_select() tea.Cmd {
-	m := message.GetNodeRequestMessage{
-		ID:   n.ID(),
-		Body: n.Value(),
+	var m tea.Msg
+	if _, ok := n.Value().Value.(virtual.N); !ok {
+		m = message.GetNodeRequestMessage{
+			ID:   n.ID(),
+			Body: n.Value(),
+		}
+	} else {
+		m = message.GetRequestMessage{
+			ID: n.ID(),
+			Body: form.Value[source.H]{
+				Key:   n.Value().Key,
+				Value: n.Value().Value.Sources()[0].Header(),
+			},
+		}
 	}
 	return func() tea.Msg { return m }
 }

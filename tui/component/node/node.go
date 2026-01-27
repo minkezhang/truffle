@@ -2,6 +2,7 @@ package component_node
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,6 +18,7 @@ import (
 	"github.com/minkezhang/truffle/tui/component/tablist"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -92,6 +94,18 @@ func (n *Node) SetValue(v util_node.N) tea.Cmd {
 	})
 
 	var cmds []tea.Cmd
+
+	var parts []string
+
+	buf, _ := prototext.Marshal(v.PB())
+
+	parts = append(parts, string(buf))
+
+	for _, s := range v.Sources() {
+		buf, _ = prototext.Marshal(s.PB())
+		parts = append(parts, string(buf))
+	}
+
 	cmds = append(cmds,
 		tea.Sequence(
 			n.tablist.SetValue(values),
@@ -159,23 +173,17 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 				}
 			}
 		}
+
 		if !is_exists {
 			s = source.Make(&dpb.Source{
 				Header: &dpb.SourceHeader{
 					Type: n.node.Header().Type(),
 					Api:  epb.SourceAPI_SOURCE_API_TRUFFLE,
 				},
-			}).WithNodeID(n.ID())
+			}).WithNodeID(n.node.Header().ID())
 		}
-		cmds = append(cmds,
-			n.edit.SetValue(s),
-			func() tea.Msg {
-				return errors.ToLogMessage(
-					errors.LevelWarn,
-					fmt.Sprintf("%v: unimplemented edit source", n.ID()),
-				)
-			},
-		)
+
+		cmds = append(cmds, n.edit.SetValue(s))
 	}
 	n.render_type = v.Value.Type
 	if n.node != nil && n.node.Header().ID() == "" && n.render_type == tablist.TabTypeEdit {
@@ -205,8 +213,24 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case message.GetNodeResponseMessage:
 		cmds = append(cmds, n.SetValue(msg.Body.Value))
-	case message.PutResponseMessage:
+	case message.GetResponseMessage:
 		cmds = append(cmds, n.SetValue(msg.Body.Value.Node))
+	case message.PutResponseMessage:
+		cmds = append(cmds, tea.Sequence(
+			func() tea.Msg {
+				buf, _ := prototext.Marshal(msg.Body.Value.Node.PB())
+				parts := []string{string(buf)}
+				for _, s := range msg.Body.Value.Node.Sources() {
+					buf, _ = prototext.Marshal(s.PB())
+					parts = append(parts, string(buf))
+				}
+				return errors.ToLogMessage(
+					errors.LevelInfo,
+					fmt.Sprintf("%v: received PutResponseMessage:\n%v", n.ID(), strings.Join(parts, "\n")),
+				)
+			},
+			n.SetValue(msg.Body.Value.Node),
+		))
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
 			cmds = append(cmds, n.do_highlight(msg.Value))

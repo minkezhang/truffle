@@ -223,13 +223,6 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 func (n *Node) SetValue(v source.S) tea.Cmd {
 	var cmds []tea.Cmd
 
-	cmds = append(cmds, func() tea.Msg {
-		return errors.ToLogMessage(
-			errors.LevelDebug,
-			fmt.Sprintf("%v: SetValue(): v = %v", n.ID(), v.Titles()),
-		)
-	})
-
 	n.source = v
 	// Additional title for adding.
 	var _cmds []tea.Cmd
@@ -331,6 +324,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 		n.authors.SetValue(strings.Join(v.Authors(), ", ")),
 		n.illustrators.SetValue(strings.Join(v.Illustrators(), ", ")),
 	)
+
 	return tea.Batch(cmds...)
 }
 
@@ -370,12 +364,20 @@ func (n *Node) Init() tea.Cmd {
 }
 
 func (n *Node) do_save() tea.Cmd {
-	return func() tea.Msg {
-		return message.PutRequestMessage{
-			ID:   n.ID(),
-			Body: n.Value(),
-		}
-	}
+	return tea.Sequence(
+		func() tea.Msg {
+			return errors.ToLogMessage(
+				errors.LevelDebug,
+				fmt.Sprintf("%v: saving... node ID = %v", n.ID(), n.Value().Value.NodeID()),
+			)
+		},
+		func() tea.Msg {
+			return message.PutRequestMessage{
+				ID:   n.ID(),
+				Body: n.Value(),
+			}
+		},
+	)
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/client/option"
@@ -13,7 +14,9 @@ import (
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/util/form"
 	"github.com/minkezhang/truffle/tui/util/node"
+	"github.com/minkezhang/truffle/tui/util/node/virtual"
 	"github.com/minkezhang/truffle/tui/util/search"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	dpb "github.com/minkezhang/truffle-api/proto/go/data"
 	epb "github.com/minkezhang/truffle-api/proto/go/enums"
@@ -53,17 +56,71 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case message.SearchRequestMessage:
 		cmds = append(cmds, do_search(n.context, n.db, msg))
 	case message.PutRequestMessage:
-		cmds = append(cmds, do_put(n.context, n.db, msg))
+		cmds = append(
+			cmds,
+			tea.Sequence(
+				func() tea.Msg {
+					buf, _ := prototext.Marshal(msg.Body.Value.PB())
+					return errors.ToLogMessage(
+						errors.LevelInfo,
+						fmt.Sprintf("%v: got PutRequestMessage\n%v", n.ID(), string(buf)),
+					)
+				},
+				do_put(n.context, n.db, msg),
+			),
+		)
 	case message.GetNodeRequestMessage:
 		cmds = append(cmds, do_get_node(n.context, n.db, msg))
+	case message.GetRequestMessage:
+		cmds = append(cmds, do_get(n.context, n.db, msg))
 	}
 
 	return n, tea.Batch(cmds...)
 }
 
+func do_get(ctx context.Context, _db *db.DB, msg message.GetRequestMessage) tea.Cmd {
+	return func() tea.Msg {
+		s, err := _db.Get(ctx, msg.Body.Value, option.Remote(false))
+		if err != nil {
+			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+		}
+		var n util_node.N
+		if s.NodeID() != "" {
+			n, err = _db.GetNode(ctx, node.Make(&dpb.Node{
+				Header: &dpb.NodeHeader{
+					Id:   s.NodeID(),
+					Type: s.Header().Type(),
+				},
+			}).Header(), option.Remote(false))
+			if err != nil {
+				return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			}
+		} else {
+			n = virtual.Make(s.PB())
+		}
+
+		source_index := -1
+		for i, t := range n.Sources() {
+			if t.Header() == msg.Body.Value {
+				source_index = i
+			}
+		}
+		return message.GetResponseMessage{
+			ID: msg.ID,
+			Body: form.Value[message.GetResponseBody]{
+				Key: msg.Body.Key,
+				Value: message.GetResponseBody{
+					Node:        n,
+					SourceIndex: source_index,
+				},
+			},
+		}
+	}
+}
+
 func do_get_node(ctx context.Context, _db *db.DB, msg message.GetNodeRequestMessage) tea.Cmd {
 	return func() tea.Msg {
-		n, err := _db.GetNode(ctx, msg.Body.Value.Header(), option.Remote(false)) // TODO(minkezhang)
+		n, err := _db.GetNode(ctx, msg.Body.Value.Header(), option.Remote(false))
 		if err != nil {
 			return errors.ToLogMessage(errors.LevelWarn, err.Error())
 		}
@@ -103,7 +160,7 @@ func do_put(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.
 			return errors.ToLogMessage(errors.LevelWarn, err.Error())
 		}
 
-		source_index := 0
+		source_index := -1
 		for i, s := range n.Sources() {
 			if s.Header() == h {
 				source_index = i

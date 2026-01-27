@@ -32,12 +32,27 @@ type SearchResponseMessage struct {
 
 type GetNodeRequestMessage struct {
 	ID   string
-	Body form.Value[util_node.N]
+	Body form.Value[util_node.N] // TODO(minkezhang): node.H
 }
 
 type GetNodeResponseMessage struct {
 	ID   string
 	Body form.Value[util_node.N]
+}
+
+type GetRequestMessage struct {
+	ID   string
+	Body form.Value[source.H]
+}
+
+type GetResponseBody struct {
+	Node        util_node.N
+	SourceIndex int
+}
+
+type GetResponseMessage struct {
+	ID   string
+	Body form.Value[GetResponseBody]
 }
 
 type PutRequestMessage struct {
