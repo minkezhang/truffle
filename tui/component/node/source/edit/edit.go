@@ -13,7 +13,6 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
-	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
@@ -172,6 +171,7 @@ func New(o O) *Node {
 func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 	type i interface {
 		SetIsInvisible(v bool) tea.Cmd
+		IsInvisible() bool
 	}
 
 	children := []i{n.Node}
@@ -191,7 +191,7 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 
 	var cmds []tea.Cmd
 	for _, c := range children {
-		cmds = append(cmds, c.SetIsInvisible(v))
+		cmds = append(cmds, c.SetIsInvisible(v || c.IsInvisible()))
 	}
 
 	_t := n.source.Header().Type()
@@ -364,20 +364,12 @@ func (n *Node) Init() tea.Cmd {
 }
 
 func (n *Node) do_save() tea.Cmd {
-	return tea.Sequence(
-		func() tea.Msg {
-			return errors.ToLogMessage(
-				errors.LevelDebug,
-				fmt.Sprintf("%v: saving... node ID = %v", n.ID(), n.Value().Value.NodeID()),
-			)
-		},
-		func() tea.Msg {
-			return message.PutRequestMessage{
-				ID:   n.ID(),
-				Body: n.Value(),
-			}
-		},
-	)
+	return func() tea.Msg {
+		return message.PutRequestMessage{
+			ID:   n.ID(),
+			Body: n.Value(),
+		}
+	}
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
