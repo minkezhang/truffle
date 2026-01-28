@@ -174,6 +174,7 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 		IsInvisible() bool
 	}
 
+	var cmds []tea.Cmd
 	children := []i{n.Node}
 	for _, _t := range n.titles {
 		children = append(children,
@@ -181,17 +182,17 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 			_t.Localization,
 		)
 	}
+	for _, c := range children {
+		cmds = append(cmds, c.SetIsInvisible(v || c.IsInvisible()))
+	}
 
-	children = append(children,
+	for _, c := range []i{
 		n.image,
 		n.score,
 		n.genres,
 		n.save_button,
-	)
-
-	var cmds []tea.Cmd
-	for _, c := range children {
-		cmds = append(cmds, c.SetIsInvisible(v || c.IsInvisible()))
+	} {
+		cmds = append(cmds, c.SetIsInvisible(v))
 	}
 
 	_t := n.source.Header().Type()
