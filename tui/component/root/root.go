@@ -7,11 +7,13 @@ import (
 	"context"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lrstanley/bubblezone"
 	"github.com/minkezhang/truffle-api/db"
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/display"
 	"github.com/minkezhang/truffle/tui/component/errors"
+	"github.com/minkezhang/truffle/tui/component/footer"
 	"github.com/minkezhang/truffle/tui/component/viewport"
 
 	component_db "github.com/minkezhang/truffle/tui/component/db"
@@ -27,10 +29,11 @@ type O struct {
 }
 
 func Make(o O) Node {
+	c := column.New(max_width)
 	return Node{
 		errors: &errors.Node{},
 		viewport: viewport.New(viewport.O{
-			Column: column.New(max_width),
+			Column: c,
 			Node: display.Make(display.O{
 				Column:         column.New(max_width - 2),
 				CacheDirectory: o.CacheDirectory,
@@ -42,12 +45,16 @@ func Make(o O) Node {
 				DB: o.DB,
 			},
 		),
+		footer: footer.New(footer.O{
+			Column: c,
+		}),
 	}
 }
 
 type Node struct {
 	errors   *errors.Node
 	viewport *viewport.Node
+	footer   *footer.Node
 	db       *component_db.Node
 }
 
@@ -55,6 +62,7 @@ func (n Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.errors.Init(),
 		n.viewport.Init(),
+		n.footer.Init(),
 		n.db.Init(),
 	)
 }
@@ -82,6 +90,7 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	for _, n := range []tea.Model{
 		n.errors,
 		n.viewport,
+		n.footer,
 		n.db,
 	} {
 		_, c = n.Update(msg)
@@ -91,4 +100,10 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return n, tea.Batch(cmds...)
 }
 
-func (n Node) View() string { return zone.Scan(n.viewport.View()) }
+func (n Node) View() string {
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		zone.Scan(n.viewport.View()),
+		n.footer.View(),
+	)
+}

@@ -62,7 +62,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		n.viewport.Height = msg.Height
+		n.viewport.Height = msg.Height - /* footer */ 1
 	case clickable.Click:
 		if msg.ID == n.clickable_up.ID() {
 			n.viewport, c = n.viewport.Update(tea.KeyMsg{Type: tea.KeyUp})
