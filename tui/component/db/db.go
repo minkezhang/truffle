@@ -96,7 +96,11 @@ func do_get(ctx context.Context, _db *db.DB, msg message.GetRequestMessage) tea.
 	return func() tea.Msg {
 		s, err := _db.Get(ctx, msg.Body.Value, option.Remote(false))
 		if err != nil {
-			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			buf, _ := prototext.Marshal(msg.Body.Value.PB())
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("db.Get(%v) returned non-nil error: %v", string(buf), err.Error()),
+			)
 		}
 		var n util_node.N
 		if s.NodeID() != "" {
@@ -107,7 +111,11 @@ func do_get(ctx context.Context, _db *db.DB, msg message.GetRequestMessage) tea.
 				},
 			}).Header(), option.Remote(false))
 			if err != nil {
-				return errors.ToLogMessage(errors.LevelWarn, err.Error())
+				buf, _ := prototext.Marshal(msg.Body.Value.PB())
+				return errors.ToLogMessage(
+					errors.LevelWarn,
+					fmt.Sprintf("db.Get(%v) returned non-nil error: %v", string(buf), err.Error()),
+				)
 			}
 		} else {
 			n = virtual.Make(s.PB())
@@ -136,7 +144,11 @@ func do_get_node(ctx context.Context, _db *db.DB, msg message.GetNodeRequestMess
 	return func() tea.Msg {
 		n, err := _db.GetNode(ctx, msg.Body.Value.Header(), option.Remote(false))
 		if err != nil {
-			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			buf, _ := prototext.Marshal(msg.Body.Value.Header().PB())
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("db.GetNode(%v) returned non-nil error: %v", string(buf), err.Error()),
+			)
 		}
 		return message.GetNodeResponseMessage{
 			ID: msg.ID,
@@ -152,12 +164,20 @@ func do_put(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.
 	return func() tea.Msg {
 		h, err := _db.Put(ctx, msg.Body.Value)
 		if err != nil {
-			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			buf, _ := prototext.Marshal(msg.Body.Value.Header().PB())
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("db.Put(%v) returned non-nil error: %v", string(buf), err.Error()),
+			)
 		}
 
 		s, err := _db.Get(ctx, h, option.Remote(false))
 		if err != nil {
-			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			buf, _ := prototext.Marshal(h.PB())
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("db.Get(%v) returned non-nil error: %v", string(buf), err.Error()),
+			)
 		}
 
 		n, err := _db.GetNode(
@@ -171,7 +191,14 @@ func do_put(ctx context.Context, _db *db.DB, msg message.PutRequestMessage) tea.
 			option.Remote(false),
 		)
 		if err != nil {
-			return errors.ToLogMessage(errors.LevelWarn, err.Error())
+			buf, _ := prototext.Marshal(&dpb.NodeHeader{
+				Id:   s.NodeID(),
+				Type: s.Header().Type(),
+			})
+			return errors.ToLogMessage(
+				errors.LevelWarn,
+				fmt.Sprintf("db.GetNode(%v) returned non-nil error: %v", string(buf), err.Error()),
+			)
 		}
 
 		source_index := -1
@@ -219,7 +246,11 @@ func do_search(ctx context.Context, _db *db.DB, msg message.SearchRequestMessage
 		if err != nil {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
-				err.Error(),
+				fmt.Sprintf(
+					"db.Search(\"%v\") returned non-nil error: %v",
+					msg.Body.Value.Query,
+					err.Error(),
+				),
 			)
 		}
 

@@ -139,7 +139,7 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 			cmds = append(cmds, func() tea.Msg {
 				return errors.ToLogMessage(
 					errors.LevelWarn,
-					fmt.Sprintf("%v: Virtual() returned error: %v", err),
+					fmt.Sprintf("cannot get virtual node: %v", err),
 				)
 			})
 		} else {
@@ -163,7 +163,7 @@ func (n *Node) do_highlight(v form.Value[tablist.Tab]) tea.Cmd {
 					cmds = append(cmds, func() tea.Msg {
 						return errors.ToLogMessage(
 							errors.LevelWarn,
-							fmt.Sprintf("%v: multiple Truffle sources found: %v", n.ID(), _s.Header()),
+							fmt.Sprintf("multiple Truffle sources found for node %v", n.node.Header().ID()),
 						)
 					})
 				} else {

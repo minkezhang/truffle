@@ -241,7 +241,7 @@ func (n *Node) do_submit() tea.Cmd {
 	cmds := []tea.Cmd{
 		func() tea.Msg {
 			return errors.ToLogMessage(
-				errors.LevelDebug,
+				errors.LevelInfo,
 				fmt.Sprintf("%v: submitting search query %v", n.ID(), m),
 			)
 		},
@@ -253,7 +253,7 @@ func (n *Node) do_submit() tea.Cmd {
 		cmds = append(cmds, func() tea.Msg {
 			return errors.ToLogMessage(
 				errors.LevelWarn,
-				fmt.Sprintf("%v: invalid search tokens: %v", n.ID(), strings.Join(invalid, " ")),
+				fmt.Sprintf("invalid search tokens: \"%v\"", strings.Join(invalid, " ")),
 			)
 		})
 	}
