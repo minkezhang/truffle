@@ -2,7 +2,6 @@ package component_node
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -216,21 +215,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case message.GetResponseMessage:
 		cmds = append(cmds, n.SetValue(msg.Body.Value.Node))
 	case message.PutResponseMessage:
-		cmds = append(cmds, tea.Sequence(
-			func() tea.Msg {
-				buf, _ := prototext.Marshal(msg.Body.Value.Node.PB())
-				parts := []string{string(buf)}
-				for _, s := range msg.Body.Value.Node.Sources() {
-					buf, _ = prototext.Marshal(s.PB())
-					parts = append(parts, string(buf))
-				}
-				return errors.ToLogMessage(
-					errors.LevelInfo,
-					fmt.Sprintf("%v: received PutResponseMessage:\n%v", n.ID(), strings.Join(parts, "\n")),
-				)
-			},
-			n.SetValue(msg.Body.Value.Node),
-		))
+		cmds = append(cmds, n.SetValue(msg.Body.Value.Node))
 	case tablist.HighlightMessage:
 		if msg.ID == n.tablist.ID() {
 			cmds = append(cmds, n.do_highlight(msg.Value))

@@ -46,7 +46,8 @@ func Make(o O) Node {
 			},
 		),
 		footer: footer.New(footer.O{
-			Column: c,
+			Column:   c,
+			MinLevel: errors.LevelWarn,
 		}),
 	}
 }

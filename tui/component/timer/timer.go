@@ -49,6 +49,8 @@ func (n *Node) Init() tea.Cmd {
 	}
 }
 
+func (n *Node) IsRunning() bool { return time.Now().Sub(n.start) <= n.duration }
+
 type tick_message struct {
 	id     string // Node ID
 	run_id string
@@ -131,10 +133,14 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (n *Node) View() string {
+	r := n.start.Add(n.duration).Sub(time.Now())
+	if r < 0 {
+		r = 0
+	}
 	return fmt.Sprintf(
-		"ID: %v, run_id: %v, time remaining: %v",
+		"ID: %v, run_id: %v, time remaining: %0.1fs",
 		n.ID(),
 		n.run_id,
-		n.start.Add(n.duration).Sub(time.Now()),
+		float64(r)/float64(time.Second),
 	)
 }

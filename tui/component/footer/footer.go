@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,26 +13,44 @@ import (
 	"github.com/minkezhang/truffle/tui/component/directory/base"
 	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/component/timer"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 )
 
+var (
+	float_duration = map[errors.Level]time.Duration{
+		errors.LevelDebug: time.Second,
+		errors.LevelInfo:  time.Second,
+		errors.LevelWarn:  5 * time.Second,
+		errors.LevelError: 10 * time.Second,
+	}
+)
+
 type O struct {
-	Column *column.C
+	Column   *column.C
+	MinLevel errors.Level
 }
 
 func New(o O) *Node {
-	return &Node{
-		Node:   focusable.New("footer", "", 0),
-		column: o.Column,
-		q:      map[errors.Level][]errors.LogMessage{},
+	n := &Node{
+		Node:      focusable.New("footer", "", 0),
+		column:    o.Column,
+		min_level: o.MinLevel,
 	}
+	n.timer = timer.New(timer.O{
+		ParentID: n.ID(),
+	})
+	return n
 }
 
 type Node struct {
 	*focusable.Node
 
-	column *column.C
-	q      map[errors.Level][]errors.LogMessage
+	column    *column.C
+	q         []errors.LogMessage // FIFO by level
+	timer     *timer.Node
+	run_id    string
+	min_level errors.Level
 }
 
 func (n *Node) Init() tea.Cmd {
@@ -43,28 +62,55 @@ func (n *Node) Init() tea.Cmd {
 }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) { // TODO(minkezhang): Add timer to expire messages.
+	var cmds []tea.Cmd
+
+	switch msg := msg.(type) {
 	case errors.LogMessage:
-		n.q[msg.L] = append(n.q[msg.L], msg)
-		slices.SortFunc(n.q[msg.L], func(a, b errors.LogMessage) int {
+		if msg.L < n.min_level {
+			break
+		}
+		var v errors.LogMessage
+		if len(n.q) > 0 {
+			v = n.q[0]
+		}
+
+		n.q = append(n.q, msg)
+		slices.SortFunc(n.q, func(a, b errors.LogMessage) int {
+			if l := cmp.Compare(b.L, a.L); l != 0 {
+				return l
+			}
 			return cmp.Compare(a.T.Unix(), b.T.Unix()) // FIFO
 		})
+
+		if !n.timer.IsRunning() || (v != errors.LogMessage{}) && n.q[0].L > v.L {
+			cmds = append(cmds, n.timer.Start(float_duration[n.q[0].L]))
+		}
+	case timer.TimerMessage:
+		if n.timer.ID() == msg.ID {
+			switch msg.Type {
+			case timer.TimerMessageStart:
+				n.run_id = msg.RunID
+			case timer.TimerMessageStop:
+				if len(n.q) > 0 {
+					n.q = n.q[1:]
+				}
+				if len(n.q) > 0 {
+					cmds = append(cmds, n.timer.Start(float_duration[n.q[0].L]))
+				}
+			}
+		}
 	}
-	return n, nil
+
+	_, c := n.timer.Update(msg)
+	cmds = append(cmds, c)
+
+	return n, tea.Batch(cmds...)
 }
 
 func (n *Node) View() string {
 	var v errors.LogMessage
-	for _, l := range []errors.Level{
-		errors.LevelError,
-		errors.LevelWarn,
-		errors.LevelInfo,
-		errors.LevelDebug,
-	} {
-		if ms := n.q[l]; len(ms) > 0 {
-			v = ms[0]
-			break
-		}
+	if len(n.q) > 0 {
+		v = n.q[0]
 	}
 
 	if v == (errors.LogMessage{}) {

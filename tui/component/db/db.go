@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/minkezhang/truffle-api/client/option"
@@ -69,6 +70,19 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				do_put(n.context, n.db, msg),
 			),
 		)
+	case message.PutResponseMessage:
+		cmds = append(cmds, func() tea.Msg {
+			buf, _ := prototext.Marshal(msg.Body.Value.Node.PB())
+			parts := []string{string(buf)}
+			for _, s := range msg.Body.Value.Node.Sources() {
+				buf, _ = prototext.Marshal(s.PB())
+				parts = append(parts, string(buf))
+			}
+			return errors.ToLogMessage(
+				errors.LevelInfo,
+				fmt.Sprintf("%v: received PutResponseMessage:\n%v", n.ID(), strings.Join(parts, "\n")),
+			)
+		})
 	case message.GetNodeRequestMessage:
 		cmds = append(cmds, do_get_node(n.context, n.db, msg))
 	case message.GetRequestMessage:
