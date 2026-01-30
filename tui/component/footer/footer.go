@@ -20,7 +20,7 @@ import (
 var (
 	float_duration = map[errors.Level]time.Duration{
 		errors.LevelDebug: time.Second,
-		errors.LevelInfo:  time.Second,
+		errors.LevelInfo:  2 * time.Second,
 		errors.LevelWarn:  5 * time.Second,
 		errors.LevelError: 10 * time.Second,
 	}

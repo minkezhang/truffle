@@ -241,7 +241,7 @@ func (n *Node) do_submit() tea.Cmd {
 	cmds := []tea.Cmd{
 		func() tea.Msg {
 			return errors.ToLogMessage(
-				errors.LevelInfo,
+				errors.LevelDebug,
 				fmt.Sprintf("%v: submitting search query %v", n.ID(), m),
 			)
 		},

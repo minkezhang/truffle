@@ -31,7 +31,6 @@ type O struct {
 	Width       int
 	Height      int
 	Placeholder string
-	Label       string
 	Value       form.Value[string]
 }
 

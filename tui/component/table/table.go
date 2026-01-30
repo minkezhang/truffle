@@ -310,7 +310,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case n.select_button.ID():
 			cmds = append(cmds, n.do_select())
 		case n.add_button.ID():
-			cmds = append(cmds, n.do_add_link(""))
+			cmds = append(cmds,
+				n.do_add_link(""),
+				func() tea.Msg {
+					return errors.ToLogMessage(errors.LevelInfo, "added new source")
+				},
+			)
 		}
 	case HighlightMessage:
 		if msg.ID == n.ID() {

@@ -63,7 +63,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				func() tea.Msg {
 					buf, _ := prototext.Marshal(msg.Body.Value.PB())
 					return errors.ToLogMessage(
-						errors.LevelInfo,
+						errors.LevelDebug,
 						fmt.Sprintf("%v: got PutRequestMessage\n%v", n.ID(), string(buf)),
 					)
 				},
@@ -79,7 +79,7 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				parts = append(parts, string(buf))
 			}
 			return errors.ToLogMessage(
-				errors.LevelInfo,
+				errors.LevelDebug,
 				fmt.Sprintf("%v: received PutResponseMessage:\n%v", n.ID(), strings.Join(parts, "\n")),
 			)
 		})

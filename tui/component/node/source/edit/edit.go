@@ -13,7 +13,9 @@ import (
 	"github.com/minkezhang/truffle/tui/component/column"
 	"github.com/minkezhang/truffle/tui/component/db/message"
 	"github.com/minkezhang/truffle/tui/component/directory/base"
+	"github.com/minkezhang/truffle/tui/component/errors"
 	"github.com/minkezhang/truffle/tui/component/focusable"
+	"github.com/minkezhang/truffle/tui/component/textarea"
 	"github.com/minkezhang/truffle/tui/component/textinput"
 	"github.com/minkezhang/truffle/tui/util/color_profile"
 	"github.com/minkezhang/truffle/tui/util/form"
@@ -43,12 +45,12 @@ type Node struct {
 	column *column.C
 	source source.S
 
-	titles []t
-	image  *textinput.Node
-	score  *textinput.Node
-	// synopsis
-	// notes
-	genres *textinput.Node
+	titles   []t
+	image    *textinput.Node
+	score    *textinput.Node
+	synopsis *textarea.Node
+	notes    *textarea.Node
+	genres   *textinput.Node
 	// status
 	studios      *textinput.Node
 	seasons      *textinput.Node
@@ -90,6 +92,30 @@ func New(o O) *Node {
 			Key: form.Key{
 				Label: "Score",
 				Key:   "edit-source-score",
+			},
+		},
+	})
+	n.synopsis = textarea.New(textarea.O{
+		Prefix:   "edit-source-synopsis",
+		ParentID: n.ID(),
+		Width:    50,
+		Height:   10,
+		Value: form.Value[string]{
+			Key: form.Key{
+				Label: "Synopsis",
+				Key:   "edit-source-synopsis",
+			},
+		},
+	})
+	n.notes = textarea.New(textarea.O{
+		Prefix:   "edit-source-notes",
+		ParentID: n.ID(),
+		Width:    50,
+		Height:   10,
+		Value: form.Value[string]{
+			Key: form.Key{
+				Label: "Notes",
+				Key:   "edit-source-notes",
 			},
 		},
 	})
@@ -275,6 +301,8 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 	children = append(
 		children,
 		n.score.ID(),
+		n.synopsis.ID(),
+		n.notes.ID(),
 		n.genres.ID(),
 		n.studios.ID(),
 		n.seasons.ID(),
@@ -319,6 +347,8 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 		cmds,
 		n.image.SetValue(v.PreviewURL()),
 		n.score.SetValue(fmt.Sprintf("%d", v.Score())),
+		n.synopsis.SetValue(v.Synopsis()),
+		n.notes.SetValue(v.Notes()),
 		n.genres.SetValue(strings.Join(v.Genres(), ", ")),
 		n.studios.SetValue(strings.Join(v.Studios(), ", ")),
 		n.seasons.SetValue(strings.Join(v.Seasons(), ", ")),
@@ -344,6 +374,8 @@ func (n *Node) Init() tea.Cmd {
 
 	for _, m := range []tea.Model{
 		n.score,
+		n.synopsis,
+		n.notes,
 		n.genres,
 		n.studios,
 		n.seasons,
@@ -384,9 +416,11 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, c)
 	}
 
-	for _, m := range []*textinput.Node{
+	for _, m := range []tea.Model{
 		n.image,
 		n.score,
+		n.synopsis,
+		n.notes,
 		n.genres,
 		n.studios,
 		n.seasons,
@@ -403,7 +437,12 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case button.SubmitMessage:
 		if msg.ID == n.save_button.ID() {
-			cmds = append(cmds, n.do_save())
+			cmds = append(cmds,
+				n.do_save(),
+				func() tea.Msg {
+					return errors.ToLogMessage(errors.LevelInfo, "saved Truffle data")
+				},
+			)
 		}
 	}
 
@@ -442,6 +481,8 @@ func (n *Node) Value() form.Value[source.S] {
 		score = 0
 	}
 	pb.Score = int64(score)
+	pb.Synopsis = sanitize(n.synopsis.Value().Value)
+	pb.Notes = sanitize(n.notes.Value().Value)
 	pb.Genres = split(sanitize(n.genres.Value().Value))
 	pb.Studios = split(sanitize(n.studios.Value().Value))
 	pb.Seasons = split(sanitize(n.seasons.Value().Value))
@@ -499,6 +540,8 @@ func (n *Node) View() string {
 		View() string
 		IsInvisible() bool
 	}{
+		n.synopsis,
+		n.notes,
 		n.genres,
 		n.studios,
 		n.seasons,
