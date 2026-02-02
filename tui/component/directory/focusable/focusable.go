@@ -210,5 +210,17 @@ func (d *D) View() string {
 		}
 		return result
 	}
-	return strings.Join(tree(0, "", []string{""}), "\n")
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			lipgloss.NewStyle().Bold(true).Render("Node Directory"),
+			lipgloss.NewStyle().Margin(0, 0, 0, 1).Foreground(color_profile.ForegroundCritical).Render("Active"),
+			lipgloss.NewStyle().Margin(0, 0, 0, 1).Foreground(color_profile.ForegroundImportant).Render("Focusable"),
+			lipgloss.NewStyle().Margin(0, 0, 0, 1).Foreground(color_profile.ForegroundNormal).Render("No Focusable Elements"),
+			lipgloss.NewStyle().Margin(0, 0, 1, 1).Foreground(color_profile.ForegroundNegligible).Render("Leaf"),
+		),
+		strings.Join(tree(0, "", []string{""}), "\n"),
+	)
 }

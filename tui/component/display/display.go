@@ -83,7 +83,7 @@ func (n Node) View() string {
 	}
 
 	if !n.table.IsInvisible() {
-		parts = append(parts, n.table.View())
+		parts = append(parts, lipgloss.NewStyle().Margin(1, 0, 0, 0).Render(n.table.View()))
 	}
 
 	parts = append(parts, n.node.View())

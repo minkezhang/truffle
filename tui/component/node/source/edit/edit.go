@@ -74,7 +74,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       image_width,
 		Placeholder: "https://cdn.myanimelist.net/images/anime/1015/138006.jpg",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Image URL",
@@ -87,7 +87,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       9,
 		Placeholder: "98",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Score",
@@ -124,7 +124,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       50,
 		Placeholder: "Adventure, Drama, Fantasy, Shounen",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Genres",
@@ -137,7 +137,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       50,
 		Placeholder: "Madhouse",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Studio",
@@ -150,7 +150,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       50,
 		Placeholder: "Fall 2023",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Seasons",
@@ -163,7 +163,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       50,
 		Placeholder: "Kanehito Yamada",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Authors",
@@ -176,7 +176,7 @@ func New(o O) *Node {
 		ParentID:    n.ID(),
 		Width:       50,
 		Placeholder: "Tsukasa Abe",
-		Prompt:      "> ",
+		Prompt:      "┃ ",
 		Value: form.Value[string]{
 			Key: form.Key{
 				Label: "Illustrators",
@@ -261,7 +261,7 @@ func (n *Node) SetValue(v source.S) tea.Cmd {
 				ParentID:    n.ID(),
 				Width:       40,
 				Placeholder: "Sousou no Frieren",
-				Prompt:      "> ",
+				Prompt:      "┃ ",
 				Value: form.Value[string]{
 					Key: form.Key{
 						Label: "Title",

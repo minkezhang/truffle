@@ -126,9 +126,13 @@ func (n *Node) View() string {
 	)
 	parts := []string{header}
 	if n.is_expanded {
-		for _, c := range n.children {
+		for i, c := range n.children {
+			s := lipgloss.NewStyle().MarginBottom(1)
+			if i == 0 {
+				s = s.MarginTop(1)
+			}
 			if v := c.View(); v != "" {
-				parts = append(parts, c.View())
+				parts = append(parts, s.Render(c.View()))
 			}
 		}
 	}
