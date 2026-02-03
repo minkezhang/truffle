@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/minkezhang/truffle/tui/component/column"
+	"github.com/minkezhang/truffle/tui/component/dropdown"
 	"github.com/minkezhang/truffle/tui/component/node"
 	"github.com/minkezhang/truffle/tui/component/org"
 	"github.com/minkezhang/truffle/tui/component/search"
@@ -22,6 +23,27 @@ type O struct {
 func Make(o O) Node {
 	return Node{
 		org: org.New(o.Column),
+		dropdown: dropdown.New(dropdown.O{
+			Prefix: "dropdown-test",
+			Width:  50,
+			Key:    form.Key{"Type", "type"},
+			Choices: []form.Key{
+				form.Key{"Anime", "anime"},
+				form.Key{"0", "book"},
+				form.Key{"01", "book"},
+				form.Key{"012", "book"},
+				form.Key{"0123", "book"},
+				form.Key{"01234", "book"},
+				form.Key{"012345", "book"},
+				form.Key{"0123456", "book"},
+				form.Key{"01234567", "book"},
+				form.Key{"012345678", "book"},
+				form.Key{"0123456789", "book"},
+				form.Key{"01234567890", "book"},
+			},
+			Prompt: "┃ ",
+			Height: 5,
+		}),
 		search_bar: search.New(search.O{
 			Column: o.Column,
 		}),
@@ -46,6 +68,7 @@ type Node struct {
 	search_bar *search.Node
 	table      *table.Node
 	node       *component_node.Node
+	dropdown   *dropdown.Node
 }
 
 func (n Node) Init() tea.Cmd {
@@ -55,6 +78,7 @@ func (n Node) Init() tea.Cmd {
 		n.search_bar,
 		n.table,
 		n.node,
+		n.dropdown,
 	} {
 		cmds = append(cmds, c.Init())
 	}
@@ -69,6 +93,7 @@ func (n Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n.search_bar,
 		n.table,
 		n.node,
+		n.dropdown,
 	} {
 		_, d := c.Update(msg)
 		cmds = append(cmds, d)
@@ -88,5 +113,9 @@ func (n Node) View() string {
 
 	parts = append(parts, n.node.View())
 
-	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		lipgloss.JoinVertical(lipgloss.Left, parts...),
+		n.dropdown.View(),
+	)
 }
