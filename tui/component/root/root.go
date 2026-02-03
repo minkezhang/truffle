@@ -33,6 +33,7 @@ func Make(o O) Node {
 	return Node{
 		errors: &errors.Node{},
 		viewport: viewport.New(viewport.O{
+			Prefix: "viewport",
 			Column: c,
 			Node: display.Make(display.O{
 				Column:         column.New(max_width - 2),
