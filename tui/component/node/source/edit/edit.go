@@ -215,6 +215,8 @@ func (n *Node) SetIsInvisible(v bool) tea.Cmd {
 	for _, c := range []i{
 		n.image,
 		n.score,
+		n.synopsis,
+		n.notes,
 		n.genres,
 		n.save_button,
 	} {
