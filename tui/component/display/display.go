@@ -25,7 +25,6 @@ func Make(o O) Node {
 		org: org.New(o.Column),
 		dropdown: dropdown.New(dropdown.O{
 			Prefix: "dropdown-test",
-			Width:  50,
 			Key:    form.Key{"Type", "type"},
 			Choices: []form.Key{
 				form.Key{"Anime", "anime"},
@@ -42,7 +41,8 @@ func Make(o O) Node {
 				form.Key{"01234567890", "book"},
 			},
 			Prompt: "┃ ",
-			Height: 5,
+			Height: 10,
+			Column: o.Column,
 		}),
 		search_bar: search.New(search.O{
 			Column: o.Column,
