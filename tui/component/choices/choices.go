@@ -50,7 +50,7 @@ func New(o O) *Node {
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.clickable.Init(),
-		n.SetValue(n.choices),
+		n.SetValue(n.choices, 0),
 		func() tea.Msg {
 			return base.RegisterMessage{
 				Node: n,
@@ -59,9 +59,9 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) SetValue(vs []form.Key) tea.Cmd {
+func (n *Node) SetValue(vs []form.Key, index int) tea.Cmd {
 	n.choices = vs
-	n.index = 0
+	n.index = index
 	n.start_index = 0
 	return nil
 }

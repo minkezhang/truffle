@@ -67,8 +67,8 @@ func (n *Node) Init() tea.Cmd {
 	)
 }
 
-func (n *Node) SetValue(vs []form.Key) tea.Cmd { return n.choices.SetValue(vs) }
-func (n *Node) Value() form.Value[form.Key]    { return n.choices.Value() }
+func (n *Node) SetValue(vs []form.Key, index int) tea.Cmd { return n.choices.SetValue(vs, index) }
+func (n *Node) Value() form.Value[form.Key]               { return n.choices.Value() }
 
 func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
