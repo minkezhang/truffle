@@ -78,15 +78,7 @@ func (n *Node) do_expand() tea.Cmd {
 		n.choices.SetIsInvisible(!n.choices.IsInvisible()),
 	}
 
-	if is_expanded {
-		cmds = append(cmds,
-			func() tea.Msg {
-				return types.FocusMessage{
-					ID: n.ID(),
-				}
-			},
-		)
-	} else {
+	if !is_expanded {
 		cmds = append(cmds,
 			func() tea.Msg {
 				return types.FocusMessage{
