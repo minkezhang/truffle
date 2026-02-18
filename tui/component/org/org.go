@@ -118,8 +118,8 @@ func (n *Node) View() string {
 			zone.Mark(
 				n.clickable.ID(),
 				map[bool]string{
-					true:  "↓",
-					false: "→",
+					true:  "(-)",
+					false: "(+)",
 				}[n.is_expanded],
 			),
 		),

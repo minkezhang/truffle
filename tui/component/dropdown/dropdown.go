@@ -32,21 +32,19 @@ type O struct {
 type Node struct {
 	*focusable.Node
 
-	column     *column.C
-	prompt     string
-	clickable  *clickable.Node
-	expandable *clickable.Node
-	choices    *choices.Node
+	column    *column.C
+	prompt    string
+	clickable *clickable.Node
+	choices   *choices.Node
 }
 
 func New(o O) *Node {
 	n := &Node{
-		Node:   focusable.New(o.Prefix, o.ParentID, 2),
+		Node:   focusable.New(o.Prefix, o.ParentID, 1),
 		column: o.Column,
 		prompt: o.Prompt,
 	}
 	n.clickable = clickable.New(n.ID())
-	n.expandable = clickable.New(n.ID())
 	n.choices = choices.New(choices.O{
 		ParentID: n.ID(),
 		Width:    o.Column.Content(),
@@ -60,7 +58,6 @@ func New(o O) *Node {
 func (n *Node) Init() tea.Cmd {
 	return tea.Sequence(
 		n.clickable.Init(),
-		n.expandable.Init(),
 		n.choices.Init(),
 		n.choices.SetIsInvisible(true),
 		func() tea.Msg {
@@ -85,8 +82,7 @@ func (n *Node) do_expand() tea.Cmd {
 		cmds = append(cmds,
 			func() tea.Msg {
 				return types.FocusMessage{
-					ID:    n.ID(),
-					Index: 0,
+					ID: n.ID(),
 				}
 			},
 		)
@@ -106,36 +102,20 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
-	case clickable.Click:
-		if msg.ID == n.expandable.ID() {
-			cmds = append(cmds, n.do_expand())
-		}
 	case tea.KeyMsg:
-		if n.FocusIndex() == 0 && n.FocusState() == types.FocusStateActive {
+		if n.FocusState() == types.FocusStateActive {
 			if msg.Type == tea.KeyEnter || msg.Type == tea.KeySpace {
 				cmds = append(cmds, n.do_expand())
 			}
 		}
-
-	}
-
-	if n.FocusState() != types.FocusStateActive {
-		switch msg := msg.(type) {
-		case clickable.Click:
-			if msg.ID == n.clickable.ID() {
-				cmds = append(cmds, func() tea.Msg {
-					return types.FocusMessage{
-						ID:    n.ID(),
-						Index: 1,
-					}
-				})
-			}
+	case clickable.Click:
+		if msg.ID == n.clickable.ID() {
+			cmds = append(cmds, n.do_expand())
 		}
 	}
 
 	for _, m := range []tea.Model{
 		n.clickable,
-		n.expandable,
 		n.choices,
 	} {
 		_, c := m.Update(msg)
@@ -150,14 +130,14 @@ func (n *Node) View() string {
 	if !n.choices.IsInvisible() {
 		choices = n.choices.View()
 	}
-	c := n.column.WithWidth(n.column.Width() - 3)
+	c := n.column.WithWidth(n.column.Width() - /* is_expanded */ 1)
 	return n.column.RenderOrDie(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
-			lipgloss.JoinHorizontal(
-				lipgloss.Top,
-				zone.Mark(
-					n.clickable.ID(),
+			zone.Mark(
+				n.clickable.ID(),
+				lipgloss.JoinHorizontal(
+					lipgloss.Top,
 					c.Style().Render(
 						lipgloss.JoinVertical(
 							lipgloss.Left,
@@ -165,10 +145,7 @@ func (n *Node) View() string {
 								fmt.Sprintf(
 									"%v%v",
 									lipgloss.NewStyle().Foreground(
-										map[bool]lipgloss.Color{
-											true:  color_profile.UIForeground[types.FocusStateActive],
-											false: color_profile.UIForeground[types.FocusStateNone],
-										}[n.FocusState() == types.FocusStateActive && n.FocusIndex() == 1],
+										color_profile.UIForeground[n.FocusState()],
 									).Render(n.prompt),
 									ansi.Truncate(
 										n.Value().Value.Label,
@@ -178,10 +155,7 @@ func (n *Node) View() string {
 								),
 							),
 							lipgloss.NewStyle().Foreground(
-								map[bool]lipgloss.Color{
-									true:  color_profile.UIForeground[types.FocusStateActive],
-									false: color_profile.UIForeground[types.FocusStateNone],
-								}[n.FocusState() == types.FocusStateActive && n.FocusIndex() == 1],
+								color_profile.UIForeground[n.FocusState()],
 							).Render(
 								fmt.Sprintf(
 									"%v%v%v%v",
@@ -199,23 +173,14 @@ func (n *Node) View() string {
 							),
 						),
 					),
-				),
-				zone.Mark(
-					n.expandable.ID(),
-					lipgloss.NewStyle().Width(3).Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
-						map[bool]lipgloss.Color{
-							true:  color_profile.UIForeground[types.FocusStateActive],
-							false: color_profile.UIForeground[types.FocusStateNone],
-						}[n.FocusState() == types.FocusStateActive && n.FocusIndex() == 1],
+					lipgloss.NewStyle().Width(1).Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+						color_profile.UIForeground[n.FocusState()],
 					).Foreground(
-						map[bool]lipgloss.Color{
-							true:  color_profile.UIForeground[types.FocusStateActive],
-							false: color_profile.UIForeground[types.FocusStateNone],
-						}[n.FocusState() == types.FocusStateActive && n.FocusIndex() == 0],
+						color_profile.UIForeground[n.FocusState()],
 					).Render(
 						map[bool]string{
-							true:  "(+)",
-							false: "(-)",
+							false: "↓",
+							true:  "→",
 						}[n.choices.IsInvisible()],
 					),
 				),
