@@ -115,6 +115,14 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.Type == tea.KeyUp {
 				cmds = append(cmds, n.do_scroll(true))
 			}
+			if msg.Type == tea.KeySpace || msg.Type == tea.KeyEnter || msg.Type == tea.KeyEsc {
+				cmds = append(cmds, func() tea.Msg {
+					return types.EOFMessage{
+						ID:     n.ID(),
+						IsHead: false,
+					}
+				})
+			}
 		}
 	} else {
 		switch msg := msg.(type) {
@@ -160,18 +168,20 @@ func (n *Node) View() string {
 		style := lipgloss.NewStyle().Width(w).MaxWidth(w).Inline(true)
 		row := lipgloss.NewStyle().PaddingLeft(1).Foreground(
 			map[bool]lipgloss.TerminalColor{
-				false: color_profile.UIForeground[types.FocusStateActive],
+				false: color_profile.UIForeground[n.FocusState()],
 				true:  color_profile.ForegroundInverted,
 			}[i+n.start_index == n.index],
 		).Background(
 			map[bool]lipgloss.TerminalColor{
-				true:  color_profile.UIForeground[types.FocusStateActive],
+				true:  color_profile.UIForeground[n.FocusState()],
 				false: color_profile.ForegroundInverted,
 			}[i+n.start_index == n.index],
 		).Render(
 			style.Render(ansi.Truncate(c.Label, w, "…")),
 		)
-		rows = append(rows, fmt.Sprintf("┃%v", row))
+		rows = append(rows, fmt.Sprintf("%v%v", lipgloss.NewStyle().Foreground(
+			color_profile.UIForeground[n.FocusState()],
+		).Render("┃"), row))
 	}
 
 	parts := []string{
@@ -192,7 +202,9 @@ func (n *Node) View() string {
 	return zone.Mark(
 		n.clickable.ID(),
 		lipgloss.NewStyle().Width(n.max_width).Render(
-			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).Render(
+			lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+				color_profile.UIForeground[n.FocusState()],
+			).Render(
 				lipgloss.JoinVertical(
 					lipgloss.Right,
 					parts...,
@@ -201,4 +213,8 @@ func (n *Node) View() string {
 		),
 	)
 
+}
+
+func (n *Node) OnBlur() tea.Cmd {
+	return tea.Sequence(n.Node.OnBlur(), n.SetIsInvisible(true))
 }
