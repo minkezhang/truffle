@@ -122,7 +122,7 @@ func (n *Node) View() string {
 	if !n.choices.IsInvisible() {
 		choices = n.choices.View()
 	}
-	c := n.column.WithWidth(n.column.Width() - /* is_expanded */ 1)
+	c := n.column.WithWidth(n.column.Width() - /* is_expanded */ 3)
 	return n.column.RenderOrDie(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
@@ -165,14 +165,14 @@ func (n *Node) View() string {
 							),
 						),
 					),
-					lipgloss.NewStyle().Width(1).Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
+					lipgloss.NewStyle().Width(3).Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(
 						color_profile.UIForeground[n.FocusState()],
 					).Foreground(
 						color_profile.UIForeground[n.FocusState()],
 					).Render(
 						map[bool]string{
-							false: "↓",
-							true:  "→",
+							false: " ↓ ",
+							true:  " → ",
 						}[n.choices.IsInvisible()],
 					),
 				),
