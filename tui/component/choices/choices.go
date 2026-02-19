@@ -119,18 +119,16 @@ func (n *Node) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, func() tea.Msg {
 					return types.EOFMessage{
 						ID:     n.ID(),
-						IsHead: false,
+						IsHead: true,
 					}
 				})
 			}
-		}
-	} else {
-		switch msg := msg.(type) {
 		case clickable.Click:
 			if msg.ID == n.clickable.ID() {
 				cmds = append(cmds, func() tea.Msg {
-					return types.FocusMessage{
-						ID: n.ID(),
+					return types.EOFMessage{
+						ID:     n.ID(),
+						IsHead: true,
 					}
 				})
 			}

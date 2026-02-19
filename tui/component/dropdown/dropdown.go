@@ -86,6 +86,15 @@ func (n *Node) do_expand() tea.Cmd {
 				}
 			},
 		)
+	} else {
+		cmds = append(cmds,
+			func() tea.Msg {
+				return types.EOFMessage{
+					ID:     n.choices.ID(),
+					IsHead: true,
+				}
+			},
+		)
 	}
 	return tea.Sequence(cmds...)
 }
